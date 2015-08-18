@@ -1,0 +1,355 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r781 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r781%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612291505.kBTF56HJ024477%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000160.html">
+   <LINK REL="Next"  HREF="000162.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r781 - trunk/libsecondlife-cs</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r781%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612291505.kBTF56HJ024477%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r781 - trunk/libsecondlife-cs">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 29 16:05:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000160.html">[Libsecondlife-commits] r780 - branches
+</A></li>
+        <LI>Next message: <A HREF="000162.html">[Libsecondlife-commits] r782 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#161">[ date ]</a>
+              <a href="thread.html#161">[ thread ]</a>
+              <a href="subject.html#161">[ subject ]</a>
+              <a href="author.html#161">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-29 16:05:04 +0100 (Fri, 29 Dec 2006)
+New Revision: 781
+
+Added:
+   trunk/libsecondlife-cs/LLSD.cs
+Log:
+Added LLSD into trunk. Used as part of CAPS and other futurey things.
+
+Added: trunk/libsecondlife-cs/LLSD.cs
+===================================================================
+--- trunk/libsecondlife-cs/LLSD.cs	2006-12-29 07:01:02 UTC (rev 780)
++++ trunk/libsecondlife-cs/LLSD.cs	2006-12-29 15:05:04 UTC (rev 781)
+@@ -0,0 +1,278 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.Xml;
++using System.IO;
++using libsecondlife;
++using System.Security.Cryptography;
++using System.Text;
++
++namespace libsecondlife
++{
++	public class LLSD {
++		public class LLSDParseException : Exception {
++			public LLSDParseException(string message) : base(message) { }
++		}
++
++		public class LLSDSerializeException : Exception {
++			public LLSDSerializeException(string message) : base(message) { }
++		}
++
++
++		private static void SkipWS(XmlTextReader reader) {
++			while(reader.NodeType == XmlNodeType.Comment || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.SignificantWhitespace) reader.Read();
++		}
++
++		public static object LLSDDeserialize(byte[] b) {
++			return LLSDDeserialize(new MemoryStream(b,false));
++		}
++
++		
++		public static object LLSDDeserialize(Stream st) {
++			XmlTextReader reader = new XmlTextReader(st);
++			reader.Read(); SkipWS(reader);
++			if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;llsd&quot;) {
++				throw new LLSDParseException(&quot;Expected &lt;llsd&gt;&quot;);
++			}
++			reader.Read();
++			object ret = LLSDParseOne(reader);
++			SkipWS(reader);
++			if(reader.NodeType != XmlNodeType.EndElement || reader.LocalName != &quot;llsd&quot;)
++				throw new LLSDParseException(&quot;Expected &lt;/llsd&gt;&quot;);
++			return ret;
++		}
++
++		public static byte[] LLSDSerialize(object obj) {
++			StringWriter sw = new StringWriter();
++			XmlTextWriter writer = new XmlTextWriter(sw);
++			writer.Formatting = Formatting.None;
++			writer.WriteStartElement(&quot;&quot;,&quot;llsd&quot;,&quot;&quot;);
++			LLSDWriteOne(writer,obj);
++			writer.WriteEndElement();
++			writer.Close();
++			return Encoding.UTF8.GetBytes(sw.ToString());
++		}
++
++		public static void LLSDWriteOne(XmlTextWriter writer, object obj) {
++			if(obj == null) {
++				writer.WriteStartElement(&quot;&quot;,&quot;undef&quot;,&quot;&quot;);
++				writer.WriteEndElement();
++				return;
++			}
++
++			Type t = obj.GetType();
++			if(t == typeof(string)) {
++				writer.WriteStartElement(&quot;&quot;,&quot;string&quot;,&quot;&quot;);
++				writer.WriteString((string)obj);
++				writer.WriteEndElement();
++   			} else if(t == typeof(long)) {
++				writer.WriteStartElement(&quot;&quot;,&quot;integer&quot;,&quot;&quot;);
++				writer.WriteString(obj.ToString());
++				writer.WriteEndElement();
++   			} else if(t == typeof(double)) {
++				writer.WriteStartElement(&quot;&quot;,&quot;real&quot;,&quot;&quot;);
++				writer.WriteString(obj.ToString());
++				writer.WriteEndElement();
++   			} else if(t == typeof(bool)) {
++				bool b = (bool) obj;
++				writer.WriteStartElement(&quot;&quot;,&quot;boolean&quot;,&quot;&quot;);
++				if(b)
++					writer.WriteString(&quot;1&quot;);
++				else writer.WriteString(&quot;0&quot;);
++				writer.WriteEndElement();
++			} else if(t == typeof(LLUUID)) {
++				LLUUID u = (LLUUID) obj;
++				writer.WriteStartElement(&quot;&quot;,&quot;uuid&quot;,&quot;&quot;);
++				writer.WriteString(u.ToStringHyphenated());
++				writer.WriteEndElement();
++			} else if(t == typeof(Hashtable)) {
++				Hashtable h = (Hashtable) obj;
++				writer.WriteStartElement(&quot;&quot;,&quot;map&quot;,&quot;&quot;);
++				foreach(string key in h.Keys) {
++					writer.WriteStartElement(&quot;&quot;,&quot;key&quot;,&quot;&quot;);
++					writer.WriteString(key);
++					writer.WriteEndElement();
++					LLSDWriteOne(writer,h[key]);
++				}
++				writer.WriteEndElement();
++			} else if(t == typeof(ArrayList)) {
++				ArrayList a = (ArrayList) obj;
++				writer.WriteStartElement(&quot;&quot;,&quot;array&quot;,&quot;&quot;);
++				foreach(object item in a) {
++					LLSDWriteOne(writer,item);
++				}
++				writer.WriteEndElement();
++   			} else if(t == typeof(byte[])) {
++				byte[] b = (byte[]) obj;
++				writer.WriteStartElement(&quot;&quot;,&quot;binary&quot;,&quot;&quot;);
++				writer.WriteStartAttribute(&quot;&quot;,&quot;encoding&quot;,&quot;&quot;);
++				writer.WriteString(&quot;base64&quot;);
++				writer.WriteEndAttribute();
++				char[] tmp = new char[b.Length*2]; // too much
++				int i = Convert.ToBase64CharArray(b,0,b.Length,tmp,0);
++				Array.Resize(ref tmp,i);
++				writer.WriteString(new String(tmp));
++				writer.WriteEndElement();
++				
++			} else {
++				throw new LLSDSerializeException(&quot;Unknown type &quot;+t.Name);
++			}
++		}
++
++		public static object LLSDParseOne(XmlTextReader reader) {
++			SkipWS(reader);
++			if(reader.NodeType != XmlNodeType.Element) 
++				throw new LLSDParseException(&quot;Expected an element&quot;);
++			string dtype = reader.LocalName; object ret = null;
++			
++			switch(dtype) {
++				case &quot;undef&quot;: {
++					reader.Read(); SkipWS(reader); ret = null; break;
++				}
++				case &quot;boolean&quot;: {
++					reader.Read();
++					string s = reader.ReadString().Trim();
++					if(s == &quot;&quot; || s == &quot;false&quot; || s == &quot;0&quot;) {
++						ret = false;
++					} else if(s == &quot;true&quot; || s == &quot;1&quot;) {
++						ret = true;
++					} else {
++						throw new LLSDParseException(&quot;Bad boolean value &quot;+s);
++					}
++					break;
++				}
++				case &quot;integer&quot;: {
++					reader.Read();
++					ret = Convert.ToInt64(reader.ReadString().Trim());
++					break;
++				}
++				case &quot;real&quot;: {
++					reader.Read();
++					ret = Convert.ToDouble(reader.ReadString().Trim());
++					break;
++				}
++				case &quot;uuid&quot;: {
++					reader.Read();
++					ret = new LLUUID(reader.ReadString().Trim());
++					break;
++				}
++				case &quot;string&quot;: {
++					reader.Read();
++					ret = reader.ReadString();
++					break;
++				}
++				case &quot;binary&quot;: {
++					if(reader.GetAttribute(&quot;encoding&quot;) != null &amp;&amp;
++					   reader.GetAttribute(&quot;encoding&quot;)!=&quot;base64&quot;)
++						throw new LLSDParseException(&quot;Unknown encoding: &quot;+
++							reader.GetAttribute(&quot;encoding&quot;));
++					reader.Read();
++					FromBase64Transform b64 = new FromBase64Transform(FromBase64TransformMode.IgnoreWhiteSpaces);
++					byte[] inp = Encoding.ASCII.GetBytes(reader.ReadString());
++					ret = b64.TransformFinalBlock(inp,0,inp.Length);
++					break;
++				}
++				case &quot;date&quot;: {
++					reader.Read();
++					throw new Exception(&quot;LLSD TODO: date&quot;);
++					break;
++				}
++				case &quot;map&quot;: {
++					return LLSDParseMap(reader);
++				}
++				case &quot;array&quot;: {
++					return LLSDParseArray(reader);
++				}
++				default:
++					throw new LLSDParseException(&quot;Unknown element &lt;&quot;+dtype+&quot;&gt;&quot;);
++			}
++			if(reader.NodeType != XmlNodeType.EndElement || reader.LocalName != dtype) {
++				throw new LLSDParseException(&quot;Expected &lt;/&quot;+dtype+&quot;&gt;&quot;);
++			}
++			reader.Read();
++			return ret;
++		}
++
++		public static Hashtable LLSDParseMap(XmlTextReader reader) {
++			if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;map&quot;)
++				throw new LLSDParseException(&quot;Expected &lt;map&gt;&quot;);
++			reader.Read();
++
++			Hashtable ret = new Hashtable();
++
++			while(true) {
++				SkipWS(reader);
++				if(reader.NodeType == XmlNodeType.EndElement &amp;&amp; reader.LocalName == &quot;map&quot;) {
++					reader.Read(); break;
++				}
++				if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;key&quot;)
++					throw new LLSDParseException(&quot;Expected &lt;key&gt;&quot;);
++				string key = reader.ReadString();
++				if(reader.NodeType != XmlNodeType.EndElement || reader.LocalName != &quot;key&quot;)
++					throw new LLSDParseException(&quot;Expected &lt;/key&gt;&quot;);
++				reader.Read();
++				object val = LLSDParseOne(reader);
++				ret[key] = val;
++			}
++			return ret; // TODO
++		}
++
++		public static ArrayList LLSDParseArray(XmlTextReader reader) {
++			if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;array&quot;)
++				throw new LLSDParseException(&quot;Expected &lt;array&gt;&quot;);
++			reader.Read();
++
++			ArrayList ret = new ArrayList();
++
++			while(true) {
++				SkipWS(reader);
++				if(reader.NodeType == XmlNodeType.EndElement &amp;&amp; reader.LocalName == &quot;array&quot;) {
++					reader.Read(); break;
++				}
++				ret.Insert(ret.Count,LLSDParseOne(reader));
++			}
++			return ret; // TODO
++		}
++
++		private static string GetSpaces(int count) {
++			StringBuilder b = new StringBuilder();
++			for(int i = 0; i &lt; count;i++) b.Append(&quot; &quot;);
++			return b.ToString();
++		}
++
++		public static String LLSDDump(object obj, int indent) {
++			if(obj == null) {
++				return GetSpaces(indent) + &quot;- undef\n&quot;;
++			} else if(obj.GetType() == typeof(string)) {
++				return GetSpaces(indent) + &quot;- string \&quot;&quot; + (string)obj + &quot;\&quot;\n&quot;;
++			} else if(obj.GetType() == typeof(long)) {
++				return GetSpaces(indent) + &quot;- integer &quot; + obj.ToString() + &quot;\n&quot;;
++			} else if(obj.GetType() == typeof(double)) {
++				return GetSpaces(indent) + &quot;- float &quot; + obj.ToString() + &quot;\n&quot;;
++			} else if(obj.GetType() == typeof(LLUUID)) {
++				return GetSpaces(indent) + &quot;- uuid &quot; + ((LLUUID)obj).ToStringHyphenated() + &quot;\n&quot;;
++			} else if(obj.GetType() == typeof(Hashtable)) {
++				StringBuilder ret = new StringBuilder();
++				ret.Append(GetSpaces(indent) + &quot;- map\n&quot;);
++				Hashtable map = (Hashtable)obj;
++				foreach(string key in map.Keys) {
++					ret.Append(GetSpaces(indent+2) + &quot;- key \&quot;&quot; + key + &quot;\&quot;\n&quot;);
++					ret.Append(LLSDDump(map[key],indent+3));
++				}
++				return ret.ToString();
++			} else if(obj.GetType() == typeof(ArrayList)) {
++				StringBuilder ret = new StringBuilder();
++				ret.Append(GetSpaces(indent) + &quot;- array\n&quot;);
++				ArrayList list = (ArrayList)obj;
++				foreach(object item in list) {
++					ret.Append(LLSDDump(item,indent+2));
++				}
++				return ret.ToString();
++			} else if(obj.GetType() == typeof(byte[])) {
++				return GetSpaces(indent) + &quot;- binary\n&quot; + Helpers.FieldToHexDump((byte[])obj,&quot;&quot;)+&quot;\n&quot;;
++			} else {
++				return GetSpaces(indent) + &quot;- unknown type &quot;+obj.GetType().Name+&quot;\n&quot;;
++			}
++		}
++	}
++}
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000160.html">[Libsecondlife-commits] r780 - branches
+</A></li>
+	<LI>Next message: <A HREF="000162.html">[Libsecondlife-commits] r782 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#161">[ date ]</a>
+              <a href="thread.html#161">[ thread ]</a>
+              <a href="subject.html#161">[ subject ]</a>
+              <a href="author.html#161">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

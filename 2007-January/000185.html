@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r793 - in trunk/libsecondlife-cs: . examples
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r793%20-%20in%20trunk/libsecondlife-cs%3A%20.%20examples&In-Reply-To=%3C200701032007.l03K7qUR010085%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000184.html">
+   <LINK REL="Next"  HREF="000186.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r793 - in trunk/libsecondlife-cs: . examples</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r793%20-%20in%20trunk/libsecondlife-cs%3A%20.%20examples&In-Reply-To=%3C200701032007.l03K7qUR010085%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r793 - in trunk/libsecondlife-cs: . examples">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  3 21:07:52 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000184.html">[Libsecondlife-commits] r792 - in trunk: applications/SLProxy	libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000186.html">[Libsecondlife-commits] r794 -	trunk/libsecondlife-cs/examples/IA_NotecardTool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#185">[ date ]</a>
+              <a href="thread.html#185">[ thread ]</a>
+              <a href="subject.html#185">[ subject ]</a>
+              <a href="author.html#185">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-03 21:07:48 +0100 (Wed, 03 Jan 2007)
+New Revision: 793
+
+Removed:
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/
+   trunk/libsecondlife-cs/examples/IA_MultiImageUpload/
+   trunk/libsecondlife-cs/examples/IA_TestAsyncImage/
+Modified:
+   trunk/libsecondlife-cs/libsecondlife.sln
+Log:
+Too much stuff in main trunk, IMHO -- some of the IA sample code is moving to: <A HREF="http://code.google.com/p/libsl-ia-samples/">http://code.google.com/p/libsl-ia-samples/</A>
+
+Modified: trunk/libsecondlife-cs/libsecondlife.sln
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.sln	2007-01-03 19:53:48 UTC (rev 792)
++++ trunk/libsecondlife-cs/libsecondlife.sln	2007-01-03 20:07:48 UTC (rev 793)
+@@ -1,5 +1,5 @@
+ Microsoft Visual Studio Solution File, Format Version 9.00
+-# Visual C# Express 2005
++# Visual Studio 2005
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libsecondlife&quot;, &quot;libsecondlife.csproj&quot;, &quot;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;sldump&quot;, &quot;examples\sldump\sldump.csproj&quot;, &quot;{F6258A68-C624-46A0-BA73-B55D21BB0A3B}&quot;
+@@ -24,18 +24,12 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_ImageTool&quot;, &quot;examples\IA_ImageTool\IA_ImageTool.csproj&quot;, &quot;{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_InventoryManager&quot;, &quot;examples\IA_InventoryManager\IA_InventoryManager.csproj&quot;, &quot;{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;groupmanager&quot;, &quot;examples\groupmanager\groupmanager.csproj&quot;, &quot;{F460FAB3-0D12-4873-89EB-2696818764B8}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;AnimationSample&quot;, &quot;examples\AnimationSample\AnimationSample.csproj&quot;, &quot;{4EF98AD4-B3B3-42B0-9273-13A614A823F7}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libjaspernet&quot;, &quot;..\libjaspernet\libjaspernet.csproj&quot;, &quot;{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_TestAsyncImage&quot;, &quot;examples\IA_TestAsyncImage\IA_TestAsyncImage.csproj&quot;, &quot;{A4F59DE9-E382-401D-AA8D-4557779D764E}&quot;
+-EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_MultiImageUpload&quot;, &quot;examples\IA_MultiImageUpload\IA_MultiImageUpload.csproj&quot;, &quot;{8598E42A-DCBC-4224-9503-5694F17B2F45}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;BodyPartMorphGenerator&quot;, &quot;examples\BodyPartMorphGenerator\BodyPartMorphGenerator.csproj&quot;, &quot;{98C44481-3F15-4305-840D-037EA0D9C221}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;TestClient&quot;, &quot;examples\TestClient\TestClient.csproj&quot;, &quot;{B87682F6-B2D7-4C4D-A529-400C24FD4880}&quot;
+@@ -134,12 +128,6 @@
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|Any CPU.Build.0 = Release|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+@@ -158,18 +146,6 @@
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|Any CPU.Build.0 = Release|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|Any CPU.Build.0 = Debug|Any CPU
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000184.html">[Libsecondlife-commits] r792 - in trunk: applications/SLProxy	libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000186.html">[Libsecondlife-commits] r794 -	trunk/libsecondlife-cs/examples/IA_NotecardTool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#185">[ date ]</a>
+              <a href="thread.html#185">[ thread ]</a>
+              <a href="subject.html#185">[ subject ]</a>
+              <a href="author.html#185">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r871 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r871%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701221019.l0MAJc8k031168%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000303.html">
+   <LINK REL="Next"  HREF="000305.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r871 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r871%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701221019.l0MAJc8k031168%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r871 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 11:19:38 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000303.html">[Libsecondlife-commits] [Patch #1845] TestClient/ExportCommand	ObjectProperties support
+</A></li>
+        <LI>Next message: <A HREF="000305.html">[Libsecondlife-commits] r872 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#304">[ date ]</a>
+              <a href="thread.html#304">[ thread ]</a>
+              <a href="subject.html#304">[ subject ]</a>
+              <a href="author.html#304">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 11:19:38 +0100 (Mon, 22 Jan 2007)
+New Revision: 871
+
+Modified:
+   trunk/libsecondlife-cs/AvatarManager.cs
+Log:
+Converted all the string conversion functions in AvatarManager to UTF8
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2007-01-22 06:37:10 UTC (rev 870)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2007-01-22 10:19:38 UTC (rev 871)
+@@ -201,8 +201,8 @@
+ 
+                 foreach (UUIDNameReplyPacket.UUIDNameBlockBlock block in reply.UUIDNameBlock)
+                 {
+-                    names[block.ID] = Helpers.FieldToString(block.FirstName) +
+-                        &quot; &quot; + Helpers.FieldToString(block.LastName);
++                    names[block.ID] = Helpers.FieldToUTF8String(block.FirstName) +
++                        &quot; &quot; + Helpers.FieldToUTF8String(block.LastName);
+                 }
+                 
+                 OnAvatarNames(names);
+@@ -247,7 +247,7 @@
+ 
+                 foreach (AvatarStatisticsReplyPacket.StatisticsDataBlock b in asr.StatisticsData)
+                 {
+-                    string n = Helpers.FieldToString(b.Name);
++                    string n = Helpers.FieldToUTF8String(b.Name);
+ 
+                     switch (n)
+                     {
+@@ -292,15 +292,15 @@
+                 properties.ProfileImage = reply.PropertiesData.ImageID;
+                 properties.FirstLifeImage = reply.PropertiesData.FLImageID;
+                 properties.Partner = reply.PropertiesData.PartnerID;
+-                properties.AboutText = Helpers.FieldToString(reply.PropertiesData.AboutText);
+-                properties.FirstLifeText = Helpers.FieldToString(reply.PropertiesData.FLAboutText);
+-                properties.BornOn = Helpers.FieldToString(reply.PropertiesData.BornOn);
+-                properties.CharterMember = Helpers.FieldToString(reply.PropertiesData.CharterMember);
++                properties.AboutText = Helpers.FieldToUTF8String(reply.PropertiesData.AboutText);
++                properties.FirstLifeText = Helpers.FieldToUTF8String(reply.PropertiesData.FLAboutText);
++                properties.BornOn = Helpers.FieldToUTF8String(reply.PropertiesData.BornOn);
++                properties.CharterMember = Helpers.FieldToUTF8String(reply.PropertiesData.CharterMember);
+                 properties.AllowPublish = reply.PropertiesData.AllowPublish;
+                 properties.MaturePublish = reply.PropertiesData.MaturePublish;
+                 properties.Identified = reply.PropertiesData.Identified;
+                 properties.Transacted = reply.PropertiesData.Transacted;
+-                properties.ProfileURL = Helpers.FieldToString(reply.PropertiesData.ProfileURL);
++                properties.ProfileURL = Helpers.FieldToUTF8String(reply.PropertiesData.ProfileURL);
+ 
+                 OnAvatarProperties(reply.AgentData.AvatarID, properties);
+             }
+@@ -317,10 +317,10 @@
+                 Avatar.Interests interests = new Avatar.Interests();
+ 
+                 interests.WantToMask = airp.PropertiesData.WantToMask;
+-                interests.WantToText = Helpers.FieldToString(airp.PropertiesData.WantToText);
++                interests.WantToText = Helpers.FieldToUTF8String(airp.PropertiesData.WantToText);
+                 interests.SkillsMask = airp.PropertiesData.SkillsMask;
+-                interests.SkillsText = Helpers.FieldToString(airp.PropertiesData.SkillsText);
+-                interests.LanguagesText = Helpers.FieldToString(airp.PropertiesData.LanguagesText);
++                interests.SkillsText = Helpers.FieldToUTF8String(airp.PropertiesData.SkillsText);
++                interests.LanguagesText = Helpers.FieldToUTF8String(airp.PropertiesData.LanguagesText);
+ 
+                 OnAvatarInterests(airp.AgentData.AvatarID, interests);
+             }
+@@ -347,8 +347,8 @@
+ 
+                 foreach (AvatarPickerReplyPacket.DataBlock block in reply.Data)
+                 {
+-                    avatars[block.AvatarID] = Helpers.FieldToString(block.FirstName) +
+-                        &quot; &quot; + Helpers.FieldToString(block.LastName);
++                    avatars[block.AvatarID] = Helpers.FieldToUTF8String(block.FirstName) +
++                        &quot; &quot; + Helpers.FieldToUTF8String(block.LastName);
+                 }
+ 
+                 OnAvatarNameSearch(reply.AgentData.QueryID, avatars);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000303.html">[Libsecondlife-commits] [Patch #1845] TestClient/ExportCommand	ObjectProperties support
+</A></li>
+	<LI>Next message: <A HREF="000305.html">[Libsecondlife-commits] r872 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#304">[ date ]</a>
+              <a href="thread.html#304">[ thread ]</a>
+              <a href="subject.html#304">[ subject ]</a>
+              <a href="author.html#304">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

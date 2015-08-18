@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r801 -	trunk/libsecondlife-cs/InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r801%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701050232.l052WZiF011826%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000197.html">
+   <LINK REL="Next"  HREF="000199.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r801 -	trunk/libsecondlife-cs/InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r801%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701050232.l052WZiF011826%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r801 -	trunk/libsecondlife-cs/InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  5 03:32:35 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000197.html">[Libsecondlife-commits] r800 - in trunk/libsecondlife-cs: .	AssetSystem examples/TestClient examples/TestClient/Commands	libsecondlife.Utilities
+</A></li>
+        <LI>Next message: <A HREF="000199.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-05 03:32:21 +0100 (Fri, 05 Jan 2007)
+New Revision: 801
+
+Modified:
+   trunk/libsecondlife-cs/InventorySystem/DownloadRequest_Folder.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+Log:
+Add an event for when InventoryFolders finish downloading.
+
+Modified: trunk/libsecondlife-cs/InventorySystem/DownloadRequest_Folder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/DownloadRequest_Folder.cs	2007-01-05 00:10:36 UTC (rev 800)
++++ trunk/libsecondlife-cs/InventorySystem/DownloadRequest_Folder.cs	2007-01-05 02:32:21 UTC (rev 801)
+@@ -5,41 +5,46 @@
+ {
+     public class DownloadRequest_Folder
+     {
+-            public LLUUID FolderID;
++        public LLUUID FolderID;
+ 
+-            public int Expected = int.MaxValue;
+-            public int Received = 0;
+-            public int LastReceivedAtTick = 0;
++        public int Expected = int.MaxValue;
++        public int Received = 0;
++        public int LastReceivedAtTick = 0;
+ 
+-            public bool FetchFolders = true;
+-            public bool FetchItems = true;
++        public bool FetchFolders = true;
++        public bool FetchItems = true;
+ 
+-            /// &lt;summary&gt;
+-            /// Do we want to recursively download this folder?
+-            /// &lt;/summary&gt;
+-            public bool Recurse = true;
++        /// &lt;summary&gt;
++        /// Do we want to recursively download this folder?
++        /// &lt;/summary&gt;
++        public bool Recurse = true;
+ 
+-            public ManualResetEvent RequestComplete = new ManualResetEvent(false);
++        public ManualResetEvent RequestComplete = new ManualResetEvent(false);
+ 
+-            public DownloadRequest_Folder(LLUUID folderID)
+-            {
+-                FolderID = folderID;
+-                LastReceivedAtTick = Environment.TickCount;
+-            }
++        public DownloadRequest_Folder(LLUUID folderID)
++        {
++            FolderID = folderID;
++            LastReceivedAtTick = Environment.TickCount;
++        }
+ 
+-            public DownloadRequest_Folder(LLUUID folderID, bool recurse)
+-            {
+-                FolderID = folderID;
+-                LastReceivedAtTick = Environment.TickCount;
+-                Recurse = recurse;
+-            }
++        public DownloadRequest_Folder(LLUUID folderID, bool recurse)
++        {
++            FolderID = folderID;
++            LastReceivedAtTick = Environment.TickCount;
++            Recurse = recurse;
++        }
+ 
+-            public DownloadRequest_Folder(LLUUID folderID, bool fetchFolders, bool fetchItems)
+-            {
+-                FolderID = folderID;
+-                FetchFolders = fetchFolders;
+-                FetchItems = fetchItems;
+-                LastReceivedAtTick = Environment.TickCount;
+-            }
++        public DownloadRequest_Folder(LLUUID folderID, bool fetchFolders, bool fetchItems)
++        {
++            FolderID = folderID;
++            FetchFolders = fetchFolders;
++            FetchItems = fetchItems;
++            LastReceivedAtTick = Environment.TickCount;
++        }
+     }
++
++    public class DownloadRequest_EventArgs : EventArgs
++    {
++        public DownloadRequest_Folder DownloadRequest;
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2007-01-05 00:10:36 UTC (rev 800)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2007-01-05 02:32:21 UTC (rev 801)
+@@ -54,7 +54,6 @@
+ 
+         internal List&lt;InventoryBase&gt; _Contents = new List&lt;InventoryBase&gt;();
+ 
+-
+         internal InventoryFolder(InventoryManager manager)
+             : base(manager)
+         {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-05 00:10:36 UTC (rev 800)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-05 02:32:21 UTC (rev 801)
+@@ -71,6 +71,15 @@
+ 
+         private int LastPacketRecievedAtTick;
+ 
++
++        /// &lt;summary&gt;
++        /// Download event singalling that folder contents have been downloaded.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;InventoryFolder&quot;&gt;The Inventory Folder that was updated&lt;/param&gt;
++        /// &lt;param name=&quot;e&quot;&gt;&lt;/param&gt;
++        public delegate void On_RequestDownloadContents_Finished(object InventoryFolder, EventArgs e);
++        public event On_RequestDownloadContents_Finished RequestDownloadFinishedEvent;
++
+         // Each InventorySystem needs to be initialized with a client and root folder.
+         public InventoryManager(SecondLife client)
+         {
+@@ -433,8 +442,8 @@
+             }
+         }
+ 
++        #region libsecondlife callback handlers
+ 
+-
+         public void UpdateCreateInventoryItemHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+@@ -498,12 +507,15 @@
+             // Get the original Descendent Request for this Packet
+             DownloadRequest_Folder dr = (DownloadRequest_Folder)FolderDownloadStatus[uuidFolderID];
+ 
++            // Get the Inventory folder that we'll be updating
++            InventoryFolder InvFolderUpdating = (InventoryFolder)htFoldersByUUID[uuidFolderID];
++
+             // Update Inventory Manager's last tick point, used for timeouts and such
+             LastPacketRecievedAtTick = Environment.TickCount;
+ 
+             // Some temp variables to be reused as we're parsing the packet
+-            InventoryItem invItem;
+-            InventoryFolder invFolder;
++            InventoryItem TempInvItem;
++            InventoryFolder TempInvFolder;
+ 
+             // Used to count the number of descendants received to see if we're finished or not.
+             int iDescendentsExpected = reply.AgentData.Descendents;
+@@ -526,43 +538,41 @@
+                     }
+                     else
+                     {
+-                        invItem = new InventoryItem(this, itemBlock);
++                        TempInvItem = new InventoryItem(this, itemBlock);
+ 
+-                        InventoryFolder ifolder = (InventoryFolder)htFoldersByUUID[invItem.FolderID];
+-
+-                        if (ifolder._Contents.Contains(invItem) == false)
++                        if (InvFolderUpdating._Contents.Contains(TempInvItem) == false)
+                         {
+-                            if ((invItem.InvType == 7) &amp;&amp; (invItem.Type == Asset.ASSET_TYPE_NOTECARD))
++                            if ((TempInvItem.InvType == 7) &amp;&amp; (TempInvItem.Type == Asset.ASSET_TYPE_NOTECARD))
+                             {
+-                                InventoryItem temp = new InventoryNotecard(this, invItem);
+-                                invItem = temp;
++                                InventoryItem temp = new InventoryNotecard(this, TempInvItem);
++                                TempInvItem = temp;
+                             }
+ 
+-                            if ((invItem.InvType == 0) &amp;&amp; (invItem.Type == Asset.ASSET_TYPE_IMAGE))
++                            if ((TempInvItem.InvType == 0) &amp;&amp; (TempInvItem.Type == Asset.ASSET_TYPE_IMAGE))
+                             {
+-                                InventoryItem temp = new InventoryImage(this, invItem);
+-                                invItem = temp;
++                                InventoryItem temp = new InventoryImage(this, TempInvItem);
++                                TempInvItem = temp;
+                             }
+ 
+-                            if ( (invItem.InvType == 10) &amp;&amp; (invItem.Type == Asset.ASSET_TYPE_SCRIPT) )
++                            if ( (TempInvItem.InvType == 10) &amp;&amp; (TempInvItem.Type == Asset.ASSET_TYPE_SCRIPT) )
+                             {
+-                                InventoryItem temp = new InventoryScript(this, invItem);
+-                                invItem = temp;
++                                InventoryItem temp = new InventoryScript(this, TempInvItem);
++                                TempInvItem = temp;
+                             }
+ 
+-                            if ((invItem.InvType == 18) &amp;&amp; 
++                            if ((TempInvItem.InvType == 18) &amp;&amp; 
+                                 (
+-                                    (invItem.Type == Asset.ASSET_TYPE_WEARABLE_BODY)
+-                                    || (invItem.Type == Asset.ASSET_TYPE_WEARABLE_CLOTHING)
++                                    (TempInvItem.Type == Asset.ASSET_TYPE_WEARABLE_BODY)
++                                    || (TempInvItem.Type == Asset.ASSET_TYPE_WEARABLE_CLOTHING)
+                                 )
+                                )
+ 
+                             {
+-                                InventoryItem temp = new InventoryWearable(this, invItem);
+-                                invItem = temp;
++                                InventoryItem temp = new InventoryWearable(this, TempInvItem);
++                                TempInvItem = temp;
+                             }
+ 
+-                            ifolder._Contents.Add(invItem);
++                            InvFolderUpdating._Contents.Add(TempInvItem);
+                         }
+                     }
+                 }
+@@ -580,32 +590,31 @@
+                 // the &quot;filler&quot; block will not have a name
+                 if (folderBlock.Name.Length != 0)
+                 {
+-                    invFolder = new InventoryFolder(this, name, folderid, parentid);
++                    TempInvFolder = new InventoryFolder(this, name, folderid, parentid);
+ 
+                     iDescendentsReceivedThisBlock++;
+ 
+                     // Add folder to Parent
+-                    InventoryFolder ifolder = (InventoryFolder)htFoldersByUUID[invFolder.ParentID];
+-                    if (ifolder._Contents.Contains(invFolder) == false)
++                    if (InvFolderUpdating._Contents.Contains(TempInvFolder) == false)
+                     {
+-                        ifolder._Contents.Add(invFolder);
++                        InvFolderUpdating._Contents.Add(TempInvFolder);
+                     }
+ 
+ 
+                     // Add folder to UUID Lookup
+-                    htFoldersByUUID[invFolder.FolderID] = invFolder;
++                    htFoldersByUUID[TempInvFolder.FolderID] = TempInvFolder;
+ 
+ 
+                     // Do we recurse?
+                     if (dr.Recurse)
+                     {
+                         // It's not the root, should be safe to &quot;recurse&quot;
+-                        if (!invFolder.FolderID.Equals(slClient.Self.InventoryRootFolderUUID))
++                        if (!TempInvFolder.FolderID.Equals(slClient.Self.InventoryRootFolderUUID))
+                         {
+                             bool alreadyQueued = false;
+                             foreach (DownloadRequest_Folder adr in alFolderRequestQueue)
+                             {
+-                                if (adr.FolderID == invFolder.FolderID)
++                                if (adr.FolderID == TempInvFolder.FolderID)
+                                 {
+                                     alreadyQueued = true;
+                                     break;
+@@ -614,7 +623,7 @@
+ 
+                             if (!alreadyQueued)
+                             {
+-                                alFolderRequestQueue.Add(new DownloadRequest_Folder(invFolder.FolderID));
++                                alFolderRequestQueue.Add(new DownloadRequest_Folder(TempInvFolder.FolderID));
+                             }
+                         }
+                     }
+@@ -645,6 +654,12 @@
+                     // remove from folder status.
+                     FolderDownloadStatus.Remove(uuidFolderID);
+                     dr.RequestComplete.Set();
++                    if (RequestDownloadFinishedEvent != null)
++                    {
++                        DownloadRequest_EventArgs e = new DownloadRequest_EventArgs();
++                        e.DownloadRequest = dr;
++                        RequestDownloadFinishedEvent(InvFolderUpdating, e);
++                    }
+                 }
+                 else
+                 {
+@@ -652,5 +667,6 @@
+                 }
+             }
+         }
++        #endregion
+     }
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000197.html">[Libsecondlife-commits] r800 - in trunk/libsecondlife-cs: .	AssetSystem examples/TestClient examples/TestClient/Commands	libsecondlife.Utilities
+</A></li>
+	<LI>Next message: <A HREF="000199.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#198">[ date ]</a>
+              <a href="thread.html#198">[ thread ]</a>
+              <a href="subject.html#198">[ subject ]</a>
+              <a href="author.html#198">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,192 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r805 -	trunk/libsecondlife-cs/InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r805%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701060013.l060DoHO009973%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000202.html">
+   <LINK REL="Next"  HREF="000204.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r805 -	trunk/libsecondlife-cs/InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r805%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701060013.l060DoHO009973%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r805 -	trunk/libsecondlife-cs/InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  6 01:13:50 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000202.html">[Libsecondlife-commits] r804 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+        <LI>Next message: <A HREF="000204.html">[Libsecondlife-commits] r806 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-06 01:13:39 +0100 (Sat, 06 Jan 2007)
+New Revision: 805
+
+Modified:
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+Log:
+Add support to the InventorySystem to RezObjects from Inventory.
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-05 22:38:15 UTC (rev 804)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-06 00:13:39 UTC (rev 805)
+@@ -421,11 +421,22 @@
+         /// &lt;/summary&gt;
+         public void Delete()
+         {
+-            base.iManager.getFolder(this.FolderID)._Contents.Remove(this);
+-            base.iManager.ItemRemove(this);
++            iManager.getFolder(this.FolderID)._Contents.Remove(this);
++            iManager.ItemRemove(this);
+ 
+         }
+ 
++        public void RezObject(LLVector3 TargetPos)
++        {
++            RezObject(TargetPos, null);
++        }
++
++        public void RezObject(LLVector3 TargetPos, Simulator TargetSim)
++        {
++            iManager.ItemRezObject(this, TargetSim, TargetPos);
++        }
++
++
+         /// &lt;summary&gt;
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;assetData&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-05 22:38:15 UTC (rev 804)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-06 00:13:39 UTC (rev 805)
+@@ -569,6 +569,20 @@
+         #endregion
+ 
+         #region Misc
++
++        internal void ItemRezObject(InventoryItem item, Simulator TargetSim, LLVector3 TargetPos)
++        {
++            Packet packet = InvPacketHelper.RezObject(item, TargetPos);
++            if (TargetSim == null)
++            {
++                slClient.Network.SendPacket(packet);
++            }
++            else
++            {
++                slClient.Network.SendPacket(packet, TargetSim);
++            }
++        }
++
+         /// &lt;summary&gt;
+         /// Request the download of a folder's contents
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2007-01-05 22:38:15 UTC (rev 804)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2007-01-06 00:13:39 UTC (rev 805)
+@@ -334,6 +334,58 @@
+             return p;
+ 		}
+ 
++
++        public Packet RezObject(InventoryItem iitem, LLVector3 TargetPos)
++        {
++            if (iitem.Type != 6)
++            {
++                Client.Log(&quot;RezObject has only been tested with items of type 6&quot;, Helpers.LogLevel.Warning);
++            }
++
++            RezObjectPacket p = new RezObjectPacket();
++            p.AgentData.AgentID = AgentID;
++            p.AgentData.SessionID = SessionID;
++            p.AgentData.GroupID = LLUUID.Zero;
++
++            p.InventoryData.TransactionID = LLUUID.Random();
++
++            p.InventoryData.GroupOwned   = iitem.GroupOwned;
++            p.InventoryData.CRC          = iitem.CRC;
++            p.InventoryData.CreationDate = iitem.CreationDate;
++			p.InventoryData.SaleType	 = iitem.SaleType;
++			p.InventoryData.BaseMask	 = iitem.BaseMask;
++            p.InventoryData.Name         = Helpers.StringToField(iitem.Name);
++			p.InventoryData.InvType		 = iitem.InvType;
++			p.InventoryData.Type			= iitem.Type;
++			p.InventoryData.GroupID		 = iitem.GroupID;
++			p.InventoryData.SalePrice	 = iitem.SalePrice;
++			p.InventoryData.OwnerID		 = iitem.OwnerID;
++			p.InventoryData.CreatorID	 = iitem.CreatorID;
++			p.InventoryData.ItemID		 = iitem.ItemID;
++			p.InventoryData.FolderID	 = iitem.FolderID;
++            p.InventoryData.EveryoneMask = iitem.EveryoneMask;
++            p.InventoryData.Description  = Helpers.StringToField(iitem.Description);
++			p.InventoryData.Flags		 = iitem.Flags;
++			p.InventoryData.NextOwnerMask= iitem.NextOwnerMask;
++			p.InventoryData.GroupMask	 = iitem.GroupMask;
++			p.InventoryData.OwnerMask	 = iitem.OwnerMask;
++
++	        p.RezData.FromTaskID = LLUUID.Zero;
++		    p.RezData.BypassRaycast = 1;
++		    p.RezData.RayStart = Client.Self.Position;
++            p.RezData.RayEnd = TargetPos;
++		    p.RezData.RayTargetID = LLUUID.Zero;
++		    p.RezData.RayEndIsIntersection = false;
++		    p.RezData.RezSelected = false;
++		    p.RezData.RemoveItem = false;
++		    p.RezData.ItemFlags = iitem.Flags;
++		    p.RezData.GroupMask = iitem.GroupMask;
++		    p.RezData.EveryoneMask = iitem.EveryoneMask;
++            p.RezData.NextOwnerMask = iitem.NextOwnerMask;
++
++            return p;
++        }
++
+ /*
+ 			// Confirm InventoryUpdate CRC
+ 			uint test = libsecondlife.Packets.InventoryPackets.InventoryUpdateCRC
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000202.html">[Libsecondlife-commits] r804 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+	<LI>Next message: <A HREF="000204.html">[Libsecondlife-commits] r806 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

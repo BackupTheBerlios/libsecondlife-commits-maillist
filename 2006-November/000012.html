@@ -1,0 +1,483 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r657 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands examples/primexport
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r657%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands%20examples/primexport&In-Reply-To=%3C200611292005.kATK5KTc027518%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000011.html">
+   <LINK REL="Next"  HREF="000037.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r657 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands examples/primexport</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r657%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands%20examples/primexport&In-Reply-To=%3C200611292005.kATK5KTc027518%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r657 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands examples/primexport">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 29 21:05:20 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000011.html">[Libsecondlife-commits] r656 - in trunk: data libsecondlife-cs	libsecondlife-cs/mapgenerator
+</A></li>
+        <LI>Next message: <A HREF="000037.html">[Libsecondlife-commits] r658 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#12">[ date ]</a>
+              <a href="thread.html#12">[ thread ]</a>
+              <a href="subject.html#12">[ subject ]</a>
+              <a href="author.html#12">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-29 21:05:19 +0100 (Wed, 29 Nov 2006)
+New Revision: 657
+
+Modified:
+   trunk/libsecondlife-cs/ParticleSystem.cs
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+   trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs
+Log:
+Removed all the manual GetXml() and FromXml() routines so we can use the .NET framework for (de)serialization instead
+
+Modified: trunk/libsecondlife-cs/ParticleSystem.cs
+===================================================================
+--- trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -126,20 +126,6 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            string xml = &quot;&lt;ParticleSystem&gt;&quot;;
+-            // FIXME: Finish ParticleSystem.GetXml()
+-            xml += &quot;&lt;/ParticleSystem&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
+         private void FromBytes(byte[] data, int pos)
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/Prims.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -30,6 +30,43 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
++    /// Primary parameters for primitives such as Physics Enabled or Phantom
++    /// &lt;/summary&gt;
++    [Flags]
++    public enum ObjectFlags
++    {
++        /// &lt;summary&gt;None of the primary flags are enabled&lt;/summary&gt;
++        None = 0,
++        /// &lt;summary&gt;Whether physics are enabled for this object&lt;/summary&gt;
++        Physics = 1 &lt;&lt; 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        CreateSelected = 1 &lt;&lt; 1,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Script = 1 &lt;&lt; 6,
++        /// &lt;summary&gt;Whether this object contains an active touch script&lt;/summary&gt;
++        Touch = 1 &lt;&lt; 7,
++        /// &lt;summary&gt;Whether this object can receive payments&lt;/summary&gt;
++        Money = 1 &lt;&lt; 9,
++        /// &lt;summary&gt;Whether this object is phantom (no collisions)&lt;/summary&gt;
++        Phantom = 1 &lt;&lt; 10,
++        /// &lt;summary&gt;Whether this object is temporary&lt;/summary&gt;
++        Temp = 1 &lt;&lt; 30
++    }
++
++    /// &lt;summary&gt;
++    /// Extra parameters for primitives, these flags are for features that have
++    /// been added after the original ObjectFlags that has all eight bits 
++    /// reserved already
++    /// &lt;/summary&gt;
++    public enum ExtraParamType : ushort
++    {
++        /// &lt;summary&gt;Whether this object has flexible parameters&lt;/summary&gt;
++        Flexible = 0x10,
++        /// &lt;summary&gt;Whether this object has light parameters&lt;/summary&gt;
++        Light = 0x20
++    }
++
++    /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
+ 	public class PrimObject
+@@ -409,73 +446,6 @@
+             return totalLength;
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml()
+-        {
+-            string xml = &quot;&lt;Prim&gt;&quot;;
+-            xml += &quot;&lt;PathTwistBegin value=\&quot;&quot; + PathTwistBegin + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathEnd value=\&quot;&quot; + PathEnd + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;ProfileBegin value=\&quot;&quot; + ProfileBegin + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathRadiusOffset value=\&quot;&quot; + PathRadiusOffset + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathSkew value=\&quot;&quot; + PathSkew + &quot;\&quot; /&gt;&quot;;
+-            xml += Position.GetXml(&quot;Position&quot;);
+-            xml += &quot;&lt;ProfileCurve value=\&quot;&quot; + ProfileCurve + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathScaleX value=\&quot;&quot; + PathScaleX + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathScaleY value=\&quot;&quot; + PathScaleY + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;ID value=\&quot;&quot; + ID.ToString() + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;LocalID value=\&quot;&quot; + LocalID + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;ParentID value=\&quot;&quot; + ParentID + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;GroupID value=\&quot;&quot; + GroupID.ToString() + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Material value=\&quot;&quot; + Material + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Name value=\&quot;&quot; + Name + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Description value=\&quot;&quot; + Description + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathShearX value=\&quot;&quot; + PathShearX + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathShearY value=\&quot;&quot; + PathShearY + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathTaperX value=\&quot;&quot; + PathTaperX + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathTaperY value=\&quot;&quot; + PathTaperY + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;ProfileEnd value=\&quot;&quot; + ProfileEnd + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathBegin value=\&quot;&quot; + PathBegin + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathCurve value=\&quot;&quot; + PathCurve + &quot;\&quot; /&gt;&quot;;
+-            xml += Scale.GetXml(&quot;Scale&quot;);
+-            xml += &quot;&lt;PathTwist value=\&quot;&quot; + PathTwist + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;ProfileHollow value=\&quot;&quot; + ProfileHollow + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PathRevolutions value=\&quot;&quot; + PathRevolutions + &quot;\&quot; /&gt;&quot;;
+-            xml += Rotation.GetXml(&quot;Rotation&quot;);
+-            xml += &quot;&lt;State value=\&quot;&quot; + State + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Text value=\&quot;&quot; + Text + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;PCode value=\&quot;&quot; + PCode + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Flags value=\&quot;&quot; + Flags + &quot;\&quot; /&gt;&quot;;
+-            xml += Textures.GetXml(&quot;Textures&quot;);
+-            xml += TextureAnim.GetXml(&quot;TextureAnim&quot;);
+-            xml += Flexible.GetXml(&quot;Flexible&quot;);
+-            xml += Light.GetXml(&quot;Light&quot;);
+-            xml += ParticleSys.GetXml(&quot;ParticleSys&quot;);
+-            xml += &quot;&lt;/Prim&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;node&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public static PrimObject FromXml(SecondLife client, XmlNode node)
+-        {
+-            PrimObject prim = new PrimObject(client);
+-
+-            foreach (XmlNode childNode in node.ChildNodes)
+-            {
+-                ;
+-            }
+-
+-            return prim;
+-        }
+-
+         public override string ToString()
+         {
+             string output = &quot;&quot;;
+@@ -498,31 +468,6 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
+-    [Flags]
+-    public enum ObjectFlags
+-    {
+-        None = 0,
+-        Physics = 1 &lt;&lt; 0,
+-        CreateSelected = 1 &lt;&lt; 1,
+-        Script = 1 &lt;&lt; 6,
+-        Touch = 1 &lt;&lt; 7,
+-        Money = 1 &lt;&lt; 9,
+-        Phantom = 1 &lt;&lt; 10,
+-        Temp = 1 &lt;&lt; 30
+-    }
+-
+-    /// &lt;summary&gt;
+-    /// 
+-    /// &lt;/summary&gt;
+-    public enum ExtraParamType : ushort
+-    {
+-        Flexible = 0x10,
+-        Light = 0x20
+-    }
+-
+-    /// &lt;summary&gt;
+-    /// 
+-    /// &lt;/summary&gt;
+     public class PrimFlexibleData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -589,34 +534,6 @@
+             Wind = data[i++] / 10.0f;
+             Force = new LLVector3(data, i);
+         }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            string xml = &quot;&lt;&quot; + name + &quot;&gt;&quot;;
+-            xml += &quot;&lt;Softness value=\&quot;&quot; + Softness + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Tension value=\&quot;&quot; + Tension + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Drag value=\&quot;&quot; + Drag + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Gravity value=\&quot;&quot; + Gravity + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Wind value=\&quot;&quot; + Wind + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;/&quot; + name + &quot;&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;node&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public static PrimFlexibleData FromXml(XmlNode node)
+-        {
+-            return null;
+-        }
+     }
+ 
+     /// &lt;summary&gt;
+@@ -676,33 +593,6 @@
+             return data;
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            string xml = &quot;&lt;&quot; + name + &quot;&gt;&quot;;
+-            xml += &quot;&lt;Color X=\&quot;&quot; + R + &quot;\&quot; Y=\&quot;&quot; + G + &quot;\&quot; Z=\&quot;&quot; + B + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Intensity value=\&quot;&quot; + Intensity + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Radius value=\&quot;&quot; + Radius + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Falloff value=\&quot;&quot; + Falloff + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;/&quot; + name + &quot;&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;node&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public static PrimLightData FromXml(XmlNode node)
+-        {
+-            return null;
+-        }
+-
+         private void FromBytes(byte[] data, int pos)
+         {
+             int i = pos;
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/Textures.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -342,20 +342,6 @@
+             return bytes;
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            string xml = &quot;&lt;TextureEntry&gt;&quot;;
+-            // FIXME: Write GetXml for TextureEntry
+-            xml += &quot;&lt;/TextureEntry&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+         private bool ReadFaceBitfield(byte[] data, ref int pos, ref uint faceBits, ref uint bitfieldSize)
+         {
+             faceBits = 0;
+@@ -820,26 +806,6 @@
+             return bytes;
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            string xml = &quot;&lt;TextureAnimation&gt;&quot;;
+-            xml += &quot;&lt;Flags value=\&quot;&quot; + Flags + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Face value=\&quot;&quot; + Face + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;SizeX value=\&quot;&quot; + SizeX + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;SizeY value=\&quot;&quot; + SizeY + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Start value=\&quot;&quot; + Start + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Length value=\&quot;&quot; + Length + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;Rate value=\&quot;&quot; + Rate + &quot;\&quot; /&gt;&quot;;
+-            xml += &quot;&lt;/TextureAnimation&gt;&quot;;
+-
+-            return xml;
+-        }
+-
+         private void FromBytes(byte[] data, int pos)
+         {
+             int i = pos;
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/Types.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -347,16 +347,6 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// Convert to a single xml node
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;The desired name of the xml node&lt;/param&gt;
+-        /// &lt;returns&gt;A line of xml data containing the values for this data type&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            return &quot;&lt;&quot; + name + &quot; x=\&quot;&quot; + X + &quot;\&quot; y=\&quot;&quot; + Y + &quot;\&quot; z=\&quot;&quot; + Z + &quot;\&quot; /&gt;&quot;;
+-        }
+-
+-        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+@@ -756,16 +746,6 @@
+ 			return bytes;
+ 		}
+ 
+-        /// &lt;summary&gt;
+-        /// Convert to a single xml node
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;name&quot;&gt;The desired name of the xml node&lt;/param&gt;
+-        /// &lt;returns&gt;A line of xml data containing the values for this data type&lt;/returns&gt;
+-        public string GetXml(string name)
+-        {
+-            return &quot;&lt;&quot; + name + &quot; x=\&quot;&quot; + X + &quot;\&quot; y=\&quot;&quot; + Y + &quot;\&quot; z=\&quot;&quot; + Z + &quot;\&quot; w=\&quot;&quot; + W + &quot;\&quot; /&gt;&quot;;
+-        }
+-
+         public override int GetHashCode()
+         {
+             float sum = X + Y + Z + W;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -17,17 +17,24 @@
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			string target = String.Empty;
+-			for (int ct = 0; ct &lt; args.Length;ct++)
++			for (int ct = 0; ct &lt; args.Length; ct++)
+ 				target = target + args[ct] + &quot; &quot;;
+ 			target = target.TrimEnd();
+ 
+ 			if (target.Length == 0)
+ 				target = TestClient.Master;
+-			
+-			if (Follow(target))
+-				return &quot;Following &quot; + target;
+-			else
+-				return &quot;Unable to follow &quot; + target + &quot;.  Client may not be able to see that avatar.&quot;;
++
++            if (target.Length &gt; 0)
++            {
++                if (Follow(target))
++                    return &quot;Following &quot; + target;
++                else
++                    return &quot;Unable to follow &quot; + target + &quot;.  Client may not be able to see that avatar.&quot;;
++            }
++            else
++            {
++                return &quot;No target specified and no master is set. usage: follow [FirstName LastName])&quot;;
++            }
+ 		}
+ 
+         const float DISTANCE_BUFFER = 3.0f;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -22,7 +22,7 @@
+ 		    sitPacket.AgentData.SessionID = Client.Network.SessionID;
+ 
+ 		    sitPacket.TargetObject.TargetID = target;
+-		    sitPacket.TargetObject.Offset = new LLVector3();
++		    sitPacket.TargetObject.Offset = LLVector3.Zero;
+ 
+ 		    Client.Network.SendPacket(sitPacket);
+ 
+
+Modified: trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs	2006-11-29 14:44:23 UTC (rev 656)
++++ trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs	2006-11-29 20:05:19 UTC (rev 657)
+@@ -544,7 +544,8 @@
+                         // This prim is part of a linkset, we need to adjust it's position and rotation
+                         if (Prims.ContainsKey(prim.ParentID))
+                         {
+-                            stream.WriteLine(prim.GetXml());
++                            // FIXME: Rewrite this when the xml serialization stuff is complete
++                            //stream.WriteLine(prim.GetXml());
+                         }
+                         else if (Avatars.Contains(prim.ParentID) || Attachments.Contains(prim.ParentID))
+                         {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000011.html">[Libsecondlife-commits] r656 - in trunk: data libsecondlife-cs	libsecondlife-cs/mapgenerator
+</A></li>
+	<LI>Next message: <A HREF="000037.html">[Libsecondlife-commits] r658 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#12">[ date ]</a>
+              <a href="thread.html#12">[ thread ]</a>
+              <a href="subject.html#12">[ subject ]</a>
+              <a href="author.html#12">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

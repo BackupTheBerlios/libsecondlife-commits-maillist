@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r848 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r848%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701180021.l0I0L246031116%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000262.html">
+   <LINK REL="Next"  HREF="000264.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r848 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r848%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701180021.l0I0L246031116%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r848 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 18 01:21:02 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000262.html">[Libsecondlife-commits] [Patch #1836] Add StandCommand.cs to	TestClient
+</A></li>
+        <LI>Next message: <A HREF="000264.html">[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#263">[ date ]</a>
+              <a href="thread.html#263">[ thread ]</a>
+              <a href="subject.html#263">[ subject ]</a>
+              <a href="author.html#263">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-18 01:20:55 +0100 (Thu, 18 Jan 2007)
+New Revision: 848
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+Log:
+Asset System: Fixing System.NullReferenceException bug
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -233,11 +233,12 @@
+                         break;
+                 }
+ 
+-                AssetRequestDownload request = Client.Assets.RequestInventoryAsset(wearableAsset);
++                AssetRequestDownload request = Client.Assets.RequestInventoryAsset(wearableAsset.AssetID, wearableAsset.Type);
+                 if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
+                 {
+                     throw new Exception(&quot;Asset (&quot; + wearableAsset.AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;)&quot;);
+                 }
++                wearableAsset.SetAssetData(request.GetAssetData());
+ 
+                 if ((wearableAsset.AssetData == null) || (wearableAsset.AssetData.Length == 0))
+                 {
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -90,7 +90,7 @@
+         /// &lt;summary&gt;
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+-        internal AssetManager(SecondLife client)
++        public AssetManager(SecondLife client)
+ 		{
+ 			slClient = client;
+ 
+@@ -172,6 +172,7 @@
+         /// &lt;summary&gt;
+         /// Get the Asset data for an item, must be used when requesting a Notecard
+         /// &lt;/summary&gt;
++        /// &lt;remarks&gt;It is the responsibility of the calling party to retrieve the asset data from the request object when it is compelte.&lt;/remarks&gt;
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+         public AssetRequestDownload RequestInventoryAsset(InventoryItem item)
+ 		{
+@@ -182,7 +183,7 @@
+ 
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, item._Asset);
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+@@ -213,17 +214,16 @@
+         /// &lt;summary&gt;
+         /// Get Asset data, works with BodyShapes (type 13) but does not work with Notecards(type 7)
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;asset&quot;&gt;&lt;/param&gt;
+-        public AssetRequestDownload RequestInventoryAsset(Asset asset)
++        public AssetRequestDownload RequestInventoryAsset(LLUUID AssetID, sbyte Type)
+ 		{
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, asset);
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+ 
+-            Packet packet = AssetPacketHelpers.TransferRequestDirect(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, asset.AssetID, asset.Type);
++            Packet packet = AssetPacketHelpers.TransferRequestDirect(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, AssetID, Type);
+ 			slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+@@ -264,7 +264,9 @@
+         [Obsolete(&quot;Use RequestInventoryAsset instead.&quot;, false)]
+         public void GetInventoryAsset(Asset asset)
+         {
+-            RequestInventoryAsset(asset).Wait(-1);
++            AssetRequestDownload request = RequestInventoryAsset(asset.AssetID, asset.Type);
++            request.Wait(-1);
++            asset.SetAssetData(request.GetAssetData());
+         }
+         #endregion
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -81,6 +81,18 @@
+             UpdateLastPacketTime();
+         }
+ 
++        public AssetRequest(AssetManager Manager, LLUUID TransID)
++        {
++            _AssetManager = Manager;
++            _TransactionID = TransID;
++            AssetBeingTransferd = null;
++
++            _Size = int.MaxValue;
++
++            UpdateLastPacketTime();
++        }
++
++
+         public void UpdateLastPacketTime()
+         {
+             _LastPacketTime = Helpers.GetUnixTime();
+@@ -127,8 +139,8 @@
+         protected int _Received;
+         protected SortedList&lt;int, byte[]&gt; _AssetDataReceived = new SortedList&lt;int, byte[]&gt;();
+ 
+-        public AssetRequestDownload(AssetManager Manager, LLUUID TransID, Asset Asset2Update)
+-            : base(Manager, TransID, Asset2Update)
++        public AssetRequestDownload(AssetManager Manager, LLUUID TransID)
++            : base(Manager, TransID)
+         {
+             _Received = 0;
+         }
+@@ -151,8 +163,6 @@
+                     curPos += kvp.Value.Length;
+                 }
+ 
+-                AssetBeingTransferd.SetAssetData(_AssetData);
+-
+                 MarkCompleted(AssetRequestDownload.RequestStatus.Success, &quot;Download Completed&quot;);
+             }
+ 
+@@ -163,5 +173,14 @@
+             _Size = size;
+             _AssetData = new byte[_Size];
+         }
++
++        /// &lt;summary&gt;
++        /// Get the asset data downloaded by this request.
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public byte[] GetAssetData()
++        {
++            return _AssetData;
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -27,6 +27,8 @@
+                         {
+                             throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
+                         }
++                        _Asset = new AssetImage(AssetID, request.GetAssetData());
++
+                         return ((AssetImage)Asset).J2CData;
+ 					}
+ 				}
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -135,6 +135,7 @@
+                         {
+                             throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
+                         }
++                        _Asset = new Asset(AssetID, Type, request.GetAssetData());
+                         return Asset;
+                     }
+                 }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -25,6 +25,8 @@
+                         {
+                             throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
+                         }
++                        _Asset = new AssetNotecard(AssetID, request.GetAssetData());
++
+                         return ((AssetNotecard)Asset).Body;
+ 					}
+ 				}
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-15 04:36:07 UTC (rev 847)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-18 00:20:55 UTC (rev 848)
+@@ -24,6 +24,7 @@
+                         {
+                             throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
+                         }
++                        _Asset = new AssetScript(AssetID, request.GetAssetData());
+                         return ((AssetScript)Asset).Source;
+                     }
+                 }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000262.html">[Libsecondlife-commits] [Patch #1836] Add StandCommand.cs to	TestClient
+</A></li>
+	<LI>Next message: <A HREF="000264.html">[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#263">[ date ]</a>
+              <a href="thread.html#263">[ thread ]</a>
+              <a href="subject.html#263">[ subject ]</a>
+              <a href="author.html#263">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

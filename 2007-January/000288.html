@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r863 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r863%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701192319.l0JNJkUF021496%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000287.html">
+   <LINK REL="Next"  HREF="000289.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r863 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r863%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701192319.l0JNJkUF021496%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r863 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 20 00:19:46 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000287.html">[Libsecondlife-commits] [Patch #1840] Patch for endianness of IP	address in TeleportFinish
+</A></li>
+        <LI>Next message: <A HREF="000289.html">[Libsecondlife-commits] [Patch #1842] Fix for libsecondlife.build	to include *.cs in /Utilities/
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-20 00:19:45 +0100 (Sat, 20 Jan 2007)
+New Revision: 863
+
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+Log:
+* Added a FieldToUTF8String method and converted some of the MainAvatar functions to use it as an experiment (needs testing!)
+* Added try/catch blocks around the callbacks in ObjectManager
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-19 21:44:31 UTC (rev 862)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-19 23:19:45 UTC (rev 863)
+@@ -175,12 +175,23 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Convert a variable length field (byte array) to a string.
++        /// Convert a variable length field (byte array) to a UTF8 string
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
++        /// &lt;returns&gt;A UTF8 string&lt;/returns&gt;
++        public static string FieldToUTF8String(byte[] bytes)
++        {
++            return UTF8Encoding.UTF8.GetString(bytes);
++        }
++
++        /// &lt;summary&gt;
++        /// Convert a variable length field (byte array) to a string
++        /// &lt;/summary&gt;
+         /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+         /// hex dump will be put in the string instead&lt;/remarks&gt;
+         /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
+-        /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
++        /// &lt;returns&gt;An ASCII string or a string containing a hex dump, minus 
++        /// the null terminator&lt;/returns&gt;
+         public static string FieldToString(byte[] bytes)
+         {
+             return FieldToString(bytes, &quot;&quot;);
+@@ -188,13 +199,14 @@
+ 
+         /// &lt;summary&gt;
+         /// Convert a variable length field (byte array) to a string, with a
+-        /// field name prepended to each line of the output.
++        /// field name prepended to each line of the output
+         /// &lt;/summary&gt;
+         /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+         /// hex dump will be put in the string instead&lt;/remarks&gt;
+         /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
+         /// &lt;param name=&quot;fieldName&quot;&gt;A field name to prepend to each line of output&lt;/param&gt;
+-        /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
++        /// &lt;returns&gt;An ASCII string or a string containing a hex dump, minus 
++        /// the null terminator&lt;/returns&gt;
+         public static string FieldToString(byte[] bytes, string fieldName)
+         {
+             string output = &quot;&quot;;
+@@ -206,9 +218,8 @@
+                 if ((bytes[i] &lt; 0x20 || bytes[i] &gt; 0x7E) &amp;&amp; bytes[i] != 0x09
+                     &amp;&amp; bytes[i] != 0x0D &amp;&amp; bytes[i] != 0x0A &amp;&amp; bytes[i] != 0x00)
+                 {
+-                    //printable = false;
+-                    // break;
+-                    bytes[i] = 0x20;
++                    printable = false;
++                    break;
+                 }
+             }
+ 
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-19 21:44:31 UTC (rev 862)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-19 23:19:45 UTC (rev 863)
+@@ -1301,7 +1301,7 @@
+                 {
+                     OnInstantMessage(
+                         im.AgentData.AgentID
+-                        , Helpers.FieldToString(im.MessageBlock.FromAgentName),
++                        , Helpers.FieldToUTF8String(im.MessageBlock.FromAgentName),
+                         im.MessageBlock.ToAgentID
+                         , im.MessageBlock.ParentEstateID
+                         , im.MessageBlock.RegionID
+@@ -1310,7 +1310,7 @@
+                         , im.MessageBlock.FromGroup
+                         , im.MessageBlock.ID
+                         , new DateTime(im.MessageBlock.Timestamp)
+-                        , Helpers.FieldToString(im.MessageBlock.Message)
++                        , Helpers.FieldToUTF8String(im.MessageBlock.Message)
+                         , im.MessageBlock.Offline
+                         , im.MessageBlock.BinaryBucket
+                         );
+@@ -1330,11 +1330,11 @@
+             {
+                 ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
+ 
+-                OnChat(Helpers.FieldToFilteredString(chat.ChatData.Message, new char())
++                OnChat(Helpers.FieldToUTF8String(chat.ChatData.Message)
+                     , chat.ChatData.Audible
+                     , chat.ChatData.ChatType
+                     , chat.ChatData.SourceType
+-                    , Helpers.FieldToString(chat.ChatData.FromName)
++                    , Helpers.FieldToUTF8String(chat.ChatData.FromName)
+                     , chat.ChatData.SourceID
+                     , chat.ChatData.OwnerID
+                     , chat.ChatData.Position
+@@ -1359,12 +1359,12 @@
+                     buttons.Add(Helpers.FieldToString(button.ButtonLabel));
+                 }
+ 
+-                OnScriptDialog(Helpers.FieldToString(dialog.Data.Message),
++                OnScriptDialog(Helpers.FieldToUTF8String(dialog.Data.Message),
+                     Helpers.FieldToString(dialog.Data.ObjectName),
+                     dialog.Data.ImageID,
+                     dialog.Data.ObjectID,
+-                    Helpers.FieldToString(dialog.Data.FirstName),
+-                    Helpers.FieldToString(dialog.Data.LastName),
++                    Helpers.FieldToUTF8String(dialog.Data.FirstName),
++                    Helpers.FieldToUTF8String(dialog.Data.LastName),
+                     dialog.Data.ChatChannel,
+                     buttons);
+             }
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2007-01-19 21:44:31 UTC (rev 862)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2007-01-19 23:19:45 UTC (rev 863)
+@@ -1530,7 +1530,8 @@
+         {
+             if (OnObjectProperties != null)
+             {
+-                OnObjectProperties(sim, props);
++                try { OnObjectProperties(sim, props); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1538,7 +1539,8 @@
+         {
+             if (OnObjectKilled != null)
+             {
+-                OnObjectKilled(simulator, localid);
++                try { OnObjectKilled(simulator, localid); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1546,7 +1548,8 @@
+         {
+             if (OnNewPrim != null)
+             {
+-                OnNewPrim(simulator, prim, RegionHandle, TimeDilation);
++                try { OnNewPrim(simulator, prim, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1554,7 +1557,8 @@
+         {
+             if (OnNewFoliage != null)
+             {
+-                OnNewFoliage(simulator, prim, RegionHandle, TimeDilation);
++                try { OnNewFoliage(simulator, prim, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1562,7 +1566,8 @@
+         {
+             if (OnNewAttachment != null)
+             {
+-                OnNewAttachment(simulator, prim, RegionHandle, TimeDilation);
++                try { OnNewAttachment(simulator, prim, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1570,7 +1575,8 @@
+         {
+             if (OnAvatarSitChanged != null)
+             {
+-                OnAvatarSitChanged(simulator, Client.Self.sittingOn);
++                try { OnAvatarSitChanged(simulator, Client.Self.sittingOn); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1578,7 +1584,8 @@
+         {
+             if (OnNewAvatar != null)
+             {
+-                OnNewAvatar(simulator, avatar, RegionHandle, TimeDilation);
++                try { OnNewAvatar(simulator, avatar, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1586,7 +1593,8 @@
+         {
+             if (OnPrimMoved != null)
+             {
+-                OnPrimMoved(simulator, primupdate, RegionHandle, TimeDilation);
++                try { OnPrimMoved(simulator, primupdate, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+@@ -1594,7 +1602,8 @@
+         {
+             if (OnAvatarMoved != null)
+             {
+-                OnAvatarMoved(simulator, avupdate, RegionHandle, TimeDilation);
++                try { OnAvatarMoved(simulator, avupdate, RegionHandle, TimeDilation); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000287.html">[Libsecondlife-commits] [Patch #1840] Patch for endianness of IP	address in TeleportFinish
+</A></li>
+	<LI>Next message: <A HREF="000289.html">[Libsecondlife-commits] [Patch #1842] Fix for libsecondlife.build	to include *.cs in /Utilities/
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#288">[ date ]</a>
+              <a href="thread.html#288">[ thread ]</a>
+              <a href="subject.html#288">[ subject ]</a>
+              <a href="author.html#288">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

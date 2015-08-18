@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r803 -	trunk/libsecondlife-cs/InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r803%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701051823.l05INRmg013854%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000200.html">
+   <LINK REL="Next"  HREF="000202.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r803 -	trunk/libsecondlife-cs/InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r803%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701051823.l05INRmg013854%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r803 -	trunk/libsecondlife-cs/InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  5 19:23:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000200.html">[Libsecondlife-commits] r802 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000202.html">[Libsecondlife-commits] r804 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#201">[ date ]</a>
+              <a href="thread.html#201">[ thread ]</a>
+              <a href="subject.html#201">[ subject ]</a>
+              <a href="author.html#201">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-05 19:23:19 +0100 (Fri, 05 Jan 2007)
+New Revision: 803
+
+Modified:
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+Log:
+Cleared out some unneeded spagetti, so that the folder download completed event will work.
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-05 13:21:55 UTC (rev 802)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-05 18:23:19 UTC (rev 803)
+@@ -77,7 +77,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;InventoryFolder&quot;&gt;The Inventory Folder that was updated&lt;/param&gt;
+         /// &lt;param name=&quot;e&quot;&gt;&lt;/param&gt;
+-        public delegate void On_RequestDownloadContents_Finished(object InventoryFolder, EventArgs e);
++        public delegate void On_RequestDownloadContents_Finished(object iFolder, EventArgs e);
+         public event On_RequestDownloadContents_Finished RequestDownloadFinishedEvent;
+ 
+         // Each InventorySystem needs to be initialized with a client and root folder.
+@@ -443,7 +443,12 @@
+         }
+ 
+         #region libsecondlife callback handlers
+-
++        
++        /// &lt;summary&gt;
++        /// This is called in response to an item creation request
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public void UpdateCreateInventoryItemHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+@@ -491,7 +496,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Returned in response to a InventoryDescendantRequest.  Contains information about the
++        /// Returned in response to a FetchInventoryDescendents request.  Contains information about the
+         /// contents of a folder.
+         /// &lt;/summary&gt;
+         /// &lt;seealso cref=&quot;InventoryManager.RequestFolder&quot;/&gt;
+@@ -631,40 +636,24 @@
+             }
+ 
+ 
++            // Update total number of descendants expected , and update the total downloaded
++            dr.Expected = iDescendentsExpected;
++            dr.Received += iDescendentsReceivedThisBlock;
++            dr.LastReceivedAtTick = Environment.TickCount;
+ 
+-            // Update download status for this folder
+-            if (iDescendentsReceivedThisBlock &gt;= iDescendentsExpected)
++            // Check if we're finished
++            if (dr.Received &gt;= dr.Expected)
+             {
+-                // We received all the descendents we're expecting for this folder
+-                // in this packet, so go ahead and remove folder from status list.
++                // Looks like after updating, we have all the descendents, 
++                // remove from folder status.
+                 FolderDownloadStatus.Remove(uuidFolderID);
+                 dr.RequestComplete.Set();
+-            }
+-            else
+-            {
+-                // This one packet didn't have all the descendents we're expecting
+-                // so update the total we're expecting, and update the total downloaded
+-                dr.Expected = iDescendentsExpected;
+-                dr.Received += iDescendentsReceivedThisBlock;
+-                dr.LastReceivedAtTick = Environment.TickCount;
+-
+-                if (dr.Received &gt;= dr.Expected)
++                if (RequestDownloadFinishedEvent != null)
+                 {
+-                    // Looks like after updating, we have all the descendents, 
+-                    // remove from folder status.
+-                    FolderDownloadStatus.Remove(uuidFolderID);
+-                    dr.RequestComplete.Set();
+-                    if (RequestDownloadFinishedEvent != null)
+-                    {
+-                        DownloadRequest_EventArgs e = new DownloadRequest_EventArgs();
+-                        e.DownloadRequest = dr;
+-                        RequestDownloadFinishedEvent(InvFolderUpdating, e);
+-                    }
++                    DownloadRequest_EventArgs e = new DownloadRequest_EventArgs();
++                    e.DownloadRequest = dr;
++                    RequestDownloadFinishedEvent(InvFolderUpdating, e);
+                 }
+-                else
+-                {
+-                    FolderDownloadStatus[uuidFolderID] = dr;
+-                }
+             }
+         }
+         #endregion
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000200.html">[Libsecondlife-commits] r802 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000202.html">[Libsecondlife-commits] r804 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#201">[ date ]</a>
+              <a href="thread.html#201">[ thread ]</a>
+              <a href="subject.html#201">[ subject ]</a>
+              <a href="author.html#201">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

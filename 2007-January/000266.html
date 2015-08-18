@@ -1,0 +1,899 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r851 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r851%20-%0A%09trunk/libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701181812.l0IIC4Tn031610%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000265.html">
+   <LINK REL="Next"  HREF="000267.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r851 -	trunk/libsecondlife-cs/libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r851%20-%0A%09trunk/libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701181812.l0IIC4Tn031610%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r851 -	trunk/libsecondlife-cs/libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 18 19:12:04 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000265.html">[Libsecondlife-commits] r850 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000267.html">[Libsecondlife-commits] r852 - trunk/applications/libslupdater
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#266">[ date ]</a>
+              <a href="thread.html#266">[ thread ]</a>
+              <a href="subject.html#266">[ subject ]</a>
+              <a href="author.html#266">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-18 19:12:02 +0100 (Thu, 18 Jan 2007)
+New Revision: 851
+
+Added:
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+Modified:
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj
+Log:
+Starting work on a new asset transfer system
+
+Added: trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-18 18:10:35 UTC (rev 850)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-18 18:12:02 UTC (rev 851)
+@@ -0,0 +1,574 @@
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.Utilities.Assets
++{
++    /// &lt;summary&gt;
++    /// The different types of assets in Second Life
++    /// &lt;/summary&gt;
++    public enum AssetType
++    {
++        /// &lt;summary&gt;Texture asset, stores in JPEG2000 J2C stream format&lt;/summary&gt;
++        Texture = 0,
++        /// &lt;summary&gt;Sound asset&lt;/summary&gt;
++        Sound = 1,
++        /// &lt;summary&gt;Calling card for another avatar&lt;/summary&gt;
++        CallingCard = 2,
++        /// &lt;summary&gt;Link to a location in world&lt;/summary&gt;
++        Landmark = 3,
++        /// &lt;summary&gt;Legacy script asset, you should never see one of these&lt;/summary&gt;
++        [Obsolete]
++        Script = 4,
++        /// &lt;summary&gt;Collection of textures and parameters that can be 
++        /// worn by an avatar&lt;/summary&gt;
++        Clothing = 5,
++        /// &lt;summary&gt;Primitive that can contain textures, sounds, 
++        /// scripts and more&lt;/summary&gt;
++        Object = 6,
++        /// &lt;summary&gt;Notecard asset&lt;/summary&gt;
++        Notecard = 7,
++        /// &lt;summary&gt;Holds a collection of inventory items&lt;/summary&gt;
++        Folder = 8,
++        /// &lt;summary&gt;Root inventory folder&lt;/summary&gt;
++        RootFolder = 9,
++        /// &lt;summary&gt;Linden scripting language script&lt;/summary&gt;
++        LSLText = 10,
++        /// &lt;summary&gt;LSO bytecode for a script&lt;/summary&gt;
++        LSLBytecode = 11,
++        /// &lt;summary&gt;Uncompressed TGA texture&lt;/summary&gt;
++        TextureTGA = 12,
++        /// &lt;summary&gt;Collection of textures and shape parameters that can
++        /// be worn&lt;/summary&gt;
++        Bodypart = 13,
++        /// &lt;summary&gt;Trash folder&lt;/summary&gt;
++        TrashFolder = 14,
++        /// &lt;summary&gt;Snapshot folder&lt;/summary&gt;
++        SnapshotFolder = 15,
++        /// &lt;summary&gt;Lost and found folder&lt;/summary&gt;
++        LostAndFoundFolder = 16,
++        /// &lt;summary&gt;Uncompressed sound&lt;/summary&gt;
++        SoundWAV = 17,
++        /// &lt;summary&gt;Uncompressed TGA non-square image, not to be used as a
++        /// texture&lt;/summary&gt;
++        ImageTGA = 18,
++        /// &lt;summary&gt;Compressed JPEG non-square image, not to be used as a
++        /// texture&lt;/summary&gt;
++        ImageJPEG = 19,
++        /// &lt;summary&gt;Animation&lt;/summary&gt;
++        Animation = 20,
++        /// &lt;summary&gt;Sequence of animations, sounds, chat, and pauses&lt;/summary&gt;
++        Gesture = 21,
++        /// &lt;summary&gt;Simstate file&lt;/summary&gt;
++        Simstate = 22,
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public enum StatusCode
++    {
++        /// &lt;summary&gt;OK&lt;/summary&gt;
++        OK = 0,
++        /// &lt;summary&gt;Transfer completed&lt;/summary&gt;
++        Done = 1,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Skip = 2,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Abort = 3,
++        /// &lt;summary&gt;Unknown error occurred&lt;/summary&gt;
++        Error = -1,
++        /// &lt;summary&gt;Equivalent to a 404 error&lt;/summary&gt;
++        UnknownSource = -2,
++        /// &lt;summary&gt;Client does not have permission for that resource&lt;/summary&gt;
++        InsufficientPermissiosn = -3,
++        /// &lt;summary&gt;Unknown status&lt;/summary&gt;
++        Unknown = -4
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public enum ChannelType
++    {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Unknown = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Misc,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Asset
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public enum SourceType
++    {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Unknown = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        File,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Asset,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        SimInventoryItem,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        SimEstate
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public enum TargetType
++    {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        Unknown = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        File,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        VFile
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class Transfer
++    {
++        public LLUUID ID = LLUUID.Zero;
++        public int Size = 0;
++        public byte[] AssetData = new byte[0];
++        public int Transferred = 0;
++        public bool Success = false;
++
++        internal ManualResetEvent HeaderReceivedEvent = new ManualResetEvent(false);
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class AssetTransfer : Transfer
++    {
++        public LLUUID AssetID = LLUUID.Zero;
++        public ChannelType Channel = ChannelType.Unknown;
++        public SourceType Source = SourceType.Unknown;
++        public TargetType Target = TargetType.Unknown;
++        public StatusCode Status = StatusCode.Unknown;
++        public float Priority = 0.0f;
++    }
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class ImageTransfer : Transfer
++    {
++        public ushort PacketCount = 0;
++        public int Codec = 0;
++        public bool NotFound = false;
++
++        internal int InitialDataSize = 0;
++    }
++
++
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class AssetManager
++    {
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;image&quot;&gt;&lt;/param&gt;
++        public delegate void AssetReceivedCallback(AssetTransfer asset);
++
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public event AssetReceivedCallback OnAssetReceived;
++
++
++        private SecondLife Client;
++        private Dictionary&lt;LLUUID, AssetTransfer&gt; Transfers = new Dictionary&lt;LLUUID, AssetTransfer&gt;();
++
++        /// &lt;summary&gt;
++        /// Default constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client object&lt;/param&gt;
++        public AssetManager(SecondLife client)
++        {
++            Client = client;
++
++            // Transfer Packets for downloading large assets
++            Client.Network.RegisterCallback(PacketType.TransferInfo, new NetworkManager.PacketCallback(TransferInfoHandler));
++            Client.Network.RegisterCallback(PacketType.TransferPacket, new NetworkManager.PacketCallback(TransferPacketHandler));
++
++            // Xfer packets for uploading large assets
++            //Client.Network.RegisterCallback(PacketType.AssetUploadComplete, new NetworkManager.PacketCallback(AssetUploadCompleteHandler));
++            //Client.Network.RegisterCallback(PacketType.ConfirmXferPacket, new NetworkManager.PacketCallback(ConfirmXferPacketHandler));
++            //Client.Network.RegisterCallback(PacketType.RequestXfer, new NetworkManager.PacketCallback(RequestXferHandler));
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;type&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;channel&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;priority&quot;&gt;&lt;/param&gt;
++        public void RequestAsset(LLUUID assetID, AssetType type, ChannelType channel, SourceType source, float priority)
++        {
++            // TODO: Should we make this function reusable for changing download priorities?
++
++            AssetTransfer transfer = new AssetTransfer();
++            transfer.ID = LLUUID.Random();
++            transfer.AssetID = assetID;
++            transfer.Priority = priority;
++            transfer.Channel = channel;
++            transfer.Source = source;
++
++            Console.WriteLine(&quot;transfer.ID: &quot; + transfer.ID.ToString());
++
++            // Add this transfer to the dictionary
++            lock (Transfers) Transfers[transfer.ID] = transfer;
++
++            // Build the request packet and send it
++            TransferRequestPacket request = new TransferRequestPacket();
++            request.TransferInfo.ChannelType = (int)channel;
++            request.TransferInfo.Priority = priority;
++            request.TransferInfo.SourceType = (int)source;
++            request.TransferInfo.TransferID = transfer.ID;
++
++            byte[] paramField = new byte[20];
++            Array.Copy(assetID.GetBytes(), paramField, 16);
++            Array.Copy(Helpers.IntToBytes((int)type), 0, paramField, 16, 4);
++            request.TransferInfo.Params = paramField;
++
++            Client.Network.SendPacket(request);
++        }
++
++        public void RequestInventoryAsset()
++        {
++            ;
++        }
++
++        public void RequestFileAsset()
++        {
++            ;
++        }
++
++        public void RequestEstateAsset()
++        {
++            ;
++        }
++
++        private void TransferInfoHandler(Packet packet, Simulator simulator)
++        {
++            TransferInfoPacket info = (TransferInfoPacket)packet;
++
++            if (Transfers.ContainsKey(info.TransferInfo.TransferID))
++            {
++                AssetTransfer transfer = Transfers[info.TransferInfo.TransferID];
++                ChannelType channel = ChannelType.Unknown;
++                StatusCode status = StatusCode.Unknown;
++                TargetType target = TargetType.Unknown;
++
++                // Attempt to recover enumeration values out of the integers
++                channel = (ChannelType)info.TransferInfo.ChannelType;
++                status = (StatusCode)info.TransferInfo.Status;
++                target = (TargetType)info.TransferInfo.TargetType;
++
++                transfer.Channel = channel;
++                transfer.Status = status;
++                transfer.Target = target;
++                transfer.Size = info.TransferInfo.Size;
++                transfer.AssetData = new byte[transfer.Size];
++            }
++            else
++            {
++                Client.Log(&quot;Received a TransferInfo packet for an asset we didn't request, TransferID: &quot; + 
++                    info.TransferInfo.TransferID, Helpers.LogLevel.Warning);
++
++                Console.WriteLine(info.ToString());
++            }
++        }
++
++        private void TransferPacketHandler(Packet packet, Simulator simulator)
++        {
++            TransferPacketPacket asset = (TransferPacketPacket)packet;
++
++            Console.WriteLine(asset.ToString());
++
++            if (Transfers.ContainsKey(asset.TransferData.TransferID))
++            {
++                AssetTransfer transfer = Transfers[asset.TransferData.TransferID];
++
++                if (transfer.Size == 0)
++                {
++                    // We haven't received the header yet, block until it's received or times out
++                    transfer.HeaderReceivedEvent.WaitOne(1000 * 20, false);
++
++                    if (transfer.Size == 0)
++                    {
++                        Client.Log(&quot;Timed out while waiting for the asset header to download for &quot; +
++                            transfer.ID.ToStringHyphenated(), Helpers.LogLevel.Warning);
++
++                        lock (Transfers) Transfers.Remove(transfer.ID);
++
++                        // Fire the event with our transfer that contains Success = false;
++                        if (OnAssetReceived != null)
++                        {
++                            try { OnAssetReceived(transfer); }
++                            catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                        }
++
++                        return;
++                    }
++                }
++
++                // This assumes that every transfer packet except the last one is exactly 1000 bytes,
++                // hopefully that is a safe assumption to make
++                if (asset.TransferData.Data.Length == 1000)
++                {
++                    Array.Copy(asset.TransferData.Data, 0, transfer.AssetData, 1000 * (asset.TransferData.Packet - 1),
++                        asset.TransferData.Data.Length);
++                    transfer.Transferred += 1000;
++                }
++                else
++                {
++                    Client.Log(&quot;Received a TransferPacket with a data length of &quot; + asset.TransferData.Data.Length +
++                        &quot; bytes!&quot;, Helpers.LogLevel.Error);
++
++                    // fire the even with out transfer that contains Success = false;
++                    if (OnAssetReceived != null)
++                    {
++                        try { OnAssetReceived(transfer); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                    }
++
++                    return;
++                }
++
++                Client.DebugLog(&quot;Received &quot; + asset.TransferData.Data.Length + &quot;/&quot; + transfer.Transferred +
++                    &quot;/&quot; + transfer.Size + &quot; bytes for asset &quot; + transfer.ID.ToStringHyphenated());
++
++                // Check if we downloaded the full asset
++                if (transfer.Transferred &gt;= transfer.Size)
++                {
++                    transfer.Success = true;
++                    lock (Transfers) Transfers.Remove(transfer.ID);
++
++                    if (OnAssetReceived != null)
++                    {
++                        try { OnAssetReceived(transfer); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                    }
++                }
++            }
++            else
++            {
++                Client.Log(&quot;Received a TransferPacket packet for an asset we didn't request, TransferID: &quot; +
++                    asset.TransferData.TransferID, Helpers.LogLevel.Warning);
++            }
++        }
++    }
++
++    public class ImageManager
++    {
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;image&quot;&gt;&lt;/param&gt;
++        public delegate void ImageReceivedCallback(ImageTransfer image);
++
++        public event ImageReceivedCallback OnImageReceived;
++
++        private SecondLife Client;
++        private Dictionary&lt;LLUUID, ImageTransfer&gt; Transfers = new Dictionary&lt;LLUUID, ImageTransfer&gt;();
++
++        /// &lt;summary&gt;
++        /// Default constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client to use&lt;/param&gt;
++        public ImageManager(SecondLife client)
++        {
++            Client = client;
++
++            Client.Network.RegisterCallback(PacketType.ImageData, new NetworkManager.PacketCallback(ImageDataHandler));
++            Client.Network.RegisterCallback(PacketType.ImagePacket, new NetworkManager.PacketCallback(ImagePacketHandler));
++            Client.Network.RegisterCallback(PacketType.ImageNotInDatabase, new NetworkManager.PacketCallback(ImageNotInDatabaseHandler));
++        }
++
++        /// &lt;summary&gt;
++        /// Initiate an image download. This is an asynchronous function
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;imageID&quot;&gt;The image to download&lt;/param&gt;
++        public void RequestImage(LLUUID imageID, float priority)
++        {
++            if (!Transfers.ContainsKey(imageID))
++            {
++                ImageTransfer transfer = new ImageTransfer();
++                transfer.ID = imageID;
++
++                // Add this transfer to the dictionary
++                lock (Transfers) Transfers[transfer.ID] = transfer;
++
++                // Build and send the request packet
++                RequestImagePacket request = new RequestImagePacket();
++                request.AgentData.AgentID = Client.Network.AgentID;
++                request.AgentData.SessionID = Client.Network.SessionID;
++                request.RequestImage = new RequestImagePacket.RequestImageBlock[1];
++                request.RequestImage[0] = new RequestImagePacket.RequestImageBlock();
++                request.RequestImage[0].DiscardLevel = 0;
++                request.RequestImage[0].DownloadPriority = priority;
++                request.RequestImage[0].Packet = 0;
++                request.RequestImage[0].Image = imageID;
++                request.RequestImage[0].Type = 0; // TODO: What is this?
++
++                Client.Network.SendPacket(request);
++            }
++            else
++            {
++                Client.Log(&quot;RequestImage() called for an image we are already downloading, ignoring&quot;,
++                    Helpers.LogLevel.Info);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Handles the Image Data packet which includes the ID and Size of the image,
++        /// along with the first block of data for the image. If the image is small enough
++        /// there will be no additional packets
++        /// &lt;/summary&gt;
++        public void ImageDataHandler(Packet packet, Simulator simulator)
++        {
++            ImageDataPacket data = (ImageDataPacket)packet;
++
++            Client.DebugLog(&quot;Received first &quot; + data.ImageData.Data.Length + &quot; bytes for image &quot; +
++                data.ImageID.ID.ToStringHyphenated());
++
++            if (Transfers.ContainsKey(data.ImageID.ID))
++            {
++                ImageTransfer transfer = Transfers[data.ImageID.ID];
++
++                transfer.Codec = data.ImageID.Codec;
++                transfer.PacketCount = data.ImageID.Packets;
++                transfer.Size = (int)data.ImageID.Size;
++                transfer.AssetData = new byte[transfer.Size];
++                Array.Copy(data.ImageData.Data, transfer.AssetData, data.ImageData.Data.Length);
++                transfer.InitialDataSize = data.ImageData.Data.Length;
++                transfer.Transferred += data.ImageData.Data.Length;
++
++                transfer.HeaderReceivedEvent.Set();
++
++                // Check if we downloaded the full image
++                if (transfer.Transferred &gt;= transfer.Size)
++                {
++                    lock (Transfers) Transfers.Remove(transfer.ID);
++                    transfer.Success = true;
++
++                    if (OnImageReceived != null)
++                    {
++                        try { OnImageReceived(transfer); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                    }
++                }
++            }
++            else
++            {
++                Client.Log(&quot;Received an ImageData packet for an image we didn't request, ID: &quot; + data.ImageID.ID,
++                    Helpers.LogLevel.Warning);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Handles the remaining Image data that did not fit in the initial ImageData packet
++        /// &lt;/summary&gt;
++        public void ImagePacketHandler(Packet packet, Simulator simulator)
++        {
++            ImagePacketPacket image = (ImagePacketPacket)packet;
++
++            if (Transfers.ContainsKey(image.ImageID.ID))
++            {
++                ImageTransfer transfer = Transfers[image.ImageID.ID];
++
++                if (transfer.Size == 0)
++                {
++                    // We haven't received the header yet, block until it's received or times out
++                    transfer.HeaderReceivedEvent.WaitOne(1000 * 20, false);
++
++                    if (transfer.Size == 0)
++                    {
++
++                        Client.Log(&quot;Timed out while waiting for the image header to download for &quot; +
++                            transfer.ID.ToStringHyphenated(), Helpers.LogLevel.Warning);
++
++                        lock (Transfers) Transfers.Remove(transfer.ID);
++
++                        // Fire the event with our transfer that contains Success = false;
++                        if (OnImageReceived != null)
++                        {
++                            try { OnImageReceived(transfer); }
++                            catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                        }
++
++                        return;
++                    }
++                }
++
++                // The header is downloaded, we can insert this data in to the proper position
++                Array.Copy(image.ImageData.Data, 0, transfer.AssetData, transfer.InitialDataSize + (1000 * (image.ImageID.Packet - 1)), image.ImageData.Data.Length);
++                transfer.Transferred += image.ImageData.Data.Length;
++
++                Client.DebugLog(&quot;Received &quot; + image.ImageData.Data.Length + &quot;/&quot; + transfer.Transferred +
++                    &quot;/&quot; + transfer.Size + &quot; bytes for image &quot; + image.ImageID.ID.ToStringHyphenated());
++
++                // Check if we downloaded the full image
++                if (transfer.Transferred &gt;= transfer.Size)
++                {
++                    transfer.Success = true;
++                    lock (Transfers) Transfers.Remove(transfer.ID);
++
++                    if (OnImageReceived != null)
++                    {
++                        try { OnImageReceived(transfer); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                    }
++                }
++            }
++            else
++            {
++                Client.Log(&quot;Received an ImagePacket packet for an image we didn't request, ID: &quot; + image.ImageID.ID,
++                    Helpers.LogLevel.Warning);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// The requested image does not exist on the asset server
++        /// &lt;/summary&gt;
++        public void ImageNotInDatabaseHandler(Packet packet, Simulator simulator)
++        {
++            ImageNotInDatabasePacket notin = (ImageNotInDatabasePacket)packet;
++
++            if (Transfers.ContainsKey(notin.ImageID.ID))
++            {
++                ImageTransfer transfer = Transfers[notin.ImageID.ID];
++
++                transfer.NotFound = true;
++                lock (Transfers) Transfers.Remove(transfer.ID);
++
++                // Fire the event with our transfer that contains Success = false;
++                if (OnImageReceived != null)
++                {
++                    OnImageReceived(transfer);
++                }
++            }
++            else
++            {
++                Client.Log(&quot;Received an ImageNotInDatabase packet for an image we didn't request, ID: &quot; +
++                    notin.ImageID.ID, Helpers.LogLevel.Warning);
++            }
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-18 18:10:35 UTC (rev 850)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-18 18:12:02 UTC (rev 851)
+@@ -416,227 +416,4 @@
+                 GroupsLookupEvents[avatarID].Set();
+         }
+     }
+-
+-    public class AssetTransfer
+-    {
+-        public LLUUID ID = LLUUID.Zero;
+-        public ushort PacketCount = 0;
+-        public uint Size = 0;
+-        public byte[] AssetData = new byte[0];
+-        public int Transferred = 0;
+-        public bool Success = false;
+-    }
+-
+-    public class ImageTransfer : AssetTransfer
+-    {
+-        public int Codec = 0;
+-        public bool NotFound = false;
+-
+-        internal ManualResetEvent HeaderReceivedEvent = new ManualResetEvent(false);
+-        internal int InitialDataSize = 0;
+-    }
+-
+-    public class AssetManager
+-    {
+-        private SecondLife Client;
+-
+-        public AssetManager(SecondLife client)
+-        {
+-            Client = client;
+-
+-            //Client.Network.RegisterCallback(PacketType.AssetUploadComplete, new NetworkManager.PacketCallback(AssetUploadCompleteHandler));
+-            //// Transfer Packets for downloading large assets
+-            //Client.Network.RegisterCallback(PacketType.TransferInfo, new NetworkManager.PacketCallback(TransferInfoHandler));
+-            //Client.Network.RegisterCallback(PacketType.TransferPacket, new NetworkManager.PacketCallback(TransferPacketHandler));
+-            //// Xfer packets for uploading large assets
+-            //Client.Network.RegisterCallback(PacketType.ConfirmXferPacket, new NetworkManager.PacketCallback(ConfirmXferPacketHandler));
+-            //Client.Network.RegisterCallback(PacketType.RequestXfer, new NetworkManager.PacketCallback(RequestXferHandler));
+-        }
+-    }
+-
+-    public class ImageManager
+-    {
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;image&quot;&gt;&lt;/param&gt;
+-        public delegate void ImageReceivedCallback(ImageTransfer image);
+-
+-        public event ImageReceivedCallback OnImageReceived;
+-
+-        private SecondLife Client;
+-        private Dictionary&lt;LLUUID, ImageTransfer&gt; Transfers = new Dictionary&lt;LLUUID, ImageTransfer&gt;();
+-
+-        /// &lt;summary&gt;
+-        /// Default constructor
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client to use&lt;/param&gt;
+-        public ImageManager(SecondLife client)
+-        {
+-            Client = client;
+-
+-            Client.Network.RegisterCallback(PacketType.ImageData, new NetworkManager.PacketCallback(ImageDataHandler));
+-            Client.Network.RegisterCallback(PacketType.ImagePacket, new NetworkManager.PacketCallback(ImagePacketHandler));
+-            Client.Network.RegisterCallback(PacketType.ImageNotInDatabase, new NetworkManager.PacketCallback(ImageNotInDatabaseHandler));
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Initiate an image download. This is an asynchronous function
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;imageID&quot;&gt;The image to download&lt;/param&gt;
+-        public void RequestImage(LLUUID imageID, float priority)
+-        {
+-            if (!Transfers.ContainsKey(imageID))
+-            {
+-                ImageTransfer transfer = new ImageTransfer();
+-                transfer.ID = imageID;
+-
+-                // Add this transfer to the dictionary
+-                lock (Transfers) Transfers[transfer.ID] = transfer;
+-
+-                // Build and send the request packet
+-                RequestImagePacket request = new RequestImagePacket();
+-                request.AgentData.AgentID = Client.Network.AgentID;
+-                request.AgentData.SessionID = Client.Network.SessionID;
+-                request.RequestImage = new RequestImagePacket.RequestImageBlock[1];
+-                request.RequestImage[0] = new RequestImagePacket.RequestImageBlock();
+-                request.RequestImage[0].DiscardLevel = 0;
+-                request.RequestImage[0].DownloadPriority = priority;
+-                request.RequestImage[0].Packet = 0;
+-                request.RequestImage[0].Image = imageID;
+-                request.RequestImage[0].Type = 0; // TODO: What is this?
+-
+-                Client.Network.SendPacket(request);
+-            }
+-            else
+-            {
+-                Client.Log(&quot;RequestImage() called for an image we are already downloading, ignoring&quot;,
+-                    Helpers.LogLevel.Info);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Handles the Image Data packet which includes the ID and Size of the image,
+-        /// along with the first block of data for the image. If the image is small enough
+-        /// there will be no additional packets
+-        /// &lt;/summary&gt;
+-        public void ImageDataHandler(Packet packet, Simulator simulator)
+-        {
+-            ImageDataPacket data = (ImageDataPacket)packet;
+-
+-            if (Transfers.ContainsKey(data.ImageID.ID))
+-            {
+-                ImageTransfer transfer = Transfers[data.ImageID.ID];
+-
+-                transfer.Codec = data.ImageID.Codec;
+-                transfer.PacketCount = data.ImageID.Packets;
+-                transfer.Size = data.ImageID.Size;
+-                transfer.AssetData = new byte[transfer.Size];
+-                Array.Copy(data.ImageData.Data, transfer.AssetData, data.ImageData.Data.Length);
+-                transfer.InitialDataSize = data.ImageData.Data.Length;
+-                transfer.Transferred += data.ImageData.Data.Length;
+-
+-                // Check if we downloaded the full image
+-                if (transfer.Transferred &gt;= transfer.Size)
+-                {
+-                    lock (Transfers) Transfers.Remove(transfer.ID);
+-                    transfer.Success = true;
+-
+-                    if (OnImageReceived != null)
+-                    {
+-                        OnImageReceived(transfer);
+-                    }
+-                }
+-            }
+-            else
+-            {
+-                Client.Log(&quot;Received an ImageData packet for an image we didn't request, ID: &quot; + data.ImageID.ID,
+-                    Helpers.LogLevel.Warning);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Handles the remaining Image data that did not fit in the initial ImageData packet
+-        /// &lt;/summary&gt;
+-        public void ImagePacketHandler(Packet packet, Simulator simulator)
+-        {
+-            ImagePacketPacket image = (ImagePacketPacket)packet;
+-
+-            if (Transfers.ContainsKey(image.ImageID.ID))
+-            {
+-                ImageTransfer transfer = Transfers[image.ImageID.ID];
+-
+-                if (transfer.Size == 0)
+-                {
+-                    // We haven't received the header yet, block until it's received or times out
+-                    transfer.HeaderReceivedEvent.WaitOne(1000 * 20, false);
+-
+-                    if (transfer.Size == 0)
+-                    {
+-
+-                        Client.Log(&quot;Timed out while waiting for the image header to download for &quot; +
+-                            transfer.ID, Helpers.LogLevel.Warning);
+-
+-                        lock (Transfers) Transfers.Remove(transfer.ID);
+-
+-                        // Fire the event with our transfer that contains Success = false;
+-                        if (OnImageReceived != null)
+-                        {
+-                            OnImageReceived(transfer);
+-                        }
+-
+-                        return;
+-                    }
+-                }
+-
+-                // The header is downloaded, we can insert this data in to the proper position
+-                Array.Copy(image.ImageData.Data, 0, transfer.AssetData, transfer.InitialDataSize + (1000 * (image.ImageID.Packet - 1)), image.ImageData.Data.Length);
+-                transfer.Transferred += image.ImageData.Data.Length;
+-
+-                // Check if we downloaded the full image
+-                if (transfer.Transferred &gt;= transfer.Size)
+-                {
+-                    transfer.Success = true;
+-                    lock (Transfers) Transfers.Remove(transfer.ID);
+-
+-                    if (OnImageReceived != null)
+-                    {
+-                        OnImageReceived(transfer);
+-                    }
+-                }
+-            }
+-            else
+-            {
+-                Client.Log(&quot;Received an ImagePacket packet for an image we didn't request, ID: &quot; + image.ImageID.ID,
+-                    Helpers.LogLevel.Warning);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// The requested image does not exist on the asset server
+-        /// &lt;/summary&gt;
+-        public void ImageNotInDatabaseHandler(Packet packet, Simulator simulator)
+-        {
+-            ImageNotInDatabasePacket notin = (ImageNotInDatabasePacket)packet;
+-
+-            if (Transfers.ContainsKey(notin.ImageID.ID))
+-            {
+-                ImageTransfer transfer = Transfers[notin.ImageID.ID];
+-
+-                transfer.NotFound = true;
+-                lock (Transfers) Transfers.Remove(transfer.ID);
+-
+-                // Fire the event with our transfer that contains Success = false;
+-                if (OnImageReceived != null)
+-                {
+-                    OnImageReceived(transfer);
+-                }
+-            }
+-            else
+-            {
+-                Client.Log(&quot;Received an ImageNotInDatabase packet for an image we didn't request, ID: &quot; +
+-                    notin.ImageID.ID, Helpers.LogLevel.Warning);
+-            }
+-        }
+-    }
+ }
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj	2007-01-18 18:10:35 UTC (rev 850)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj	2007-01-18 18:12:02 UTC (rev 851)
+@@ -33,6 +33,7 @@
+     &lt;Reference Include=&quot;System.Xml&quot; /&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
++    &lt;Compile Include=&quot;Assets.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Utilities.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Properties\AssemblyInfo.cs&quot; /&gt;
+   &lt;/ItemGroup&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000265.html">[Libsecondlife-commits] r850 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000267.html">[Libsecondlife-commits] r852 - trunk/applications/libslupdater
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#266">[ date ]</a>
+              <a href="thread.html#266">[ thread ]</a>
+              <a href="subject.html#266">[ subject ]</a>
+              <a href="author.html#266">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

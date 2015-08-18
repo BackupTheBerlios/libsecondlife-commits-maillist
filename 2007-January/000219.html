@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r815 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r815%20-%20trunk&In-Reply-To=%3C200701080037.l080bSCZ008052%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000218.html">
+   <LINK REL="Next"  HREF="000220.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r815 - trunk</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r815%20-%20trunk&In-Reply-To=%3C200701080037.l080bSCZ008052%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r815 - trunk">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  8 01:37:28 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000218.html">[Libsecondlife-commits] r814 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000220.html">[Libsecondlife-commits] r816 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-08 01:37:28 +0100 (Mon, 08 Jan 2007)
+New Revision: 815
+
+Modified:
+   trunk/libsecondlife.build
+Log:
+nant will produce a source package alongside the binary package now
+
+Modified: trunk/libsecondlife.build
+===================================================================
+--- trunk/libsecondlife.build	2007-01-07 18:01:42 UTC (rev 814)
++++ trunk/libsecondlife.build	2007-01-08 00:37:28 UTC (rev 815)
+@@ -62,23 +62,28 @@
+     &lt;property name=&quot;dist&quot; value=&quot;true&quot; /&gt;
+     &lt;property name=&quot;src&quot;  value=&quot;false&quot; /&gt;
+     &lt;property name=&quot;archive.name&quot; value=&quot;${package.name}.zip&quot; /&gt;
+-    &lt;property name=&quot;archive.dir&quot;
+-      value=&quot;${temp.dir}/${project::get-name()}-${project.version}&quot; /&gt;
++    &lt;property name=&quot;archive.dir&quot; value=&quot;${temp.dir}/${project::get-name()}-${project.version}&quot; /&gt;
++    &lt;property name=&quot;srcarchive.name&quot; value=&quot;${project::get-name()}-${project.version}-src.zip&quot; /&gt;
++    &lt;property name=&quot;srcarchive.dir&quot; value=&quot;${temp.dir}/${project::get-name()}-${project.version}-src&quot; /&gt;
+   &lt;/target&gt;
+ 
+-  &lt;target name=&quot;src&quot; description=&quot;Configures a source package&quot;&gt;
++  &lt;!-- &lt;target name=&quot;src&quot; description=&quot;Configures a source package&quot;&gt;
+     &lt;property name=&quot;package.config&quot; value=&quot;src&quot; /&gt;
+     &lt;property name=&quot;dist&quot;           value=&quot;false&quot; /&gt;
+     &lt;property name=&quot;src&quot;            value=&quot;true&quot; /&gt;
+     &lt;property name=&quot;archive.dir&quot;
+       value=&quot;${temp.dir}/${project::get-name()}-${project.version}&quot; /&gt;
+     &lt;property name=&quot;archive.name&quot;
+-      value=&quot;${project::get-name()}-${project.version}.src.zip&quot; /&gt;
+-  &lt;/target&gt;
++      value=&quot;${project::get-name()}-${project.version}-src.zip&quot; /&gt;
++  &lt;/target&gt; --&gt;
+ 
+   &lt;zipfileset id=&quot;archive.set&quot; basedir=&quot;${temp.dir}&quot;&gt;
+       &lt;include name=&quot;${project::get-name()}-${project.version}/**&quot; /&gt;
+   &lt;/zipfileset&gt;
++  
++  &lt;zipfileset id=&quot;srcarchive.set&quot; basedir=&quot;${temp.dir}&quot;&gt;
++      &lt;include name=&quot;${project::get-name()}-${project.version}-src/**&quot; /&gt;
++  &lt;/zipfileset&gt;
+ 
+   &lt;!-- build tasks --&gt;
+   &lt;target name=&quot;build&quot;
+@@ -130,16 +135,20 @@
+ 
+   &lt;target name=&quot;package&quot; depends=&quot;init init-package&quot;
+     description=&quot;Creates a zip archive for the current configuration&quot;&gt;
+-    &lt;delete file=&quot;${archive.name}&quot; failonerror=&quot;false&quot; /&gt;
+-    &lt;if test=&quot;${src}&quot;&gt;
+-      &lt;mkdir dir=&quot;${archive.dir}&quot; failonerror=&quot;false&quot; /&gt;
+-      &lt;copy todir=&quot;${archive.dir}&quot; overwrite=&quot;true&quot;&gt;
++    
++    &lt;delete file=&quot;${archive.name}&quot; failonerror=&quot;true&quot; /&gt;
++    &lt;delete file=&quot;${srcarchive.name}&quot; failonerror=&quot;true&quot; /&gt;
++    
++    &lt;!-- &lt;if test=&quot;${src}&quot;&gt; --&gt;
++      &lt;mkdir dir=&quot;${srcarchive.dir}&quot; failonerror=&quot;false&quot; /&gt;
++      &lt;copy todir=&quot;${srcarchive.dir}&quot; overwrite=&quot;true&quot;&gt;
+         &lt;fileset basedir=&quot;.&quot;&gt;
+           &lt;include name=&quot;**&quot; /&gt;
+           &lt;exclude name=&quot;*.zip&quot; /&gt;
+         &lt;/fileset&gt;
+       &lt;/copy&gt;
+-    &lt;/if&gt;
++    &lt;!-- &lt;/if&gt; --&gt;
++    
+     &lt;if test=&quot;${dist}&quot;&gt;
+       &lt;call target=&quot;build&quot; /&gt;
+       &lt;mkdir dir=&quot;${archive.dir}&quot; failonerror=&quot;false&quot; /&gt;
+@@ -153,14 +162,21 @@
+         &lt;fileset basedir=&quot;bin&quot;&gt;
+           &lt;include name=&quot;*.exe&quot; /&gt;
+           &lt;include name=&quot;*.dll&quot; /&gt;
+-		&lt;/fileset&gt;
++		    &lt;/fileset&gt;
+       &lt;/copy&gt;
+     &lt;/if&gt;
++    
+     &lt;zip zipfile=&quot;${archive.name}&quot;&gt;
+       &lt;fileset refid=&quot;archive.set&quot; /&gt;
+     &lt;/zip&gt;
++    
++    &lt;zip zipfile=&quot;${srcarchive.name}&quot;&gt;
++      &lt;fileset refid=&quot;srcarchive.set&quot; /&gt;
++    &lt;/zip&gt;
++    
+     &lt;delete dir=&quot;${archive.dir}&quot; failonerror=&quot;false&quot; /&gt;
+     &lt;echo message=&quot;Created archive at <A HREF="file://${project::get-base-directory(">file://${project::get-base-directory(</A>)}/${archive.name}&quot; /&gt;
++    &lt;echo message=&quot;Created archive at <A HREF="file://${project::get-base-directory(">file://${project::get-base-directory(</A>)}/${srcarchive.name}&quot; /&gt;
+   &lt;/target&gt;
+   
+   &lt;target name=&quot;doc&quot; depends=&quot;build&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000218.html">[Libsecondlife-commits] r814 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000220.html">[Libsecondlife-commits] r816 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,371 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r706 - in trunk/libsecondlife-cs: .	mapgenerator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r706%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612110234.kBB2Y77M009882%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000063.html">
+   <LINK REL="Next"  HREF="000065.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r706 - in trunk/libsecondlife-cs: .	mapgenerator</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r706%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612110234.kBB2Y77M009882%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r706 - in trunk/libsecondlife-cs: .	mapgenerator">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 03:34:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000063.html">[Libsecondlife-commits] r705 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000065.html">[Libsecondlife-commits] r707 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-11 03:34:04 +0100 (Mon, 11 Dec 2006)
+New Revision: 706
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/_Packets_.cs
+   trunk/libsecondlife-cs/mapgenerator/template.cs
+Log:
+Fixed the sequence-rollover-network-explosion bug (needs confirmation). The sequence number is actually the second, third, and fourth bytes of the packet header, giving it a max value of 16777215, or approximately 26 days of connectivity to a single simulator.
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 00:38:36 UTC (rev 705)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 02:34:04 UTC (rev 706)
+@@ -53,10 +53,6 @@
+         /// is attached to&lt;/summary&gt;
+         public SecondLife Client;
+ 
+-        /// &lt;summary&gt;The maximum size of the sequence number inbox, used to 
+-        /// check for resent and/or duplicate packets&lt;/summary&gt;
+-        public const int INBOX_SIZE = 10000;
+-
+         /// &lt;summary&gt;The Region class that this Simulator wraps&lt;/summary&gt;
+         public Region Region;
+ 
+@@ -96,26 +92,41 @@
+ 
+         private NetworkManager Network;
+         private Dictionary&lt;PacketType, List&lt;NetworkManager.PacketCallback&gt;&gt; Callbacks;
+-        private ushort Sequence = 0;
++        private uint Sequence = 0;
+         private byte[] RecvBuffer = new byte[4096];
+         private byte[] ZeroBuffer = new byte[8192];
+         private byte[] ZeroOutBuffer = new byte[4096];
+         private Socket Connection = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+         private AsyncCallback ReceivedData;
+-        private Dictionary&lt;int, Packet&gt; NeedAck = new Dictionary&lt;int, Packet&gt;();
+-        private Queue&lt;ushort&gt; Inbox = new Queue&lt;ushort&gt;(INBOX_SIZE);
+-        private List&lt;uint&gt; PendingAcks = new List&lt;uint&gt;();
++        // Packets we sent out that need ACKs from the simulator
++        private Dictionary&lt;uint, Packet&gt; NeedAck = new Dictionary&lt;uint, Packet&gt;();
++        // Sequence numbers of packets we've received from the simulator
++        private Queue&lt;uint&gt; Inbox = new Queue&lt;uint&gt;(InboxSize);
++        // ACKs that are queued up to be sent to the simulator
++        private Dictionary&lt;uint, uint&gt; PendingAcks = new Dictionary&lt;uint, uint&gt;();
+         private bool connected = false;
+         private uint circuitCode;
+         private IPEndPoint ipEndPoint;
+         private EndPoint endPoint;
+         private System.Timers.Timer AckTimer;
+-        // Every tick, all ACKs are sent out and the age of unACKed packets is checked
+-        private int TickLength = 500;
+-        // Number of milliseconds before a packet is assumed lost and resent
+-        private int ResendTimeout = 4000;
+-
++        // The maximum value of a packet sequence number. After that we assume the 
++        // sequence number just rolls over? Or maybe the protocol isn't able to 
++        // sustain a connection past that
++        private const int MaxSequence = 0xFFFFFF;
++        // The maximum size of the sequence number inbox, used to 
++        // check for resent and/or duplicate packets
++        private const int InboxSize = 100;
++        // Millisecond interval between ticks, where all ACKs are sent out and the age of 
++        // unACKed packets is checked
++        private const int TickLength = 500;
++        // Milliseconds before a packet is assumed lost and resent
++        private const int ResendTimeout = 4000;
++        // Milliseconds before the connection to a simulator is assumed lost
+         private const int SimConnectTimeout = 15000;
++        // Maximum number of queued ACKs to be sent before SendAcks() is forced
++        private const int MaxPendingAcks = 10;
++        // Maximum number of ACKs to append to a packet
++        private const int MaxAppendedAcks = 10;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -242,8 +253,8 @@
+             if (incrementSequence)
+             {
+                 // Set the sequence number
+-                if (Sequence == ushort.MaxValue)
+-                    Sequence = 0;
++                if (Sequence &gt; MaxSequence)
++                    Sequence = 1;
+                 else
+                     Sequence++;
+                 packet.Header.Sequence = Sequence;
+@@ -267,24 +278,30 @@
+                         }
+                     }
+ 
+-                    // Append any ACKs that need to be sent out to this packet
+-                    lock (PendingAcks)
++                    // Don't append ACKs to resent packets, in case that's what was causing the
++                    // delivery to fail
++                    if (!packet.Header.Resent)
+                     {
+-                        if (PendingAcks.Count &gt; 0 &amp;&amp; packet.Type != PacketType.PacketAck &amp;&amp;
+-                            packet.Type != PacketType.LogoutRequest)
++                        // Append any ACKs that need to be sent out to this packet
++                        lock (PendingAcks)
+                         {
+-                            packet.Header.AckList = new uint[PendingAcks.Count];
++                            if (PendingAcks.Count &gt; 0 &amp;&amp; PendingAcks.Count &lt; MaxAppendedAcks &amp;&amp;
++                                packet.Type != PacketType.PacketAck &amp;&amp;
++                                packet.Type != PacketType.LogoutRequest)
++                            {
++                                packet.Header.AckList = new uint[PendingAcks.Count];
+ 
+-                            int i = 0;
++                                int i = 0;
+ 
+-                            foreach (uint ack in PendingAcks)
+-                            {
+-                                packet.Header.AckList[i] = ack;
+-                                i++;
++                                foreach (uint ack in PendingAcks.Values)
++                                {
++                                    packet.Header.AckList[i] = ack;
++                                    i++;
++                                }
++
++                                PendingAcks.Clear();
++                                packet.Header.AppendedAcks = true;
+                             }
+-
+-                            PendingAcks.Clear();
+-                            packet.Header.AppendedAcks = true;
+                         }
+                     }
+                 }
+@@ -344,7 +361,7 @@
+             return Region.Name + &quot; (&quot; + ipEndPoint.ToString() + &quot;)&quot;;
+         }
+ 
+-        private void SendAck(ushort id)
++        private void SendAck(uint id)
+         {
+             PacketAckPacket ack = new PacketAckPacket();
+ 
+@@ -355,7 +372,7 @@
+ 
+             lock (PendingAcks)
+             {
+-                if (PendingAcks.Contains(id))
++                if (PendingAcks.ContainsKey(id))
+                 {
+                     PendingAcks.Remove(id);
+                 }
+@@ -370,11 +387,18 @@
+             {
+                 if (PendingAcks.Count &gt; 0)
+                 {
++                    if (PendingAcks.Count &gt; 250)
++                    {
++                        // FIXME: Handle the odd case where we have too many pending ACKs queued up
++                        Client.Log(&quot;Too many ACKs queued up!&quot;, Helpers.LogLevel.Error);
++                        return;
++                    }
++
+                     int i = 0;
+                     PacketAckPacket acks = new PacketAckPacket();
+                     acks.Packets = new PacketAckPacket.PacketsBlock[PendingAcks.Count];
+ 
+-                    foreach (uint ack in PendingAcks)
++                    foreach (uint ack in PendingAcks.Values)
+                     {
+                         acks.Packets[i] = new PacketAckPacket.PacketsBlock();
+                         acks.Packets[i].ID = ack;
+@@ -453,7 +477,7 @@
+             // Track the sequence number for this packet if it's marked as reliable
+             if (packet.Header.Reliable)
+             {
+-                if (PendingAcks.Count &gt; 10)
++                if (PendingAcks.Count &gt; MaxPendingAcks)
+                 {
+                     SendAcks();
+                 }
+@@ -467,8 +491,15 @@
+                         Helpers.LogLevel.Info);
+ 
+                     // Send an ACK for this packet immediately
+-                    SendAck(packet.Header.Sequence);
++                    //SendAck(packet.Header.Sequence);
+ 
++                    // TESTING: Try just queuing up ACKs for resent packets instead of immediately triggering an ACK
++                    lock (PendingAcks)
++                    {
++                        uint sequence = (uint)packet.Header.Sequence;
++                        if (!PendingAcks.ContainsKey(sequence)) { PendingAcks[sequence] = sequence; }
++                    }
++
+                     // Avoid firing a callback twice for the same packet
+                     return;
+                 }
+@@ -476,7 +507,8 @@
+                 {
+                     lock (PendingAcks)
+                     {
+-                        PendingAcks.Add((uint)packet.Header.Sequence);
++                        uint sequence = (uint)packet.Header.Sequence;
++                        if (!PendingAcks.ContainsKey(sequence)) { PendingAcks[sequence] = sequence; }
+                     }
+                 }
+             }
+@@ -484,7 +516,7 @@
+             // Add this packet to our inbox
+             lock (Inbox)
+             {
+-                if (Inbox.Count &gt;= INBOX_SIZE)
++                if (Inbox.Count &gt;= InboxSize)
+                 {
+                     Inbox.Dequeue();
+                 }
+@@ -496,7 +528,7 @@
+             {
+                 lock (NeedAck)
+                 {
+-                    foreach (ushort ack in packet.Header.AckList)
++                    foreach (uint ack in packet.Header.AckList)
+                     {
+                         NeedAck.Remove(ack);
+                     }
+@@ -512,7 +544,7 @@
+                 {
+                     foreach (PacketAckPacket.PacketsBlock block in ackPacket.Packets)
+                     {
+-                        NeedAck.Remove((ushort)block.ID);
++                        NeedAck.Remove(block.ID);
+                     }
+                 }
+             }
+@@ -1608,5 +1640,4 @@
+             return data;
+         }
+     }
+-
+ }
+
+Modified: trunk/libsecondlife-cs/_Packets_.cs
+===================================================================
+--- trunk/libsecondlife-cs/_Packets_.cs	2006-12-11 00:38:36 UTC (rev 705)
++++ trunk/libsecondlife-cs/_Packets_.cs	2006-12-11 02:34:04 UTC (rev 706)
+@@ -102,12 +102,12 @@
+             get { return (Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0; }
+             set { if (value) { Data[0] |= (byte)Helpers.MSG_APPENDED_ACKS; } else { byte mask = (byte)Helpers.MSG_APPENDED_ACKS ^ 0xFF; Data[0] &amp;= mask; } }
+         }
+-        /// &lt;summary&gt;Packet sequence number&lt;/summary&gt;
++        /// &lt;summary&gt;Packet sequence number, three bytes long&lt;/summary&gt;
+         [XmlIgnore]
+-        public ushort Sequence
++        public uint Sequence
+         {
+-            get { return (ushort)((Data[2] &lt;&lt; 8) + Data[3]); }
+-            set { Data[2] = (byte)(value &gt;&gt; 8); Data[3] = (byte)(value % 256); }
++            get { return (uint)((Data[1] &lt;&lt; 16) + (Data[2] &lt;&lt; 8) + Data[3]); }
++            set { Data[1] = (byte)(value &gt;&gt; 16); Data[2] = (byte)(value &gt;&gt; 8); Data[3] = (byte)(value % 256); }
+         }
+         /// &lt;summary&gt;Numeric ID number of this packet&lt;/summary&gt;
+         [XmlIgnore]
+@@ -182,7 +182,11 @@
+                     
+                     for (int i = 0; i &lt; count; i++)
+                     {
+-                        AckList[i] = (ushort)((bytes[(packetEnd - i * 4) - 1] &lt;&lt; 8) | (bytes[packetEnd - i * 4]));
++                        AckList[i] = (uint)(
++                            (bytes[(packetEnd - i * 4) - 3] &lt;&lt; 24) |
++                            (bytes[(packetEnd - i * 4) - 2] &lt;&lt; 16) |
++                            (bytes[(packetEnd - i * 4) - 1] &lt;&lt;  8) |
++                            (bytes[(packetEnd - i * 4)    ]));
+                     }
+ 
+                     packetEnd -= (count * 4);
+
+Modified: trunk/libsecondlife-cs/mapgenerator/template.cs
+===================================================================
+--- trunk/libsecondlife-cs/mapgenerator/template.cs	2006-12-11 00:38:36 UTC (rev 705)
++++ trunk/libsecondlife-cs/mapgenerator/template.cs	2006-12-11 02:34:04 UTC (rev 706)
+@@ -102,12 +102,12 @@
+             get { return (Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0; }
+             set { if (value) { Data[0] |= (byte)Helpers.MSG_APPENDED_ACKS; } else { byte mask = (byte)Helpers.MSG_APPENDED_ACKS ^ 0xFF; Data[0] &amp;= mask; } }
+         }
+-        /// &lt;summary&gt;Packet sequence number&lt;/summary&gt;
++        /// &lt;summary&gt;Packet sequence number, three bytes long&lt;/summary&gt;
+         [XmlIgnore]
+-        public ushort Sequence
++        public uint Sequence
+         {
+-            get { return (ushort)((Data[2] &lt;&lt; 8) + Data[3]); }
+-            set { Data[2] = (byte)(value &gt;&gt; 8); Data[3] = (byte)(value % 256); }
++            get { return (uint)((Data[1] &lt;&lt; 16) + (Data[2] &lt;&lt; 8) + Data[3]); }
++            set { Data[1] = (byte)(value &gt;&gt; 16); Data[2] = (byte)(value &gt;&gt; 8); Data[3] = (byte)(value % 256); }
+         }
+         /// &lt;summary&gt;Numeric ID number of this packet&lt;/summary&gt;
+         [XmlIgnore]
+@@ -182,7 +182,11 @@
+                     
+                     for (int i = 0; i &lt; count; i++)
+                     {
+-                        AckList[i] = (ushort)((bytes[(packetEnd - i * 4) - 1] &lt;&lt; 8) | (bytes[packetEnd - i * 4]));
++                        AckList[i] = (uint)(
++                            (bytes[(packetEnd - i * 4) - 3] &lt;&lt; 24) |
++                            (bytes[(packetEnd - i * 4) - 2] &lt;&lt; 16) |
++                            (bytes[(packetEnd - i * 4) - 1] &lt;&lt;  8) |
++                            (bytes[(packetEnd - i * 4)    ]));
+                     }
+ 
+                     packetEnd -= (count * 4);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000063.html">[Libsecondlife-commits] r705 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000065.html">[Libsecondlife-commits] r707 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#64">[ date ]</a>
+              <a href="thread.html#64">[ thread ]</a>
+              <a href="subject.html#64">[ subject ]</a>
+              <a href="author.html#64">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r722 - in trunk: SLProxy SLProxy/legacy	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r722%20-%20in%20trunk%3A%20SLProxy%20SLProxy/legacy%0A%09libsecondlife-cs/examples/TestClient%0A%09libsecondlife-cs/examples/TestClient/Commands&In-Reply-To=%3C200612140236.kBE2a8nQ022820%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000085.html">
+   <LINK REL="Next"  HREF="000086.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r722 - in trunk: SLProxy SLProxy/legacy	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r722%20-%20in%20trunk%3A%20SLProxy%20SLProxy/legacy%0A%09libsecondlife-cs/examples/TestClient%0A%09libsecondlife-cs/examples/TestClient/Commands&In-Reply-To=%3C200612140236.kBE2a8nQ022820%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r722 - in trunk: SLProxy SLProxy/legacy	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 14 03:36:08 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000085.html">[Libsecondlife-commits] [Patch #1689] SetAgentAppearance TestClient	Command
+</A></li>
+        <LI>Next message: <A HREF="000086.html">[Libsecondlife-commits] [Patch #1723] Bot identifys itself when	asked for uptime.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-14 03:35:59 +0100 (Thu, 14 Dec 2006)
+New Revision: 722
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SetAppearanceCommand.cs
+Modified:
+   trunk/SLProxy/SLProxy.cs
+   trunk/SLProxy/legacy/Packet.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+Applied patches #1713 and #1689.
+
+Modified: trunk/SLProxy/SLProxy.cs
+===================================================================
+--- trunk/SLProxy/SLProxy.cs	2006-12-13 21:15:49 UTC (rev 721)
++++ trunk/SLProxy/SLProxy.cs	2006-12-14 02:35:59 UTC (rev 722)
+@@ -430,7 +430,7 @@
+ 				packet = simProxy.CheckAcks(packet, Direction.Incoming, ref length, ref needsCopy);
+ 
+ 				// modify sequence numbers to account for injections
+-				ushort oldSequence = packet.Sequence;
++				uint oldSequence = packet.Sequence;
+ 				packet = simProxy.ModifySequence(packet, Direction.Incoming, ref length, ref needsCopy);
+ 
+ 				// keep track of sequence numbers
+@@ -518,7 +518,7 @@
+ 		}
+ 
+ 		// SpoofAck: create an ACK for the given packet
+-		public Packet SpoofAck(ushort sequence) {
++		public Packet SpoofAck(uint sequence) {
+ 			Hashtable blocks = new Hashtable();
+ 			Hashtable fields = new Hashtable();
+ 			fields[&quot;ID&quot;] = (uint)sequence;
+@@ -601,12 +601,12 @@
+ 			private IPEndPoint remoteEndPoint;
+ 			private Proxy proxy;
+ 			private Socket socket;
+-			public ushort incomingSequence;
+-			public ushort outgoingSequence;
++			public uint incomingSequence;
++			public uint outgoingSequence;
+ 			private ArrayList incomingInjections;
+ 			private ArrayList outgoingInjections;
+-			private ushort incomingOffset = 0;
+-			private ushort outgoingOffset = 0;
++			private uint incomingOffset = 0;
++			private uint outgoingOffset = 0;
+ 			private Hashtable incomingAcks;
+ 			private Hashtable outgoingAcks;
+ 			private ArrayList incomingSeenAcks;
+@@ -682,7 +682,7 @@
+ 						outgoingSeenAcksPoint = outgoingSeenAcks.Count;
+ 					}
+ 
+-					foreach (ushort id in incomingAcks.Keys)
++					foreach (uint id in incomingAcks.Keys)
+ 						if (!incomingSeenAcks.Contains(id)) {
+ 							Packet packet = (Packet)incomingAcks[id];
+ 							packet.Data[0] |= Helpers.MSG_RESENT;
+@@ -692,7 +692,7 @@
+ 							SendPacket(packet, packet.Data.Length, false);
+ 						}
+ 
+-					foreach (ushort id in outgoingAcks.Keys)
++					foreach (uint id in outgoingAcks.Keys)
+ 						if (!outgoingSeenAcks.Contains(id)) {
+ 							Packet packet = (Packet)outgoingAcks[id];
+ 							packet.Data[0] |= Helpers.MSG_RESENT;
+@@ -750,7 +750,7 @@
+ 				packet = CheckAcks(packet, Direction.Outgoing, ref length, ref needsCopy);
+ 
+ 				// modify sequence numbers to account for injections
+-				ushort oldSequence = packet.Sequence;
++				uint oldSequence = packet.Sequence;
+ 				packet = ModifySequence(packet, Direction.Outgoing, ref length, ref needsCopy);
+ 
+ 				// keep track of sequence numbers
+@@ -895,7 +895,7 @@
+ 					Hashtable blocks = PacketUtility.Unbuild(packet);
+ 					Hashtable newBlocks = new Hashtable();
+ 					foreach (Hashtable fields in blocks.Keys) {
+-						ushort id = (ushort)((uint)fields[&quot;ID&quot;]);
++						uint id = ((uint)fields[&quot;ID&quot;]);
+ #if DEBUG_SEQUENCE
+ 						string hrup = &quot;Check !&quot; + id;
+ #endif
+@@ -925,7 +925,7 @@
+ 					byte ackCount = packet.Data[length - 1];
+ 					for (int i = 0; i &lt; ackCount;) {
+ 						int offset = length - (ackCount - i) * 4 - 1;
+-						ushort ackID = (ushort)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8));
++						uint ackID = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16));
+ #if DEBUG_SEQUENCE
+ 						string hrup = &quot;Check @&quot; + ackID;
+ #endif
+@@ -962,11 +962,11 @@
+ 			public Packet ModifySequence(Packet packet, Direction direction, ref int length, ref bool needsCopy) {
+ 				ArrayList ourInjections = direction == Direction.Outgoing ? outgoingInjections : incomingInjections;
+ 				ArrayList theirInjections = direction == Direction.Incoming ? outgoingInjections : incomingInjections;
+-				ushort ourOffset = direction == Direction.Outgoing ? outgoingOffset : incomingOffset;
+-				ushort theirOffset = direction == Direction.Incoming ? outgoingOffset : incomingOffset;
++				uint ourOffset = direction == Direction.Outgoing ? outgoingOffset : incomingOffset;
++				uint theirOffset = direction == Direction.Incoming ? outgoingOffset : incomingOffset;
+ 
+-				ushort newSequence = (ushort)(packet.Sequence + ourOffset);
+-				foreach (ushort injection in ourInjections)
++				uint newSequence = (packet.Sequence + ourOffset);
++				foreach (uint injection in ourInjections)
+ 					if (newSequence &gt;= injection)
+ 						++newSequence;
+ #if DEBUG_SEQUENCE
+@@ -978,18 +978,19 @@
+ 					int ackCount = packet.Data[length - 1];
+ 					for (int i = 0; i &lt; ackCount; ++i) {
+ 						int offset = length - (ackCount - i) * 4 - 1;
+-						uint ackID = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8)) - theirOffset;
++						uint ackID = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16)) - theirOffset;
+ #if DEBUG_SEQUENCE
+-						uint hrup = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8));
++						uint hrup = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16));
+ #endif
+ 						for (int j = theirInjections.Count - 1; j &gt;= 0; --j)
+-							if (ackID &gt;= (ushort)theirInjections[j])
++							if (ackID &gt;= (uint)theirInjections[j])
+ 								--ackID;
+ #if DEBUG_SEQUENCE
+ 						Console.WriteLine(&quot;Mod @&quot; + hrup + &quot; = &quot; + ackID);
+ #endif
+ 						packet.Data[offset + 3] = (byte)(ackID % 256);
+-						packet.Data[offset + 2] = (byte)(ackID / 256);
++						packet.Data[offset + 2] = (byte)((ackID / 256) % 256);
++						packet.Data[offset + 1] = (byte)(ackID / 65536);
+ 					}
+ 				}
+ 
+@@ -1002,7 +1003,7 @@
+ 							uint hrup = (uint)fields[&quot;ID&quot;];
+ #endif
+ 							for (int i = theirInjections.Count - 1; i &gt;= 0; --i)
+-								if (ackID &gt;= (ushort)theirInjections[i])
++								if (ackID &gt;= (uint)theirInjections[i])
+ 									--ackID;
+ #if DEBUG_SEQUENCE
+ 							Console.WriteLine(&quot;Mod !&quot; + hrup + &quot; = &quot; + ackID);
+
+Modified: trunk/SLProxy/legacy/Packet.cs
+===================================================================
+--- trunk/SLProxy/legacy/Packet.cs	2006-12-13 21:15:49 UTC (rev 721)
++++ trunk/SLProxy/legacy/Packet.cs	2006-12-14 02:35:59 UTC (rev 722)
+@@ -133,18 +133,19 @@
+         /// loss. For outgoing packets the sequence number will be 
+         /// automatically set by the network layer as the packet is sent out.
+         /// &lt;/summary&gt;
+-		public ushort Sequence
++		public uint Sequence
+ 		{
+ 			get
+ 			{
+-				// The sequence number is the third and fourth bytes of the packet, stored 
++				// The sequence number is the second, third and fourth bytes of the packet, stored 
+ 				// in network order
+-				return (ushort)(Data[2] * 256 + Data[3]);
++				return (uint)(Data[1] * 65536 + Data[2] * 256 + Data[3]);
+ 			}
+ 
+ 			set
+ 			{
+-				Data[2] = (byte)(value / 256);
++				Data[1] = (byte)(value / 65536);
++				Data[2] = (byte)((value / 256) % 256);
+ 				Data[3] = (byte)(value % 256);
+ 			}
+ 		}
+@@ -700,8 +701,8 @@
+ 											length += 16;
+ 											break;
+ 										case FieldType.LLQuaternion:
+-											Array.Copy(((LLQuaternion)field).GetBytes(), 0, byteArray, length, 16);
+-											length += 16;
++											Array.Copy(((LLQuaternion)field).GetBytes(), 0, byteArray, length, 12);
++											length += 12;
+ 											break;
+ 										case FieldType.IPADDR:
+ 											Array.Copy(((IPAddress)field).GetAddressBytes(), 0, byteArray, length, 4);
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/SetAppearanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SetAppearanceCommand.cs	2006-12-13 21:15:49 UTC (rev 721)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SetAppearanceCommand.cs	2006-12-14 02:35:59 UTC (rev 722)
+@@ -0,0 +1,52 @@
++using System;
++
++using System.Collections.Generic;
++
++using System.Text;
++
++using libsecondlife;
++
++using libsecondlife.Packets;
++
++using libsecondlife.AssetSystem;
++
++namespace libsecondlife.TestClient
++
++{
++
++    public class SetAppearanceCommand: Command
++
++    {
++
++	
++
++		AppearanceManager aManager;
++
++    	    	public SetAppearanceCommand()
++
++		{
++
++			Name = &quot;setapp&quot;;
++
++			Description = &quot;Set appearance to what's stored in the DB.&quot;;
++
++		}
++
++        	public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++
++		{
++
++			if(aManager == null)
++
++				aManager = new AppearanceManager(Client);
++
++			aManager.SendAgentSetAppearance();
++
++			return &quot;Done.&quot;;
++
++		}
++
++    }
++
++}
++
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-13 21:15:49 UTC (rev 721)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-14 02:35:59 UTC (rev 722)
+@@ -37,6 +37,7 @@
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\PacketLogCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\SetAppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhisperCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000085.html">[Libsecondlife-commits] [Patch #1689] SetAgentAppearance TestClient	Command
+</A></li>
+	<LI>Next message: <A HREF="000086.html">[Libsecondlife-commits] [Patch #1723] Bot identifys itself when	asked for uptime.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r814 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r814%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701071801.l07I1s8e031605%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000217.html">
+   <LINK REL="Next"  HREF="000219.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r814 - trunk/libsecondlife-cs</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r814%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701071801.l07I1s8e031605%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r814 - trunk/libsecondlife-cs">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 19:01:54 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000217.html">[Libsecondlife-commits] r813 - in trunk/libsecondlife-cs: .	examples/TestClient
+</A></li>
+        <LI>Next message: <A HREF="000219.html">[Libsecondlife-commits] r815 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-07 19:01:42 +0100 (Sun, 07 Jan 2007)
+New Revision: 814
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatarStatus.cs
+Log:
+The MainAvatarStatus class might get instantiated before your avatar is inworld, thus you can't use Client.Self.Position for it's initial default value.
+
+Modified: trunk/libsecondlife-cs/MainAvatarStatus.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 11:01:59 UTC (rev 813)
++++ trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 18:01:42 UTC (rev 814)
+@@ -291,7 +291,7 @@
+                 // Lets set some default camera values
+                 Camera.BodyRotation = LLQuaternion.Identity;
+                 Camera.HeadRotation = LLQuaternion.Identity;
+-                Camera.CameraCenter = Client.Self.Position;
++                Camera.CameraCenter = new LLVector3(128,128,20); // this cannot be set to Client.Self.Position because this is constructed before we're in-world
+                 Camera.CameraAtAxis = new LLVector3(0, 0.9999f, 0);
+                 Camera.CameraLeftAxis = new LLVector3(0.9999f, 0, 0);
+                 Camera.CameraUpAxis = new LLVector3(0, 0, 0.9999f);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000217.html">[Libsecondlife-commits] r813 - in trunk/libsecondlife-cs: .	examples/TestClient
+</A></li>
+	<LI>Next message: <A HREF="000219.html">[Libsecondlife-commits] r815 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#218">[ date ]</a>
+              <a href="thread.html#218">[ thread ]</a>
+              <a href="subject.html#218">[ subject ]</a>
+              <a href="author.html#218">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

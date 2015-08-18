@@ -1,0 +1,857 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r811 - in trunk/libsecondlife-cs: .	examples/slaccountant
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r811%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/slaccountant&In-Reply-To=%3C200701070325.l073PRxt031829%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000214.html">
+   <LINK REL="Next"  HREF="000216.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r811 - in trunk/libsecondlife-cs: .	examples/slaccountant</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r811%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/slaccountant&In-Reply-To=%3C200701070325.l073PRxt031829%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r811 - in trunk/libsecondlife-cs: .	examples/slaccountant">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 04:25:27 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000214.html">[Libsecondlife-commits] r810 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000216.html">[Libsecondlife-commits] r812 - branches/aditi/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#215">[ date ]</a>
+              <a href="thread.html#215">[ thread ]</a>
+              <a href="subject.html#215">[ subject ]</a>
+              <a href="author.html#215">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-07 04:25:26 +0100 (Sun, 07 Jan 2007)
+New Revision: 811
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatarStatus.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/Region.cs
+   trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs
+Log:
+* Hacked up slaccountant enough to function again
+* Reorganized MainAvatarStatus and added comment skeletons
+* All NetworkManager callbacks are protected with try/catch blocks now
+* Slight initialization cleanup in Region
+
+Modified: trunk/libsecondlife-cs/MainAvatarStatus.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 03:05:57 UTC (rev 810)
++++ trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 03:25:26 UTC (rev 811)
+@@ -33,272 +33,318 @@
+ {
+     public partial class MainAvatar
+     {
+-        
+         /// &lt;summary&gt; 
+         /// Holds current camera and control key status
+         /// &lt;/summary&gt; 
+         public class MainAvatarStatus
+         {
+-            private SecondLife Client;
+-            private static uint agentControls;
+             /// &lt;summary&gt;
+-            /// Timer for sending AgentUpdate packets, disabled by default
++            /// 
+             /// &lt;/summary&gt;
+-            public Timer UpdateTimer;
+-            private static bool getControlFlag(Avatar.AgentUpdateFlags flag)
+-            {
+-                uint control = (uint)flag;
+-                return ((agentControls &amp; control) == control);
+-            }
+-
+-            private static void setControlFlag(Avatar.AgentUpdateFlags flag, bool value)
+-            {
+-                uint control = (uint)flag;
+-                if (value &amp;&amp; ((agentControls &amp; control) != control)) agentControls ^= control;
+-                else if (!value &amp;&amp; ((agentControls &amp; control) == control)) agentControls ^= control;
+-            }
+-            /// &lt;summary&gt;
+-            /// Holds control flags
+-            /// &lt;/summary&gt;
+-            public ControlStatus Controls;
+-            /// &lt;summary&gt;
+-            /// Holds camera flags
+-            /// &lt;/summary&gt;
+-            public CameraStatus Camera;
+-
+-            /// &lt;summary&gt;Constructor for class MainAvatarStatus&lt;/summary&gt;
+-            public MainAvatarStatus(SecondLife client)
+-            {
+-                Client = client;
+-                UpdateTimer = new Timer();
+-                UpdateTimer.Elapsed += new ElapsedEventHandler(UpdateTimer_Elapsed);
+-                UpdateTimer.Interval = 500;
+-                //Update Timer Disabled By Default --Jesse Malthus
+-                UpdateTimer.Enabled = false;
+-
+-                //Lets set some defaults...
+-                Camera.BodyRotation = LLQuaternion.Identity;
+-                Camera.HeadRotation = LLQuaternion.Identity;
+-                Camera.CameraCenter = new LLVector3(128,128,20);
+-                Camera.CameraAtAxis = new LLVector3(0, 0.9999f, 0);
+-                Camera.CameraLeftAxis = new LLVector3(0.9999f, 0, 0);
+-                Camera.CameraUpAxis = new LLVector3(0, 0, 0.9999f);
+-                Camera.Far = 128.0f;
+-            }
+-            /// &lt;summary&gt;
+-            /// Event handler for UpdateTimer that sends an AgentUpdate packet
+-            /// &lt;/summary&gt;
+-            /// &lt;param name=&quot;sender&quot;&gt;&lt;/param&gt;
+-            /// &lt;param name=&quot;e&quot;&gt;&lt;/param&gt;
+-            void UpdateTimer_Elapsed(object sender, ElapsedEventArgs e)
+-            {
+-                //Send an AgentUpdate packet
+-                SendUpdate();
+-            }
+-
+-            public uint AgentControls
+-            {
+-                get { return agentControls; }
+-            }
+-            /// &lt;summary&gt;
+-            /// Send new AgentUpdate
+-            /// &lt;/summary&gt;
+-            public void SendUpdate()
+-            {
+-                AgentUpdatePacket update = new AgentUpdatePacket();
+-                update.Header.Reliable = false;
+-
+-                update.AgentData.AgentID = Client.Network.AgentID;
+-                update.AgentData.SessionID = Client.Network.SessionID;
+-                update.AgentData.HeadRotation = Camera.HeadRotation;
+-                update.AgentData.BodyRotation = Camera.BodyRotation;
+-                update.AgentData.CameraAtAxis = Camera.CameraAtAxis;
+-                update.AgentData.CameraCenter = Camera.CameraCenter;
+-                update.AgentData.CameraLeftAxis = Camera.CameraLeftAxis;
+-                update.AgentData.CameraUpAxis = Camera.CameraUpAxis;
+-                update.AgentData.ControlFlags = agentControls;
+-                update.AgentData.Far = Camera.Far;
+-
+-                Client.Network.SendPacket(update);
+-            }
+-
+             public struct ControlStatus
+             {
+-
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool AtPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AT_POS); }
+-                    set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AT_POS,value); }
++                    set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AT_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool AtNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AT_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AT_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool LeftPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LEFT_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LEFT_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool LeftNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LEFT_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LEFT_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool UpPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_UP_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_UP_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool UpNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_UP_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_UP_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool PitchPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_PITCH_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_PITCH_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool PitchNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_PITCH_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_PITCH_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool YawPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_YAW_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_YAW_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool YawNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_YAW_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_YAW_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool FastAt
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_AT); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_AT, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool FastLeft
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_LEFT); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_LEFT, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool FastUp
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_UP); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FAST_UP, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool Fly
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FLY); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FLY, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool Stop
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_STOP); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_STOP, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool FinishAnim
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FINISH_ANIM); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_FINISH_ANIM, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool StandUp
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_STAND_UP); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_STAND_UP, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool SitOnGround
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_SIT_ON_GROUND); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_SIT_ON_GROUND, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool Mouselook
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_MOUSELOOK); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_MOUSELOOK, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeAtPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_AT_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_AT_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeAtNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_AT_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_AT_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeLeftPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_LEFT_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_LEFT_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeLeftNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_LEFT_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_LEFT_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeUpPos
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_UP_POS); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_UP_POS, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool NudgeUpNeg
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_UP_NEG); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_NUDGE_UP_NEG, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool TurnLeft
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_TURN_LEFT); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_TURN_LEFT, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool TurnRight
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_TURN_RIGHT); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_TURN_RIGHT, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool Away
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AWAY); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_AWAY, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool LButtonDown
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LBUTTON_DOWN); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LBUTTON_DOWN, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool LButtonUp
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LBUTTON_UP); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_LBUTTON_UP, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool MLButtonDown
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_ML_LBUTTON_DOWN); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_ML_LBUTTON_DOWN, value); }
+                 }
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public bool MLButtonUp
+                 {
+                     get { return getControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_ML_LBUTTON_UP); }
+                     set { setControlFlag(Avatar.AgentUpdateFlags.AGENT_CONTROL_ML_LBUTTON_UP, value); }
+                 }
+-
+             }
+ 
++            /// &lt;summary&gt;
++            /// 
++            /// &lt;/summary&gt;
+             public struct CameraStatus
+             {
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLQuaternion BodyRotation;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLQuaternion HeadRotation;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLVector3 CameraAtAxis;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLVector3 CameraCenter;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLVector3 CameraLeftAxis;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public LLVector3 CameraUpAxis;
++                /// &lt;summary&gt;&lt;/summary&gt;
+                 public float Far;
+             }
+ 
++
++            /// &lt;summary&gt;
++            /// Timer for sending AgentUpdate packets, disabled by default
++            /// &lt;/summary&gt;
++            public Timer UpdateTimer;
++            /// &lt;summary&gt;
++            /// Holds control flags
++            /// &lt;/summary&gt;
++            public ControlStatus Controls;
++            /// &lt;summary&gt;
++            /// Holds camera flags
++            /// &lt;/summary&gt;
++            public CameraStatus Camera;
++
++            /// &lt;summary&gt;The current value of the agent control flags&lt;/summary&gt;
++            public uint AgentControls
++            {
++                get { return agentControls; }
++            }
++
++
++            private SecondLife Client;
++            private static uint agentControls;
++
++
++            /// &lt;summary&gt;Constructor for class MainAvatarStatus&lt;/summary&gt;
++            public MainAvatarStatus(SecondLife client)
++            {
++                Client = client;
++
++                // Lets set some default camera values
++                Camera.BodyRotation = LLQuaternion.Identity;
++                Camera.HeadRotation = LLQuaternion.Identity;
++                Camera.CameraCenter = Client.Self.Position;
++                Camera.CameraAtAxis = new LLVector3(0, 0.9999f, 0);
++                Camera.CameraLeftAxis = new LLVector3(0.9999f, 0, 0);
++                Camera.CameraUpAxis = new LLVector3(0, 0, 0.9999f);
++                Camera.Far = 128.0f;
++
++                UpdateTimer = new Timer(500);
++                UpdateTimer.Elapsed += new ElapsedEventHandler(UpdateTimer_Elapsed);
++                // Update Timer Disabled By Default --Jesse Malthus
++                UpdateTimer.Enabled = false;
++            }
++
++            
++
++            /// &lt;summary&gt;
++            /// Send new AgentUpdate
++            /// &lt;/summary&gt;
++            public void SendUpdate()
++            {
++                AgentUpdatePacket update = new AgentUpdatePacket();
++                update.Header.Reliable = false;
++
++                update.AgentData.AgentID = Client.Network.AgentID;
++                update.AgentData.SessionID = Client.Network.SessionID;
++                update.AgentData.HeadRotation = Camera.HeadRotation;
++                update.AgentData.BodyRotation = Camera.BodyRotation;
++                update.AgentData.CameraAtAxis = Camera.CameraAtAxis;
++                update.AgentData.CameraCenter = Camera.CameraCenter;
++                update.AgentData.CameraLeftAxis = Camera.CameraLeftAxis;
++                update.AgentData.CameraUpAxis = Camera.CameraUpAxis;
++                update.AgentData.ControlFlags = agentControls;
++                update.AgentData.Far = Camera.Far;
++
++                Client.Network.SendPacket(update);
++            }
++
++            private static bool getControlFlag(Avatar.AgentUpdateFlags flag)
++            {
++                uint control = (uint)flag;
++                return ((agentControls &amp; control) == control);
++            }
++
++            private static void setControlFlag(Avatar.AgentUpdateFlags flag, bool value)
++            {
++                uint control = (uint)flag;
++                if (value &amp;&amp; ((agentControls &amp; control) != control)) agentControls ^= control;
++                else if (!value &amp;&amp; ((agentControls &amp; control) == control)) agentControls ^= control;
++            }
++
++            private void UpdateTimer_Elapsed(object sender, ElapsedEventArgs e)
++            {
++                //Send an AgentUpdate packet
++                SendUpdate();
++            }
+         }
+     }
+-}
+\ No newline at end of file
++}
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-07 03:05:57 UTC (rev 810)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-07 03:25:26 UTC (rev 811)
+@@ -555,40 +555,49 @@
+ 
+             // Fire the registered packet events
+             #region FireCallbacks
+-            try
++            if (Callbacks.ContainsKey(packet.Type))
+             {
+-                if (Callbacks.ContainsKey(packet.Type))
++                List&lt;NetworkManager.PacketCallback&gt; callbackArray = Callbacks[packet.Type];
++
++                // Fire any registered callbacks
++                foreach (NetworkManager.PacketCallback callback in callbackArray)
+                 {
+-                    List&lt;NetworkManager.PacketCallback&gt; callbackArray = Callbacks[packet.Type];
+-
+-                    // Fire any registered callbacks
+-                    foreach (NetworkManager.PacketCallback callback in callbackArray)
++                    if (callback != null)
+                     {
+-                        if (callback != null)
++                        try
+                         {
+                             callback(packet, this);
+                         }
++                        catch (Exception e)
++                        {
++                            Client.Log(&quot;Caught an exception in a packet callback: &quot; + e.ToString(), 
++                                Helpers.LogLevel.Error);
++                        }
+                     }
+                 }
++            }
+ 
+-                if (Callbacks.ContainsKey(PacketType.Default))
++            if (Callbacks.ContainsKey(PacketType.Default))
++            {
++                List&lt;NetworkManager.PacketCallback&gt; callbackArray = Callbacks[PacketType.Default];
++
++                // Fire any registered callbacks
++                foreach (NetworkManager.PacketCallback callback in callbackArray)
+                 {
+-                    List&lt;NetworkManager.PacketCallback&gt; callbackArray = Callbacks[PacketType.Default];
+-
+-                    // Fire any registered callbacks
+-                    foreach (NetworkManager.PacketCallback callback in callbackArray)
++                    if (callback != null)
+                     {
+-                        if (callback != null)
++                        try
+                         {
+                             callback(packet, this);
+                         }
++                        catch (Exception e)
++                        {
++                            Client.Log(&quot;Caught an exception in a packet callback: &quot; + e.ToString(),
++                                Helpers.LogLevel.Error);
++                        }
+                     }
+                 }
+             }
+-            catch (Exception e)
+-            {
+-                Client.Log(&quot;Caught an exception in a packet callback: &quot; + e.ToString(), Helpers.LogLevel.Warning);
+-            }
+             #endregion FireCallbacks
+         }
+ 
+@@ -1215,10 +1224,32 @@
+                 SendInitialPackets();
+                 
+                 // Fire an event for connecting to the grid
+-                if (OnConnected != null) OnConnected(this.Client);
++                if (OnConnected != null)
++                {
++                    try
++                    {
++                        OnConnected(this.Client);
++                    }
++                    catch (Exception e)
++                    {
++                        Client.Log(&quot;Caught an exception in the OnConnected() callback: &quot; + e.ToString(),
++                            Helpers.LogLevel.Error);
++                    }
++                }
+ 
+                 // Fire an event that the current simulator has changed
+-                if (OnCurrentSimChanged != null) OnCurrentSimChanged(oldSim);
++                if (OnCurrentSimChanged != null)
++                {
++                    try
++                    {
++                        OnCurrentSimChanged(oldSim);
++                    }
++                    catch (Exception e)
++                    {
++                        Client.Log(&quot;Caught an exception in OnCurrentSimChanged(): &quot; + e.ToString(),
++                            Helpers.LogLevel.Error);
++                    }
++                }
+ 
+                 return true;
+             }
+@@ -1313,7 +1344,16 @@
+                         {
+                             callbackDict.Add(InventoryData.ItemID, InventoryData.NewAssetID);
+                         }
+-                        OnLogoutReply(callbackDict);
++
++                        try
++                        {
++                            OnLogoutReply(callbackDict);
++                        }
++                        catch (Exception e)
++                        {
++                            Client.Log(&quot;Caught an exception in OnLogoutReply(): &quot; + e.ToString(),
++                                Helpers.LogLevel.Error);
++                        }
+                     }
+                     FinalizeLogout();
+                 }
+@@ -1349,7 +1389,15 @@
+ 
+             if (OnDisconnected != null)
+             {
+-                OnDisconnected(DisconnectType.ClientInitiated, &quot;&quot;);
++                try
++                {
++                    OnDisconnected(DisconnectType.ClientInitiated, &quot;&quot;);
++                }
++                catch (Exception e)
++                {
++                    Client.Log(&quot;Caught an exception in OnDisconnected(): &quot; + e.ToString(),
++                        Helpers.LogLevel.Error);
++                }
+             }
+         }
+ 
+@@ -1366,7 +1414,15 @@
+                 // Fire the SimDisconnected event if a handler is registered
+                 if (OnSimDisconnected != null)
+                 {
+-                    OnSimDisconnected(sim, DisconnectType.NetworkTimeout);
++                    try
++                    {
++                        OnSimDisconnected(sim, DisconnectType.NetworkTimeout);
++                    }
++                    catch (Exception e)
++                    {
++                        Client.Log(&quot;Caught an exception in OnSimDisconnected(): &quot; + e.ToString(),
++                            Helpers.LogLevel.Error);
++                    }
+                 }
+ 
+                 lock (Simulators)
+@@ -1399,9 +1455,20 @@
+                         DisconnectSim(simulator);
+ 
+                         // Fire the SimDisconnected event if a handler is registered
++                        // FIXME: This is a recipe for disaster. Firing an event when we 
++                        // are locking is just inviting someone to call a function that 
++                        // locks in Simulators and deadlocks the library
+                         if (OnSimDisconnected != null)
+                         {
+-                            OnSimDisconnected(simulator, DisconnectType.NetworkTimeout);
++                            try
++                            {
++                                OnSimDisconnected(simulator, DisconnectType.NetworkTimeout);
++                            }
++                            catch (Exception e)
++                            {
++                                Client.Log(&quot;Caught an exception in OnSimDisconnected(): &quot; + e.ToString(),
++                                    Helpers.LogLevel.Error);
++                            }
+                         }
+                     }
+                 }
+@@ -1416,7 +1483,18 @@
+                 DisconnectSim(CurrentSim);
+                 CurrentSim = null;
+ 
+-                if (OnCurrentSimChanged != null) OnCurrentSimChanged(oldSim);
++                if (OnCurrentSimChanged != null)
++                {
++                    try
++                    {
++                        OnCurrentSimChanged(oldSim);
++                    }
++                    catch (Exception e)
++                    {
++                        Client.Log(&quot;Caught an exception in OnCurrentSimChanged(): &quot; + e.ToString(),
++                            Helpers.LogLevel.Error);
++                    }
++                }
+             }
+         }
+ 
+@@ -1463,7 +1541,15 @@
+ 
+                     if (OnDisconnected != null)
+                     {
+-                        OnDisconnected(DisconnectType.NetworkTimeout, &quot;&quot;);
++                        try
++                        {
++                            OnDisconnected(DisconnectType.NetworkTimeout, &quot;&quot;);
++                        }
++                        catch (Exception e)
++                        {
++                            Client.Log(&quot;Caught an exception in OnDisconnected(): &quot; + e.ToString(),
++                                Helpers.LogLevel.Error);
++                        }
+                     }
+ 
+                     // We're completely logged out and shut down, leave this function
+@@ -1532,8 +1618,6 @@
+             reply.RegionInfo.Flags = 0;
+             SendPacket(reply, simulator);
+ 
+-            // TODO: Do we need to send an AgentUpdate to each sim upon connection?
+-
+             RegionHandshakePacket handshake = (RegionHandshakePacket)packet;
+ 
+             simulator.Region.ID = handshake.RegionInfo.CacheID;
+@@ -1610,7 +1694,15 @@
+ 
+             if (OnDisconnected != null)
+             {
+-                OnDisconnected(DisconnectType.ServerInitiated, message);
++                try
++                {
++                    OnDisconnected(DisconnectType.ServerInitiated, message);
++                }
++                catch (Exception e)
++                {
++                    Client.Log(&quot;Caught an exception in OnDisconnected(): &quot; + e.ToString(),
++                        Helpers.LogLevel.Error);
++                }
+             }
+         }
+     }
+
+Modified: trunk/libsecondlife-cs/Region.cs
+===================================================================
+--- trunk/libsecondlife-cs/Region.cs	2007-01-07 03:05:57 UTC (rev 810)
++++ trunk/libsecondlife-cs/Region.cs	2007-01-07 03:25:26 UTC (rev 811)
+@@ -50,7 +50,7 @@
+         // might be iterating through them or modifying them when internally 
+         // we are doing the opposite. The best way to fix this will be 
+         // privatizing and adding helper functions to access the dictionary
+-        public Dictionary&lt;int, Parcel&gt; Parcels;
++        public Dictionary&lt;int, Parcel&gt; Parcels = new Dictionary&lt;int, Parcel&gt;();
+ 
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID ID = LLUUID.Zero;
+@@ -59,12 +59,12 @@
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public string Name = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public byte[] ParcelOverlay;
++        public byte[] ParcelOverlay = new byte[4096];
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int ParcelOverlaysReceived;
+         /// &lt;summary&gt;64x64 Array of parcels which have been successfully downloaded 
+         /// (and their LocalID's, 0 = Null)&lt;/summary&gt;
+-        public int[,] ParcelMarked;
++        public int[,] ParcelMarked = new int[64, 64];
+         /// &lt;summary&gt;Flag to indicate whether we are downloading a sim's parcels&lt;/summary&gt;
+         public bool ParcelDownloading;
+         /// &lt;summary&gt;Flag to indicate whether to get Dwell values automatically (NOT USED YET). Call Parcel.GetDwell() instead&lt;/summary&gt;
+@@ -138,10 +138,6 @@
+         {
+             Estate = new EstateTools(client);
+             Client = client;
+-            ParcelOverlay = new byte[4096];
+-            ParcelMarked = new int[64, 64];
+-
+-            Parcels = new Dictionary&lt;int, Parcel&gt;();
+         }
+ 
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs	2007-01-07 03:05:57 UTC (rev 810)
++++ trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs	2007-01-07 03:25:26 UTC (rev 811)
+@@ -354,25 +354,39 @@
+             frm.ShowDialog();
+ 		}
+ 
++        private delegate void StringParamInvoker(string value);
++        private delegate void ListViewItemParamInvoker(ListViewItem item);
++
++        private void UpdateBalance(string value)
++        {
++            lblBalance.Text = value;
++        }
++
++        private void AddFindItem(ListViewItem item)
++        {
++            lock (lstFind)
++            {
++                lstFind.Items.Add(item);
++            }
++        }
++
+ 		private void BalanceHandler(Packet packet, Simulator simulator)
+ 		{
+-            lblBalance.Text = ((MoneyBalanceReplyPacket)packet).MoneyData.MoneyBalance.ToString();
++            string value = ((MoneyBalanceReplyPacket)packet).MoneyData.MoneyBalance.ToString();
++            this.BeginInvoke(new StringParamInvoker(UpdateBalance), new object[] { value });
+ 		}
+ 
+ 		private void DirPeopleHandler(Packet packet, Simulator simulator)
+ 		{
+             DirPeopleReplyPacket reply = (DirPeopleReplyPacket)packet;
+ 
+-            lock (lstFind)
++            foreach (DirPeopleReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
+             {
++                ListViewItem listItem = new ListViewItem(new string[] { 
++                Helpers.FieldToString(block.FirstName) + &quot; &quot; + Helpers.FieldToString(block.LastName), 
++                (block.Online ? &quot;Yes&quot; : &quot;No&quot;), block.AgentID.ToString() });
+ 
+-                foreach (DirPeopleReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
+-                {
+-                    ListViewItem listItem = new ListViewItem(new string[] { 
+-                    Helpers.FieldToString(block.FirstName) + &quot; &quot; + Helpers.FieldToString(block.LastName), 
+-                    (block.Online ? &quot;Yes&quot; : &quot;No&quot;), block.AgentID.ToString() });
+-                    lstFind.Items.Add(listItem);
+-                }
++                this.BeginInvoke(new ListViewItemParamInvoker(AddFindItem), new object[] { listItem });
+             }
+ 		}
+ 
+@@ -399,11 +413,8 @@
+ 				{
+ 					Random rand = new Random();
+ 					
+-					lblName.Text = client.Network.LoginValues[&quot;first_name&quot;] + &quot; &quot; + 
+-						client.Network.LoginValues[&quot;last_name&quot;];
++					lblName.Text = client.ToString();
+ 
+-                    client.Self.SetHeightWidth((ushort)rand.Next(0, 65535), (ushort)rand.Next(0, 65535));
+-
+                     // AgentSetAppearance
+                     AgentSetAppearancePacket appearance = new AgentSetAppearancePacket();
+                     appearance.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
+@@ -421,6 +432,9 @@
+ 
+                     client.Network.SendPacket(appearance);
+ 
++                    // Request our balance
++                    client.Self.RequestBalance();
++
+ 					txtFind.Enabled = cmdFind.Enabled = true;
+ 					txtTransfer.Enabled = cmdTransfer.Enabled = true;
+ 				}
+@@ -458,7 +472,7 @@
+             query.QueryData.QueryText = Helpers.StringToField(txtFind.Text);
+             query.Header.Reliable = true;
+ 
+-            client.Network.SendPacket((Packet)query);
++            client.Network.SendPacket(query);
+ 		}
+ 
+ 		private void cmdTransfer_Click(object sender, System.EventArgs e)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000214.html">[Libsecondlife-commits] r810 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000216.html">[Libsecondlife-commits] r812 - branches/aditi/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#215">[ date ]</a>
+              <a href="thread.html#215">[ thread ]</a>
+              <a href="subject.html#215">[ subject ]</a>
+              <a href="author.html#215">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

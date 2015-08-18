@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r825 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r825%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20libsecondlife.Utilities&In-Reply-To=%3C200701090719.l097JoT1030702%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000228.html">
+   <LINK REL="Next"  HREF="000230.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r825 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem libsecondlife.Utilities</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r825%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20libsecondlife.Utilities&In-Reply-To=%3C200701090719.l097JoT1030702%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r825 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem libsecondlife.Utilities">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 08:19:50 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000228.html">[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+        <LI>Next message: <A HREF="000230.html">[Libsecondlife-commits] r826 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#229">[ date ]</a>
+              <a href="thread.html#229">[ thread ]</a>
+              <a href="subject.html#229">[ subject ]</a>
+              <a href="author.html#229">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-09 08:19:44 +0100 (Tue, 09 Jan 2007)
+New Revision: 825
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+Log:
+Cleaned up a few build warnings.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -211,7 +211,6 @@
+         /// &lt;summary&gt;
+         /// Converts byte[] data from a data transfer into a bodypart class
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         internal void UpdateFromAssetData()
+         {
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -159,9 +159,6 @@
+         /// Start a request for Avatar Properties
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;avatarid&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;aic&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;asc&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;apc&quot;&gt;&lt;/param&gt;
+         public void RequestAvatarProperties(LLUUID avatarid)
+         {
+             AvatarPropertiesRequestPacket aprp = new AvatarPropertiesRequestPacket();
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -220,7 +220,6 @@
+                 return null;
+             }
+             string output = &quot;&quot;;
+-            bool printable = true;
+ 
+             for (int i = 0; i &lt; bytes.Length; ++i)
+             {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -78,9 +78,9 @@
+         /// &lt;summary&gt;
+         /// Request a download of this folder's content information.
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;Recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
+-        /// &lt;param name=&quot;Items&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
+-        /// &lt;param name=&quot;Clear&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
++        /// &lt;param name=&quot;recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
++        /// &lt;param name=&quot;items&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
++        /// &lt;param name=&quot;clear&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
+         /// &lt;returns&gt;The Request object for this download&lt;/returns&gt;
+         public DownloadRequest_Folder RequestDownloadContents(bool recurse, bool folders, bool items, bool clear)
+         {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -207,8 +207,7 @@
+         /// &lt;summary&gt;
+         /// Recursive helper function for public InventoryFolder getFolder(String sFolderPath)
+         /// &lt;/summary&gt;
+-        /// &lt;see cref=&quot;getFolder(string sFolderPath)&quot;/&gt;
+-        /// &lt;param name=&quot;qFolderPath&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;qFolderPath&quot;&gt;Queue&lt;\string\&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         private InventoryFolder getFolder(Queue&lt;string&gt; qFolderPath)
+         {
+@@ -253,8 +252,8 @@
+         /// &lt;summary&gt;
+         /// Create a folder
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;IncomingName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IncomingParentID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;parentid&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         internal InventoryFolder FolderCreate(String name, LLUUID parentid)
+         {
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-09 07:10:02 UTC (rev 824)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-09 07:19:44 UTC (rev 825)
+@@ -152,7 +152,7 @@
+         /// Get an avatar's name, either from the cache or request it.
+         /// This function is blocking
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;key&quot;&gt;Avatar key to look up&lt;/param&gt;
++        /// &lt;param name=&quot;id&quot;&gt;Avatar key to look up&lt;/param&gt;
+         /// &lt;returns&gt;The avatar name, or String.Empty if the lookup failed&lt;/returns&gt;
+         public string GetAvatarName(LLUUID id)
+         {
+@@ -191,10 +191,6 @@
+         //    BeginGetAvatarNames(ids);
+         //}
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;ids&quot;&gt;&lt;/param&gt;
+         //public void BeginGetAvatarNames(List&lt;LLUUID&gt; ids)
+         //{
+         //    Dictionary&lt;LLUUID, string&gt; havenames = new Dictionary&lt;LLUUID, string&gt;();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000228.html">[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+	<LI>Next message: <A HREF="000230.html">[Libsecondlife-commits] r826 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#229">[ date ]</a>
+              <a href="thread.html#229">[ thread ]</a>
+              <a href="subject.html#229">[ subject ]</a>
+              <a href="author.html#229">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

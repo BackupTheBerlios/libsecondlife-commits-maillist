@@ -1,0 +1,2002 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r695 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r695%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612090045.kB90jepM011604%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000052.html">
+   <LINK REL="Next"  HREF="000054.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r695 - trunk/libsecondlife-cs</H1>
+    <B>root66 at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r695%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612090045.kB90jepM011604%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r695 - trunk/libsecondlife-cs">root66 at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  9 01:45:40 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000052.html">[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+        <LI>Next message: <A HREF="000054.html">[Libsecondlife-commits] r696 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: root66
+Date: 2006-12-09 01:45:40 +0100 (Sat, 09 Dec 2006)
+New Revision: 695
+
+Added:
+   trunk/libsecondlife-cs/MainAvatar.cs
+Modified:
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Moved MainAvatar class to new MainAvatar.cs
+Mapped a few more dialog values in InstantMessageDialog
+
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2006-12-08 09:06:13 UTC (rev 694)
++++ trunk/libsecondlife-cs/Avatar.cs	2006-12-09 00:45:40 UTC (rev 695)
+@@ -99,12 +99,22 @@
+     /// &lt;/summary&gt;
+     public enum InstantMessageDialog
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
++        MessageFromAgent = 0,
++        /// &lt;summary&gt;Indicates that someone has given the user inventory&lt;/summary&gt;
++        GiveInventory = 4,
++        /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
++        MessageFromObject = 19,
++        /// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
+         RequestTeleport = 22,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+         AcceptTeleport = 23,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        DenyTeleport = 24
++        /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++        DenyTeleport = 24,
++        /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
++        StartTyping = 41,
++        /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
++        StopTyping = 42
+     }
+ 
+     /// &lt;summary&gt;
+@@ -279,921 +289,4 @@
+         protected const int TOTAL_CONTROLS = 32;
+     }
+ 
+-    /// &lt;summary&gt;
+-    /// Class to hold Client Avatar's data
+-    /// &lt;/summary&gt;
+-    public class MainAvatar
+-    {
+-        /// &lt;summary&gt;Callback for incoming chat packets&lt;/summary&gt;
+-        public event ChatCallback OnChat;
+-        /// &lt;summary&gt;Callback for incoming IMs&lt;/summary&gt;
+-        public event InstantMessageCallback OnInstantMessage;
+-        /// &lt;summary&gt;Callback for Teleport request update&lt;/summary&gt;
+-        public event TeleportCallback OnTeleport;
+-        /// &lt;summary&gt;Callback for incoming change in L$ balance&lt;/summary&gt;
+-        public event BalanceCallback OnBalanceUpdated;
+-
+-        /// &lt;summary&gt;Your (client) Avatar UUID, asset server&lt;/summary&gt;
+-        public LLUUID ID = LLUUID.Zero;
+-        /// &lt;summary&gt;Your (client) Avatar ID, local to Region/sim&lt;/summary&gt;
+-        public uint LocalID;
+-        /// &lt;summary&gt;Avatar First Name (i.e. Philip)&lt;/summary&gt;
+-        public string FirstName = &quot;&quot;;
+-        /// &lt;summary&gt;Avatar Last Name (i.e. Linden)&lt;/summary&gt;
+-        public string LastName = &quot;&quot;;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public string TeleportMessage;
+-        /// &lt;summary&gt;Current position of avatar&lt;/summary&gt;
+-        public LLVector3 Position = LLVector3.Zero;
+-        /// &lt;summary&gt;Current rotation of avatar&lt;/summary&gt;
+-        public LLQuaternion Rotation = LLQuaternion.Identity;
+-        /// &lt;summary&gt;The point the avatar is currently looking at
+-        /// (may not stay updated)&lt;/summary&gt;
+-        public LLVector3 LookAt = LLVector3.Zero;
+-        /// &lt;summary&gt;Position avatar client will goto when login to 'home' or during
+-        /// teleport request to 'home' region.&lt;/summary&gt;
+-        public LLVector3 HomePosition = LLVector3.Zero;
+-        /// &lt;summary&gt;LookAt point saved/restored with HomePosition&lt;/summary&gt;
+-        public LLVector3 HomeLookAt = LLVector3.Zero;
+-        /// &lt;summary&gt;Gets the health of the agent&lt;/summary&gt;
+-        protected float health;
+-        public float Health
+-        {
+-            get { return health; }
+-        }
+-        /// &lt;summary&gt;Gets the current balance of the agent&lt;/summary&gt;
+-        protected int balance;
+-        public int Balance
+-        {
+-            get { return balance; }
+-        }
+-
+-        private SecondLife Client;
+-        private TeleportCallback OnBeginTeleport;
+-        private TeleportStatus TeleportStat;
+-        private Timer TeleportTimer;
+-        private bool TeleportTimeout;
+-        private uint HeightWidthGenCounter;
+-
+-        /// &lt;summary&gt;
+-        /// Constructor, aka 'CallBack Central' - Setup callbacks for packets related to our avatar
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+-        public MainAvatar(SecondLife client)
+-        {
+-            NetworkManager.PacketCallback callback;
+-            Client = client;
+-            TeleportMessage = &quot;&quot;;
+-
+-            // Coarse location callback
+-            Client.Network.RegisterCallback(PacketType.CoarseLocationUpdate, new NetworkManager.PacketCallback(CoarseLocationHandler));
+-
+-            // Teleport callbacks
+-            callback = new NetworkManager.PacketCallback(TeleportHandler);
+-            Client.Network.RegisterCallback(PacketType.TeleportStart, callback);
+-            Client.Network.RegisterCallback(PacketType.TeleportProgress, callback);
+-            Client.Network.RegisterCallback(PacketType.TeleportFailed, callback);
+-            Client.Network.RegisterCallback(PacketType.TeleportFinish, callback);
+-
+-            // Instant Message callback
+-            Client.Network.RegisterCallback(PacketType.ImprovedInstantMessage, new NetworkManager.PacketCallback(InstantMessageHandler));
+-
+-            // Chat callback
+-            Client.Network.RegisterCallback(PacketType.ChatFromSimulator, new NetworkManager.PacketCallback(ChatHandler));
+-
+-            TeleportTimer = new Timer(18000);
+-            TeleportTimer.Elapsed += new ElapsedEventHandler(TeleportTimerEvent);
+-            TeleportTimeout = false;
+-
+-            // Movement complete callback
+-            Client.Network.RegisterCallback(PacketType.AgentMovementComplete, new NetworkManager.PacketCallback(MovementCompleteHandler));
+-
+-            // Health callback
+-            Client.Network.RegisterCallback(PacketType.HealthMessage, new NetworkManager.PacketCallback(HealthHandler));
+-
+-            // Money callbacks
+-            callback = new NetworkManager.PacketCallback(BalanceHandler);
+-            Client.Network.RegisterCallback(PacketType.MoneyBalanceReply, callback);
+-            Client.Network.RegisterCallback(PacketType.MoneySummaryReply, callback);
+-            Client.Network.RegisterCallback(PacketType.AdjustBalance, callback);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+-        public void InstantMessage(LLUUID target, string message)
+-        {
+-            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, LLUUID.Random());
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
+-        public void InstantMessage(LLUUID target, string message, LLUUID IMSessionID)
+-        {
+-            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, IMSessionID);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;fromName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;sessionID&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+-        public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message, LLUUID[] conferenceIDs)
+-        {
+-            InstantMessage(fromName, sessionID, target, message, conferenceIDs, LLUUID.Random());
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Generate an Instant Message (Full Arguments).
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;UUID of target Av.&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
+-        /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
+-        /// 
+-        /// TODO: Have fromName grabbed from elsewhere and remove argument, to prevent inadvertant spoofing.
+-        /// 
+-        public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message, 
+-            LLUUID[] conferenceIDs, LLUUID IMSessionID)
+-        {
+-            ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
+-            im.AgentData.AgentID = this.ID;
+-            im.AgentData.SessionID = Client.Network.SessionID;
+-            im.MessageBlock.Dialog = 0;
+-            im.MessageBlock.FromAgentName = Helpers.StringToField(fromName);
+-            im.MessageBlock.FromGroup = false;
+-            im.MessageBlock.ID = IMSessionID;
+-            im.MessageBlock.Message = Helpers.StringToField(message);
+-            im.MessageBlock.Offline = 1;
+-            im.MessageBlock.ToAgentID = target;
+-            if (conferenceIDs != null &amp;&amp; conferenceIDs.Length &gt; 0)
+-            {
+-                im.MessageBlock.BinaryBucket = new byte[16 * conferenceIDs.Length];
+-
+-                for (int i = 0; i &lt; conferenceIDs.Length; ++i)
+-                {
+-                    Array.Copy(conferenceIDs[i].Data, 0, im.MessageBlock.BinaryBucket, i * 16, 16);
+-                }
+-            }
+-            else
+-            {
+-                im.MessageBlock.BinaryBucket = new byte[0];
+-            }
+-
+-            // These fields are mandatory, even if we don't have valid values for them
+-            im.MessageBlock.Position = LLVector3.Zero;
+-                //TODO: Allow region id to be correctly set by caller or fetched from Client.*
+-            im.MessageBlock.RegionID = LLUUID.Zero; 
+-
+-
+-            // Send the message
+-            Client.Network.SendPacket((Packet)im);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Conversion type to denote Chat Packet types in an easier-to-understand format
+-        /// &lt;/summary&gt;
+-        public enum ChatType
+-        {
+-            /// &lt;summary&gt;Whispers (5m radius)&lt;/summary&gt;
+-            Whisper = 0,
+-            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
+-            Normal = 1,
+-            /// &lt;summary&gt;Shouting! (100m radius)&lt;/summary&gt;
+-            Shout = 2,
+-            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
+-            Say = 3,
+-            /// &lt;summary&gt;Event message when an Avatar has begun to type&lt;/summary&gt;
+-            StartTyping = 4,
+-            /// &lt;summary&gt;Event message when an Avatar has stopped typing&lt;/summary&gt;
+-            StopTyping = 5
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Send a Chat message.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;The Message you're sending out.&lt;/param&gt;
+-        /// &lt;param name=&quot;channel&quot;&gt;Channel number (0 would be default 'Say' message, other numbers 
+-        /// denote the equivalent of /# in normal client).&lt;/param&gt;
+-        /// &lt;param name=&quot;type&quot;&gt;Chat Type, see above.&lt;/param&gt;
+-        public void Chat(string message, int channel, ChatType type)
+-        {
+-            ChatFromViewerPacket chat = new ChatFromViewerPacket();
+-            chat.AgentData.AgentID = this.ID;
+-            chat.AgentData.SessionID = Client.Network.SessionID;
+-            chat.ChatData.Channel = channel;
+-            chat.ChatData.Message = Helpers.StringToField(message);
+-            chat.ChatData.Type = (byte)type;
+-
+-            Client.Network.SendPacket((Packet)chat);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Set the height and the width of your avatar. This is used to scale
+-        /// the avatar mesh.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;height&quot;&gt;New height of the avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;width&quot;&gt;New width of the avatar&lt;/param&gt;
+-        public void SetHeightWidth(ushort height, ushort width)
+-        {
+-            AgentHeightWidthPacket heightwidth = new AgentHeightWidthPacket();
+-            heightwidth.AgentData.AgentID = Client.Network.AgentID;
+-            heightwidth.AgentData.SessionID = Client.Network.SessionID;
+-            heightwidth.AgentData.CircuitCode = Client.Network.CurrentSim.CircuitCode;
+-            heightwidth.HeightWidthBlock.Height = height;
+-            heightwidth.HeightWidthBlock.Width = width;
+-            heightwidth.HeightWidthBlock.GenCounter = HeightWidthGenCounter++;
+-
+-            Client.Network.SendPacket((Packet)heightwidth);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Sends a request to sit on the specified object
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;targetID&quot;&gt;LLUUID of the object to sit on&lt;/param&gt;
+-        /// &lt;param name=&quot;offset&quot;&gt;Sit at offset&lt;/param&gt;
+-        public void RequestSit(LLUUID targetID, LLVector3 offset)
+-        {
+-            AgentRequestSitPacket requestSit = new AgentRequestSitPacket();
+-            requestSit.AgentData.AgentID = Client.Network.AgentID;
+-            requestSit.AgentData.SessionID = Client.Network.SessionID;
+-            requestSit.TargetObject.TargetID = targetID;
+-            requestSit.TargetObject.Offset = offset;
+-            Client.Network.SendPacket(requestSit);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Follows a call to RequestSit() to actually sit on the object
+-        /// &lt;/summary&gt;
+-        public void Sit()
+-        {
+-            AgentSitPacket sit = new AgentSitPacket();
+-            sit.AgentData.AgentID = Client.Network.AgentID;
+-            sit.AgentData.SessionID = Client.Network.SessionID;
+-            Client.Network.SendPacket(sit);
+-        }
+-        
+-        /// &lt;summary&gt;
+-        /// Give Money to destination Avatar
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;UUID of the Target Avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;amount&quot;&gt;Amount in L$&lt;/param&gt;
+-        /// &lt;param name=&quot;description&quot;&gt;Reason (optional normally)&lt;/param&gt;
+-        public void GiveMoney(LLUUID target, int amount, string description)
+-        {
+-            // 5001 - transaction type for av to av money transfers
+-            
+-            GiveMoney(target, amount, description, 5001);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Toggle running on or off
+-        /// &lt;/summary&gt;
+-        public void SetAlwaysRun(bool running)
+-        {
+-            SetAlwaysRunPacket run = new SetAlwaysRunPacket();
+-            run.AgentData.AgentID = Client.Network.AgentID;
+-            run.AgentData.SessionID = Client.Network.SessionID;
+-            run.AgentData.AlwaysRun = running;
+-            Client.Network.SendPacket(run);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Give Money to destionation Object or Avatar
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;UUID of the Target Object/Avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;amount&quot;&gt;Amount in L$&lt;/param&gt;
+-        /// &lt;param name=&quot;description&quot;&gt;Reason (Optional normally)&lt;/param&gt;
+-        /// &lt;param name=&quot;transactiontype&quot;&gt;The type of transaction.  Currently only 5001 is
+-        /// documented for Av-&gt;Av money transfers.&lt;/param&gt;
+-        public void GiveMoney(LLUUID target, int amount, string description, int transactiontype)
+-        {
+-            MoneyTransferRequestPacket money = new MoneyTransferRequestPacket();
+-            money.AgentData.AgentID = this.ID;
+-            money.AgentData.SessionID = Client.Network.SessionID;
+-            money.MoneyData.Description = Helpers.StringToField(description);
+-            money.MoneyData.DestID = target;
+-            money.MoneyData.SourceID = this.ID;
+-            money.MoneyData.TransactionType = transactiontype;
+-            money.MoneyData.AggregatePermInventory = 0; //TODO: whats this?
+-            money.MoneyData.AggregatePermNextOwner = 0; //TODO: whats this?
+-            money.MoneyData.Flags = 0; //TODO: whats this?
+-            money.MoneyData.Amount = amount;
+-
+-            Client.Network.SendPacket((Packet)money);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Send an AgentAnimation packet that will toggle animations on or off
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;animations&quot;&gt;A list of animation UUIDs, and whether to
+-        /// turn that animation on or off&lt;/param&gt;
+-        public void Animate(Dictionary&lt;LLUUID, bool&gt; animations)
+-        {
+-            AgentAnimationPacket animate = new AgentAnimationPacket();
+-
+-            animate.AgentData.AgentID = Client.Network.AgentID;
+-            animate.AgentData.SessionID = Client.Network.SessionID;
+-            animate.AnimationList = new AgentAnimationPacket.AnimationListBlock[animations.Count];
+-            int i = 0;
+-
+-            foreach (KeyValuePair&lt;LLUUID, bool&gt; animation in animations)
+-            {
+-                animate.AnimationList[i] = new AgentAnimationPacket.AnimationListBlock();
+-                animate.AnimationList[i].AnimID = animation.Key;
+-                animate.AnimationList[i].StartAnim = animation.Value;
+-
+-                i++;
+-            }
+-
+-            Client.Network.SendPacket(animate);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Use the autopilot sim function to move the avatar to a new position
+-        /// &lt;/summary&gt;
+-        /// &lt;remarks&gt;The z value is currently not handled properly by the simulator&lt;/remarks&gt;
+-        /// &lt;param name=&quot;globalX&quot;&gt;Integer value for the global X coordinate to move to&lt;/param&gt;
+-        /// &lt;param name=&quot;globalY&quot;&gt;Integer value for the global Y coordinate to move to&lt;/param&gt;
+-        /// &lt;param name=&quot;z&quot;&gt;Floating-point value for the Z coordinate to move to&lt;/param&gt;
+-        /// &lt;example&gt;AutoPilot(252620, 247078, 20.2674);&lt;/example&gt;
+-        public void AutoPilot(ulong globalX, ulong globalY, float z)
+-        {
+-            GenericMessagePacket autopilot = new GenericMessagePacket();
+-
+-            autopilot.AgentData.AgentID = Client.Network.AgentID;
+-            autopilot.AgentData.SessionID = Client.Network.SessionID;
+-            autopilot.MethodData.Invoice = LLUUID.Zero;
+-            autopilot.MethodData.Method = Helpers.StringToField(&quot;autopilot&quot;);
+-            autopilot.ParamList = new GenericMessagePacket.ParamListBlock[3];
+-            autopilot.ParamList[0] = new GenericMessagePacket.ParamListBlock();
+-            autopilot.ParamList[0].Parameter = Helpers.StringToField(globalX.ToString());
+-            autopilot.ParamList[1] = new GenericMessagePacket.ParamListBlock();
+-            autopilot.ParamList[1].Parameter = Helpers.StringToField(globalY.ToString());
+-            autopilot.ParamList[2] = new GenericMessagePacket.ParamListBlock();
+-            // TODO: Do we need to prevent z coordinates from being sent in 1.4827e-18 notation?
+-            autopilot.ParamList[2].Parameter = Helpers.StringToField(z.ToString());
+-
+-            Client.Network.SendPacket(autopilot);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Use the autopilot sim function to move the avatar to a new position
+-        /// &lt;/summary&gt;
+-        /// &lt;remarks&gt;The z value is currently not handled properly by the simulator&lt;/remarks&gt;
+-        /// &lt;param name=&quot;localX&quot;&gt;Integer value for the local X coordinate to move to&lt;/param&gt;
+-        /// &lt;param name=&quot;localY&quot;&gt;Integer value for the local Y coordinate to move to&lt;/param&gt;
+-        /// &lt;param name=&quot;z&quot;&gt;Floating-point value for the Z coordinate to move to&lt;/param&gt;
+-        /// &lt;example&gt;AutoPilot(252620, 247078, 20.2674);&lt;/example&gt;
+-        public void AutoPilotLocal(int localX, int localY, float z)
+-        {
+-            GridRegion gr = Client.Network.CurrentSim.Region.GridRegionData;
+-            ulong GridCornerX = ((ulong)gr.X * (ulong)256) + (ulong)localX;
+-            ulong GridCornerY = ((ulong)gr.Y * (ulong)256) + (ulong)localY;
+-            AutoPilot(GridCornerX, GridCornerY, z);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
+-        public void BeginTeleport(ulong regionHandle, LLVector3 position, TeleportCallback tc)
+-        {
+-            BeginTeleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z), tc);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
+-        public void BeginTeleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt, TeleportCallback tc)
+-        {
+-            OnBeginTeleport = tc;
+-
+-            TeleportLocationRequestPacket teleport = new TeleportLocationRequestPacket();
+-            teleport.AgentData.AgentID = Client.Network.AgentID;
+-            teleport.AgentData.SessionID = Client.Network.SessionID;
+-            teleport.Info.LookAt = lookAt;
+-            teleport.Info.Position = position;
+-            teleport.Info.RegionHandle = regionHandle;
+-
+-            Client.Log(&quot;Teleporting to region &quot; + regionHandle.ToString(), Helpers.LogLevel.Info);
+-
+-            Client.Network.SendPacket(teleport);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool Teleport(ulong regionHandle, LLVector3 position)
+-        {
+-            return Teleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z));
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool Teleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt)
+-        {
+-            TeleportStat = TeleportStatus.None;
+-
+-            TeleportLocationRequestPacket teleport = new TeleportLocationRequestPacket();
+-            teleport.AgentData.AgentID = Client.Network.AgentID;
+-            teleport.AgentData.SessionID = Client.Network.SessionID;
+-            teleport.Info.LookAt = lookAt;
+-            teleport.Info.Position = position;
+-            
+-            teleport.Info.RegionHandle = regionHandle;
+-
+-            Client.Log(&quot;Teleporting to region &quot; + regionHandle.ToString(), Helpers.LogLevel.Info);
+-
+-            // Start the timeout check
+-            TeleportTimeout = false;
+-            TeleportTimer.Start();
+-
+-            Client.Network.SendPacket(teleport);
+-
+-            while (TeleportStat != TeleportStatus.Failed &amp;&amp; TeleportStat != TeleportStatus.Finished &amp;&amp; !TeleportTimeout)
+-            {
+-                Client.Tick();
+-            }
+-
+-            TeleportTimer.Stop();
+-
+-            if (TeleportTimeout)
+-            {
+-                TeleportMessage = &quot;Teleport timed out.&quot;;
+-                TeleportStat = TeleportStatus.Failed;
+-
+-                if (OnTeleport != null) { OnTeleport(TeleportMessage, TeleportStat); }
+-            }
+-            else
+-            {
+-                if (OnTeleport != null) { OnTeleport(TeleportMessage, TeleportStat); }
+-            }
+-
+-            return (TeleportStat == TeleportStatus.Finished);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool Teleport(string simName, LLVector3 position)
+-        {
+-            //position.Z = 0; //why was this here?
+-            return Teleport(simName, position, new LLVector3(0, 1.0F, 0));
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool Teleport(string simName, LLVector3 position, LLVector3 lookAt)
+-        {
+-            int attempts = 0;
+-            TeleportStat = TeleportStatus.None;
+-
+-            simName = simName.ToLower();
+-
+-            GridRegion region = Client.Grid.GetGridRegion(simName);
+-
+-            if (region != null)
+-            {
+-                return Teleport(region.RegionHandle, position, lookAt);
+-            }
+-            else
+-            {
+-                while (attempts++ &lt; 5)
+-                {
+-                    region = Client.Grid.GetGridRegion(simName);
+-
+-                    if (region != null)
+-                    {
+-                        return Teleport(region.RegionHandle, position, lookAt);
+-                    }
+-                    else
+-                    {
+-                        // Request the region info again
+-                        Client.Grid.AddSim(simName);
+-                        
+-                        System.Threading.Thread.Sleep(1000);
+-                    }
+-                }
+-            }
+-
+-            if (OnTeleport != null)
+-            {
+-                TeleportMessage = &quot;Unable to resolve name: &quot; + simName;
+-                TeleportStat = TeleportStatus.Failed;
+-                OnTeleport(TeleportMessage, TeleportStat);
+-            }
+-
+-            return false;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Respond to a teleport lure by either accepting it and initiating 
+-        /// the teleport, or denying it
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;requesterID&quot;&gt;UUID of the avatar requesting the teleport&lt;/param&gt;
+-        /// &lt;param name=&quot;accept&quot;&gt;Accept the teleport request or deny it&lt;/param&gt;
+-        public void TeleportLureRespond(LLUUID requesterID, bool accept)
+-        {
+-            ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
+-
+-            im.AgentData.AgentID = Client.Network.AgentID;
+-            im.AgentData.SessionID = Client.Network.SessionID;
+-            im.MessageBlock.BinaryBucket = new byte[0];
+-            im.MessageBlock.FromAgentName = Helpers.StringToField(this.FirstName + &quot; &quot; + this.LastName);
+-            im.MessageBlock.FromGroup = false;
+-            im.MessageBlock.ID = Client.Network.AgentID;
+-            im.MessageBlock.Message = new byte[0];
+-            im.MessageBlock.Offline = 0;
+-            im.MessageBlock.ParentEstateID = 0;
+-            im.MessageBlock.Position = this.Position;
+-            im.MessageBlock.RegionID = LLUUID.Zero;
+-            im.MessageBlock.Timestamp = 0;
+-            im.MessageBlock.ToAgentID = requesterID;
+-
+-            if (accept)
+-            {
+-                im.MessageBlock.Dialog = (byte)InstantMessageDialog.AcceptTeleport;
+-                
+-                Client.Network.SendPacket(im);
+-
+-                TeleportLureRequestPacket lure = new TeleportLureRequestPacket();
+-
+-                lure.Info.AgentID = Client.Network.AgentID;
+-                lure.Info.SessionID = Client.Network.SessionID;
+-                lure.Info.LureID = Client.Network.AgentID;
+-                lure.Info.TeleportFlags = 4; // TODO: What does this mean?
+-
+-                Client.Network.SendPacket(lure);
+-            }
+-            else
+-            {
+-                im.MessageBlock.Dialog = (byte)InstantMessageDialog.DenyTeleport;
+-
+-                Client.Network.SendPacket(im);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Grabs an object
+-        /// &lt;/summary&gt;
+-        public void Grab(uint objectLocalID)
+-        {
+-            ObjectGrabPacket grab = new ObjectGrabPacket();
+-            grab.AgentData.AgentID = Client.Network.AgentID;
+-            grab.AgentData.SessionID = Client.Network.SessionID;
+-            grab.ObjectData.LocalID = objectLocalID;
+-            grab.ObjectData.GrabOffset = new LLVector3(0, 0, 0);
+-            Client.Network.SendPacket(grab);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Drags on an object
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;objectID&quot;&gt;Strangely, LLUID instead of local ID&lt;/param&gt;
+-        /// &lt;param name=&quot;grabPosition&quot;&gt;Drag target in region coordinates&lt;/param&gt;
+-        public void GrabUpdate(LLUUID objectID, LLVector3 grabPosition)
+-        {
+-            ObjectGrabUpdatePacket grab = new ObjectGrabUpdatePacket();
+-            grab.AgentData.AgentID = Client.Network.AgentID;
+-            grab.AgentData.SessionID = Client.Network.SessionID;
+-            grab.ObjectData.ObjectID = objectID;
+-            grab.ObjectData.GrabOffsetInitial = new LLVector3(0, 0, 0);
+-            grab.ObjectData.GrabPosition = grabPosition;
+-            grab.ObjectData.TimeSinceLast = 0;
+-            Client.Network.SendPacket(grab);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Releases a grabbed object
+-        /// &lt;/summary&gt;
+-        public void DeGrab(uint objectLocalID)
+-        {
+-            ObjectDeGrabPacket degrab = new ObjectDeGrabPacket();
+-            degrab.AgentData.AgentID = Client.Network.AgentID;
+-            degrab.AgentData.SessionID = Client.Network.SessionID;
+-            degrab.ObjectData.LocalID = objectLocalID;
+-            Client.Network.SendPacket(degrab);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Touches an object
+-        /// &lt;/summary&gt;
+-        public void Touch(uint objectLocalID)
+-        {
+-            Client.Self.Grab(objectLocalID);
+-            Client.Self.DeGrab(objectLocalID);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+-        public void CompleteAgentMovement(Simulator simulator)
+-        {
+-            CompleteAgentMovementPacket move = new CompleteAgentMovementPacket();
+-
+-            move.AgentData.AgentID = Client.Network.AgentID;
+-            move.AgentData.SessionID = Client.Network.SessionID;
+-            move.AgentData.CircuitCode = simulator.CircuitCode;
+-
+-            Client.Network.SendPacket(move, simulator);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;reliable&quot;&gt;&lt;/param&gt;
+-        public void UpdateCamera(Avatar.AgentUpdateFlags controlFlags, LLVector3 position, LLVector3 forwardAxis,
+-            LLVector3 leftAxis, LLVector3 upAxis, LLQuaternion bodyRotation, LLQuaternion headRotation, float farClip,
+-            bool reliable)
+-        {
+-            AgentUpdatePacket update = new AgentUpdatePacket();
+-            update.AgentData.AgentID = Client.Network.AgentID;
+-            update.AgentData.SessionID = Client.Network.SessionID;
+-            update.AgentData.State = 0;
+-            // Semi-sane default values
+-            update.AgentData.BodyRotation = bodyRotation; //new LLQuaternion(0, 0.6519076f, 0, 0);
+-            update.AgentData.HeadRotation = headRotation; //LLQuaternion.Identity;
+-            update.AgentData.CameraCenter = position; //new LLVector3(9.549901f, 7.033957f, 11.75f);
+-            update.AgentData.CameraAtAxis = forwardAxis; //new LLVector3(0.7f, 0.7f, 0);
+-            update.AgentData.CameraLeftAxis = leftAxis; //new LLVector3(-0.7f, 0.7f, 0);
+-            update.AgentData.CameraUpAxis = upAxis; //new LLVector3(0.1822026f, 0.9828722f, 0);
+-            update.AgentData.Far = farClip;
+-            update.AgentData.ControlFlags = (uint)controlFlags;
+-            update.AgentData.Flags = 0;
+-            update.Header.Reliable = reliable;
+-
+-            Client.Network.SendPacket(update);
+-
+-            // Send an AgentFOV packet widening our field of vision
+-            /*AgentFOVPacket fovPacket = new AgentFOVPacket();
+-            fovPacket.AgentData.AgentID = this.ID;
+-            fovPacket.AgentData.SessionID = Client.Network.SessionID;
+-            fovPacket.AgentData.CircuitCode = simulator.CircuitCode;
+-            fovPacket.FOVBlock.GenCounter = 0;
+-            fovPacket.FOVBlock.VerticalAngle = 6.28318531f;
+-            fovPacket.Header.Reliable = true;
+-            Client.Network.SendPacket((Packet)fovPacket);*/
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// [UNUSED - for now]
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+-        private void CoarseLocationHandler(Packet packet, Simulator simulator)
+-        {
+-            // TODO: This will be useful one day
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Take an incoming ImprovedInstantMessage packet, auto-parse, and if
+-        ///   OnInstantMessage is defined call that with the appropriate arguments.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Incoming ImprovedInstantMessagePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
+-        private void InstantMessageHandler(Packet packet, Simulator simulator)
+-        {
+-            if (packet.Type == PacketType.ImprovedInstantMessage)
+-            {
+-                ImprovedInstantMessagePacket im = (ImprovedInstantMessagePacket)packet;
+-                
+-                if (OnInstantMessage != null)
+-                {
+-                    OnInstantMessage(
+-                        im.AgentData.AgentID
+-                        , Helpers.FieldToString(im.MessageBlock.FromAgentName),
+-                        im.MessageBlock.ToAgentID
+-                        , im.MessageBlock.ParentEstateID
+-                        , im.MessageBlock.RegionID
+-                        , im.MessageBlock.Position
+-                        , im.MessageBlock.Dialog
+-                        , im.MessageBlock.FromGroup
+-                        , im.MessageBlock.ID
+-                        , new DateTime(im.MessageBlock.Timestamp)
+-                        , Helpers.FieldToString(im.MessageBlock.Message)
+-                        , im.MessageBlock.Offline
+-                        , im.MessageBlock.BinaryBucket
+-                        );
+-                }
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Take an incoming Chat packet, auto-parse, and if OnChat is defined call 
+-        ///   that with the appropriate arguments.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Incoming ChatFromSimulatorPacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
+-        private void ChatHandler(Packet packet, Simulator simulator)
+-        {
+-            if (packet.Type == PacketType.ChatFromSimulator)
+-            {
+-                ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
+-
+-                if (OnChat != null)
+-                {
+-                    OnChat(Helpers.FieldToString(chat.ChatData.Message)
+-                            , chat.ChatData.Audible
+-                            , chat.ChatData.ChatType
+-                            , chat.ChatData.SourceType
+-                            , Helpers.FieldToString(chat.ChatData.FromName)
+-                            , chat.ChatData.SourceID
+-                            , chat.ChatData.OwnerID
+-                            , chat.ChatData.Position
+-                            );
+-                }
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Update client's Position and LookAt from incoming packet
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Incoming AgentMovementCompletePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
+-        private void MovementCompleteHandler(Packet packet, Simulator simulator)
+-        {
+-            AgentMovementCompletePacket movement = (AgentMovementCompletePacket)packet;
+-
+-            this.Position = movement.Data.Position;
+-            this.LookAt = movement.Data.LookAt;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Update Client Avatar's health via incoming packet
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Incoming HealthMessagePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
+-        private void HealthHandler(Packet packet, Simulator simulator)
+-        {
+-            health = ((HealthMessagePacket)packet).HealthData.Health;
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Update Client Avatar's L$ balance from incoming packet
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Incoming MoneyBalanceReplyPacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
+-        private void BalanceHandler(Packet packet, Simulator simulator)
+-        {
+-            if (packet.Type == PacketType.MoneyBalanceReply)
+-            {
+-                balance = ((MoneyBalanceReplyPacket)packet).MoneyData.MoneyBalance;
+-            }
+-            else if (packet.Type == PacketType.MoneySummaryReply)
+-            {
+-                balance = ((MoneySummaryReplyPacket)packet).MoneyData.Balance;
+-            }
+-            else if (packet.Type == PacketType.AdjustBalance)
+-            {
+-                balance += ((AdjustBalancePacket)packet).AgentData.Delta;
+-            }
+-
+-            if (OnBalanceUpdated != null)
+-            {
+-                OnBalanceUpdated(balance);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+-        private void TeleportHandler(Packet packet, Simulator simulator)
+-        {
+-            if (packet.Type == PacketType.TeleportStart)
+-            {
+-                Client.DebugLog(&quot;TeleportStart received from &quot; + simulator.ToString());
+-
+-                TeleportMessage = &quot;Teleport started&quot;;
+-                TeleportStat = TeleportStatus.Start;
+-
+-                if (OnBeginTeleport != null)
+-                {
+-                    OnBeginTeleport(TeleportMessage, TeleportStat);
+-                }
+-            }
+-            else if (packet.Type == PacketType.TeleportProgress)
+-            {
+-                Client.DebugLog(&quot;TeleportProgress received from &quot; + simulator.ToString());
+-
+-                TeleportMessage = Helpers.FieldToString(((TeleportProgressPacket)packet).Info.Message);
+-                TeleportStat = TeleportStatus.Progress;
+-
+-                if (OnBeginTeleport != null)
+-                {
+-                    OnBeginTeleport(TeleportMessage, TeleportStat);
+-                }
+-            }
+-            else if (packet.Type == PacketType.TeleportFailed)
+-            {
+-                Client.DebugLog(&quot;TeleportFailed received from &quot; + simulator.ToString());
+-
+-                TeleportMessage = Helpers.FieldToString(((TeleportFailedPacket)packet).Info.Reason);
+-                TeleportStat = TeleportStatus.Failed;
+-
+-                if (OnBeginTeleport != null)
+-                {
+-                    OnBeginTeleport(TeleportMessage, TeleportStat);
+-                }
+-
+-                OnBeginTeleport = null;
+-            }
+-            else if (packet.Type == PacketType.TeleportFinish)
+-            {
+-                Client.DebugLog(&quot;TeleportFinish received from &quot; + simulator.ToString());
+-
+-                TeleportFinishPacket finish = (TeleportFinishPacket)packet;
+-
+-                // Connect to the new sim
+-                Simulator sim = Client.Network.Connect(new IPAddress((long)finish.Info.SimIP), finish.Info.SimPort, 
+-                    simulator.CircuitCode, true);
+-                
+-                if (sim != null)
+-                {
+-                    TeleportMessage = &quot;Teleport finished&quot;;
+-                    TeleportStat = TeleportStatus.Finished;
+-
+-                    // Move the avatar in to the new sim
+-                    CompleteAgentMovementPacket move = new CompleteAgentMovementPacket();
+-                    move.AgentData.AgentID = Client.Network.AgentID;
+-                    move.AgentData.SessionID = Client.Network.SessionID;
+-                    move.AgentData.CircuitCode = simulator.CircuitCode;
+-                    Client.Network.SendPacket(move, sim);
+-
+-                    Client.Log(&quot;Moved to new sim &quot; + sim.ToString(), Helpers.LogLevel.Info);
+-
+-                    if (OnBeginTeleport != null)
+-                    {
+-                        OnBeginTeleport(TeleportMessage, TeleportStat);
+-                    }
+-                    else
+-                    {
+-                        // Sleep a little while so we can collect parcel information
+-                        // FIXME: This doesn't belong in libsecondlife
+-                        System.Threading.Thread.Sleep(1000);
+-                    }
+-                }
+-                else
+-                {
+-                    TeleportMessage = &quot;Failed to connect to the new sim after a teleport&quot;;
+-                    TeleportStat = TeleportStatus.Failed;
+-
+-                    Client.Log(TeleportMessage, Helpers.LogLevel.Warning);
+-
+-                    if (OnBeginTeleport != null)
+-                    {
+-                        OnBeginTeleport(TeleportMessage, TeleportStat);
+-                    }
+-                }
+-
+-                OnBeginTeleport = null;
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;ea&quot;&gt;&lt;/param&gt;
+-        private void TeleportTimerEvent(object source, System.Timers.ElapsedEventArgs ea)
+-        {
+-            TeleportTimeout = true;
+-        }
+-    }
+ }
+
+Added: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-08 09:06:13 UTC (rev 694)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-09 00:45:40 UTC (rev 695)
+@@ -0,0 +1,954 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Timers;
++using System.Net;
++using System.Collections.Generic;
++using libsecondlife.Packets;
++
++namespace libsecondlife
++{
++
++    /// &lt;summary&gt;
++    /// Class to hold Client Avatar's data
++    /// &lt;/summary&gt;
++    public class MainAvatar
++    {
++        /// &lt;summary&gt;Callback for incoming chat packets&lt;/summary&gt;
++        public event ChatCallback OnChat;
++        /// &lt;summary&gt;Callback for incoming IMs&lt;/summary&gt;
++        public event InstantMessageCallback OnInstantMessage;
++        /// &lt;summary&gt;Callback for Teleport request update&lt;/summary&gt;
++        public event TeleportCallback OnTeleport;
++        /// &lt;summary&gt;Callback for incoming change in L$ balance&lt;/summary&gt;
++        public event BalanceCallback OnBalanceUpdated;
++
++        /// &lt;summary&gt;Your (client) Avatar UUID, asset server&lt;/summary&gt;
++        public LLUUID ID = LLUUID.Zero;
++        /// &lt;summary&gt;Your (client) Avatar ID, local to Region/sim&lt;/summary&gt;
++        public uint LocalID;
++        /// &lt;summary&gt;Avatar First Name (i.e. Philip)&lt;/summary&gt;
++        public string FirstName = &quot;&quot;;
++        /// &lt;summary&gt;Avatar Last Name (i.e. Linden)&lt;/summary&gt;
++        public string LastName = &quot;&quot;;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public string TeleportMessage;
++        /// &lt;summary&gt;Current position of avatar&lt;/summary&gt;
++        public LLVector3 Position = LLVector3.Zero;
++        /// &lt;summary&gt;Current rotation of avatar&lt;/summary&gt;
++        public LLQuaternion Rotation = LLQuaternion.Identity;
++        /// &lt;summary&gt;The point the avatar is currently looking at
++        /// (may not stay updated)&lt;/summary&gt;
++        public LLVector3 LookAt = LLVector3.Zero;
++        /// &lt;summary&gt;Position avatar client will goto when login to 'home' or during
++        /// teleport request to 'home' region.&lt;/summary&gt;
++        public LLVector3 HomePosition = LLVector3.Zero;
++        /// &lt;summary&gt;LookAt point saved/restored with HomePosition&lt;/summary&gt;
++        public LLVector3 HomeLookAt = LLVector3.Zero;
++        /// &lt;summary&gt;Gets the health of the agent&lt;/summary&gt;
++        protected float health;
++        public float Health
++        {
++            get { return health; }
++        }
++        /// &lt;summary&gt;Gets the current balance of the agent&lt;/summary&gt;
++        protected int balance;
++        public int Balance
++        {
++            get { return balance; }
++        }
++
++        private SecondLife Client;
++        private TeleportCallback OnBeginTeleport;
++        private TeleportStatus TeleportStat;
++        private Timer TeleportTimer;
++        private bool TeleportTimeout;
++        private uint HeightWidthGenCounter;
++
++        /// &lt;summary&gt;
++        /// Constructor, aka 'CallBack Central' - Setup callbacks for packets related to our avatar
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
++        public MainAvatar(SecondLife client)
++        {
++            NetworkManager.PacketCallback callback;
++            Client = client;
++            TeleportMessage = &quot;&quot;;
++
++            // Coarse location callback
++            Client.Network.RegisterCallback(PacketType.CoarseLocationUpdate, new NetworkManager.PacketCallback(CoarseLocationHandler));
++
++            // Teleport callbacks
++            callback = new NetworkManager.PacketCallback(TeleportHandler);
++            Client.Network.RegisterCallback(PacketType.TeleportStart, callback);
++            Client.Network.RegisterCallback(PacketType.TeleportProgress, callback);
++            Client.Network.RegisterCallback(PacketType.TeleportFailed, callback);
++            Client.Network.RegisterCallback(PacketType.TeleportFinish, callback);
++
++            // Instant Message callback
++            Client.Network.RegisterCallback(PacketType.ImprovedInstantMessage, new NetworkManager.PacketCallback(InstantMessageHandler));
++
++            // Chat callback
++            Client.Network.RegisterCallback(PacketType.ChatFromSimulator, new NetworkManager.PacketCallback(ChatHandler));
++
++            TeleportTimer = new Timer(18000);
++            TeleportTimer.Elapsed += new ElapsedEventHandler(TeleportTimerEvent);
++            TeleportTimeout = false;
++
++            // Movement complete callback
++            Client.Network.RegisterCallback(PacketType.AgentMovementComplete, new NetworkManager.PacketCallback(MovementCompleteHandler));
++
++            // Health callback
++            Client.Network.RegisterCallback(PacketType.HealthMessage, new NetworkManager.PacketCallback(HealthHandler));
++
++            // Money callbacks
++            callback = new NetworkManager.PacketCallback(BalanceHandler);
++            Client.Network.RegisterCallback(PacketType.MoneyBalanceReply, callback);
++            Client.Network.RegisterCallback(PacketType.MoneySummaryReply, callback);
++            Client.Network.RegisterCallback(PacketType.AdjustBalance, callback);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        public void InstantMessage(LLUUID target, string message)
++        {
++            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, LLUUID.Random());
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
++        public void InstantMessage(LLUUID target, string message, LLUUID IMSessionID)
++        {
++            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, IMSessionID);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;fromName&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;sessionID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
++        public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message, LLUUID[] conferenceIDs)
++        {
++            InstantMessage(fromName, sessionID, target, message, conferenceIDs, LLUUID.Random());
++        }
++
++        /// &lt;summary&gt;
++        /// Generate an Instant Message (Full Arguments).
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;UUID of target Av.&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
++        /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
++        /// 
++        /// TODO: Have fromName grabbed from elsewhere and remove argument, to prevent inadvertant spoofing.
++        /// 
++        public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message,
++            LLUUID[] conferenceIDs, LLUUID IMSessionID)
++        {
++            ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
++            im.AgentData.AgentID = this.ID;
++            im.AgentData.SessionID = Client.Network.SessionID;
++            im.MessageBlock.Dialog = 0;
++            im.MessageBlock.FromAgentName = Helpers.StringToField(fromName);
++            im.MessageBlock.FromGroup = false;
++            im.MessageBlock.ID = IMSessionID;
++            im.MessageBlock.Message = Helpers.StringToField(message);
++            im.MessageBlock.Offline = 1;
++            im.MessageBlock.ToAgentID = target;
++            if (conferenceIDs != null &amp;&amp; conferenceIDs.Length &gt; 0)
++            {
++                im.MessageBlock.BinaryBucket = new byte[16 * conferenceIDs.Length];
++
++                for (int i = 0; i &lt; conferenceIDs.Length; ++i)
++                {
++                    Array.Copy(conferenceIDs[i].Data, 0, im.MessageBlock.BinaryBucket, i * 16, 16);
++                }
++            }
++            else
++            {
++                im.MessageBlock.BinaryBucket = new byte[0];
++            }
++
++            // These fields are mandatory, even if we don't have valid values for them
++            im.MessageBlock.Position = LLVector3.Zero;
++            //TODO: Allow region id to be correctly set by caller or fetched from Client.*
++            im.MessageBlock.RegionID = LLUUID.Zero;
++
++
++            // Send the message
++            Client.Network.SendPacket((Packet)im);
++        }
++
++        /// &lt;summary&gt;
++        /// Conversion type to denote Chat Packet types in an easier-to-understand format
++        /// &lt;/summary&gt;
++        public enum ChatType
++        {
++            /// &lt;summary&gt;Whispers (5m radius)&lt;/summary&gt;
++            Whisper = 0,
++            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
++            Normal = 1,
++            /// &lt;summary&gt;Shouting! (100m radius)&lt;/summary&gt;
++            Shout = 2,
++            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
++            Say = 3,
++            /// &lt;summary&gt;Event message when an Avatar has begun to type&lt;/summary&gt;
++            StartTyping = 4,
++            /// &lt;summary&gt;Event message when an Avatar has stopped typing&lt;/summary&gt;
++            StopTyping = 5
++        }
++
++        /// &lt;summary&gt;
++        /// Send a Chat message.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;message&quot;&gt;The Message you're sending out.&lt;/param&gt;
++        /// &lt;param name=&quot;channel&quot;&gt;Channel number (0 would be default 'Say' message, other numbers 
++        /// denote the equivalent of /# in normal client).&lt;/param&gt;
++        /// &lt;param name=&quot;type&quot;&gt;Chat Type, see above.&lt;/param&gt;
++        public void Chat(string message, int channel, ChatType type)
++        {
++            ChatFromViewerPacket chat = new ChatFromViewerPacket();
++            chat.AgentData.AgentID = this.ID;
++            chat.AgentData.SessionID = Client.Network.SessionID;
++            chat.ChatData.Channel = channel;
++            chat.ChatData.Message = Helpers.StringToField(message);
++            chat.ChatData.Type = (byte)type;
++
++            Client.Network.SendPacket((Packet)chat);
++        }
++
++        /// &lt;summary&gt;
++        /// Set the height and the width of your avatar. This is used to scale
++        /// the avatar mesh.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;height&quot;&gt;New height of the avatar&lt;/param&gt;
++        /// &lt;param name=&quot;width&quot;&gt;New width of the avatar&lt;/param&gt;
++        public void SetHeightWidth(ushort height, ushort width)
++        {
++            AgentHeightWidthPacket heightwidth = new AgentHeightWidthPacket();
++            heightwidth.AgentData.AgentID = Client.Network.AgentID;
++            heightwidth.AgentData.SessionID = Client.Network.SessionID;
++            heightwidth.AgentData.CircuitCode = Client.Network.CurrentSim.CircuitCode;
++            heightwidth.HeightWidthBlock.Height = height;
++            heightwidth.HeightWidthBlock.Width = width;
++            heightwidth.HeightWidthBlock.GenCounter = HeightWidthGenCounter++;
++
++            Client.Network.SendPacket((Packet)heightwidth);
++        }
++
++        /// &lt;summary&gt;
++        /// Sends a request to sit on the specified object
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;targetID&quot;&gt;LLUUID of the object to sit on&lt;/param&gt;
++        /// &lt;param name=&quot;offset&quot;&gt;Sit at offset&lt;/param&gt;
++        public void RequestSit(LLUUID targetID, LLVector3 offset)
++        {
++            AgentRequestSitPacket requestSit = new AgentRequestSitPacket();
++            requestSit.AgentData.AgentID = Client.Network.AgentID;
++            requestSit.AgentData.SessionID = Client.Network.SessionID;
++            requestSit.TargetObject.TargetID = targetID;
++            requestSit.TargetObject.Offset = offset;
++            Client.Network.SendPacket(requestSit);
++        }
++
++        /// &lt;summary&gt;
++        /// Follows a call to RequestSit() to actually sit on the object
++        /// &lt;/summary&gt;
++        public void Sit()
++        {
++            AgentSitPacket sit = new AgentSitPacket();
++            sit.AgentData.AgentID = Client.Network.AgentID;
++            sit.AgentData.SessionID = Client.Network.SessionID;
++            Client.Network.SendPacket(sit);
++        }
++
++        /// &lt;summary&gt;
++        /// Give Money to destination Avatar
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;target&quot;&gt;UUID of the Target Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;amount&quot;&gt;Amount in L$&lt;/param&gt;
++        /// &lt;param name=&quot;description&quot;&gt;Reason (optional normally)&lt;/param&gt;
++        public void GiveMoney(LLUUID target, int amount, string description)
++        {
++            // 5001 - transaction type for av to av money transfers
++
++            GiveMoney(target, amount, description, 5001);
++        }
++
++        /// &lt;summary&gt;
++        /// Toggle running on or off
++        /// &lt;/summary&gt;
++        public void SetAlwaysRun(bool running)
++        {
++            SetAlwaysRunPacket run = new SetAlwaysRunPacket();
++            run.AgentData.AgentID = Client.Network.AgentID;
++            run.AgentData.SessionID = Client.Network.SessionID;
++            run.AgentData.AlwaysRun = running;
++            Client.Network.SendPacket(run);
++        }
++
++        /// &lt;summary&gt;
++        /// Give Money to destionation Object or Avatar
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;target&quot;&gt;UUID of the Target Object/Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;amount&quot;&gt;Amount in L$&lt;/param&gt;
++        /// &lt;param name=&quot;description&quot;&gt;Reason (Optional normally)&lt;/param&gt;
++        /// &lt;param name=&quot;transactiontype&quot;&gt;The type of transaction.  Currently only 5001 is
++        /// documented for Av-&gt;Av money transfers.&lt;/param&gt;
++        public void GiveMoney(LLUUID target, int amount, string description, int transactiontype)
++        {
++            MoneyTransferRequestPacket money = new MoneyTransferRequestPacket();
++            money.AgentData.AgentID = this.ID;
++            money.AgentData.SessionID = Client.Network.SessionID;
++            money.MoneyData.Description = Helpers.StringToField(description);
++            money.MoneyData.DestID = target;
++            money.MoneyData.SourceID = this.ID;
++            money.MoneyData.TransactionType = transactiontype;
++            money.MoneyData.AggregatePermInventory = 0; //TODO: whats this?
++            money.MoneyData.AggregatePermNextOwner = 0; //TODO: whats this?
++            money.MoneyData.Flags = 0; //TODO: whats this?
++            money.MoneyData.Amount = amount;
++
++            Client.Network.SendPacket((Packet)money);
++        }
++
++        /// &lt;summary&gt;
++        /// Send an AgentAnimation packet that will toggle animations on or off
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;animations&quot;&gt;A list of animation UUIDs, and whether to
++        /// turn that animation on or off&lt;/param&gt;
++        public void Animate(Dictionary&lt;LLUUID, bool&gt; animations)
++        {
++            AgentAnimationPacket animate = new AgentAnimationPacket();
++
++            animate.AgentData.AgentID = Client.Network.AgentID;
++            animate.AgentData.SessionID = Client.Network.SessionID;
++            animate.AnimationList = new AgentAnimationPacket.AnimationListBlock[animations.Count];
++            int i = 0;
++
++            foreach (KeyValuePair&lt;LLUUID, bool&gt; animation in animations)
++            {
++                animate.AnimationList[i] = new AgentAnimationPacket.AnimationListBlock();
++                animate.AnimationList[i].AnimID = animation.Key;
++                animate.AnimationList[i].StartAnim = animation.Value;
++
++                i++;
++            }
++
++            Client.Network.SendPacket(animate);
++        }
++
++        /// &lt;summary&gt;
++        /// Use the autopilot sim function to move the avatar to a new position
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;The z value is currently not handled properly by the simulator&lt;/remarks&gt;
++        /// &lt;param name=&quot;globalX&quot;&gt;Integer value for the global X coordinate to move to&lt;/param&gt;
++        /// &lt;param name=&quot;globalY&quot;&gt;Integer value for the global Y coordinate to move to&lt;/param&gt;
++        /// &lt;param name=&quot;z&quot;&gt;Floating-point value for the Z coordinate to move to&lt;/param&gt;
++        /// &lt;example&gt;AutoPilot(252620, 247078, 20.2674);&lt;/example&gt;
++        public void AutoPilot(ulong globalX, ulong globalY, float z)
++        {
++            GenericMessagePacket autopilot = new GenericMessagePacket();
++
++            autopilot.AgentData.AgentID = Client.Network.AgentID;
++            autopilot.AgentData.SessionID = Client.Network.SessionID;
++            autopilot.MethodData.Invoice = LLUUID.Zero;
++            autopilot.MethodData.Method = Helpers.StringToField(&quot;autopilot&quot;);
++            autopilot.ParamList = new GenericMessagePacket.ParamListBlock[3];
++            autopilot.ParamList[0] = new GenericMessagePacket.ParamListBlock();
++            autopilot.ParamList[0].Parameter = Helpers.StringToField(globalX.ToString());
++            autopilot.ParamList[1] = new GenericMessagePacket.ParamListBlock();
++            autopilot.ParamList[1].Parameter = Helpers.StringToField(globalY.ToString());
++            autopilot.ParamList[2] = new GenericMessagePacket.ParamListBlock();
++            // TODO: Do we need to prevent z coordinates from being sent in 1.4827e-18 notation?
++            autopilot.ParamList[2].Parameter = Helpers.StringToField(z.ToString());
++
++            Client.Network.SendPacket(autopilot);
++        }
++
++        /// &lt;summary&gt;
++        /// Use the autopilot sim function to move the avatar to a new position
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;The z value is currently not handled properly by the simulator&lt;/remarks&gt;
++        /// &lt;param name=&quot;localX&quot;&gt;Integer value for the local X coordinate to move to&lt;/param&gt;
++        /// &lt;param name=&quot;localY&quot;&gt;Integer value for the local Y coordinate to move to&lt;/param&gt;
++        /// &lt;param name=&quot;z&quot;&gt;Floating-point value for the Z coordinate to move to&lt;/param&gt;
++        /// &lt;example&gt;AutoPilot(252620, 247078, 20.2674);&lt;/example&gt;
++        public void AutoPilotLocal(int localX, int localY, float z)
++        {
++            GridRegion gr = Client.Network.CurrentSim.Region.GridRegionData;
++            ulong GridCornerX = ((ulong)gr.X * (ulong)256) + (ulong)localX;
++            ulong GridCornerY = ((ulong)gr.Y * (ulong)256) + (ulong)localY;
++            AutoPilot(GridCornerX, GridCornerY, z);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
++        public void BeginTeleport(ulong regionHandle, LLVector3 position, TeleportCallback tc)
++        {
++            BeginTeleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z), tc);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
++        public void BeginTeleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt, TeleportCallback tc)
++        {
++            OnBeginTeleport = tc;
++
++            TeleportLocationRequestPacket teleport = new TeleportLocationRequestPacket();
++            teleport.AgentData.AgentID = Client.Network.AgentID;
++            teleport.AgentData.SessionID = Client.Network.SessionID;
++            teleport.Info.LookAt = lookAt;
++            teleport.Info.Position = position;
++            teleport.Info.RegionHandle = regionHandle;
++
++            Client.Log(&quot;Teleporting to region &quot; + regionHandle.ToString(), Helpers.LogLevel.Info);
++
++            Client.Network.SendPacket(teleport);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public bool Teleport(ulong regionHandle, LLVector3 position)
++        {
++            return Teleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z));
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public bool Teleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt)
++        {
++            TeleportStat = TeleportStatus.None;
++
++            TeleportLocationRequestPacket teleport = new TeleportLocationRequestPacket();
++            teleport.AgentData.AgentID = Client.Network.AgentID;
++            teleport.AgentData.SessionID = Client.Network.SessionID;
++            teleport.Info.LookAt = lookAt;
++            teleport.Info.Position = position;
++
++            teleport.Info.RegionHandle = regionHandle;
++
++            Client.Log(&quot;Teleporting to region &quot; + regionHandle.ToString(), Helpers.LogLevel.Info);
++
++            // Start the timeout check
++            TeleportTimeout = false;
++            TeleportTimer.Start();
++
++            Client.Network.SendPacket(teleport);
++
++            while (TeleportStat != TeleportStatus.Failed &amp;&amp; TeleportStat != TeleportStatus.Finished &amp;&amp; !TeleportTimeout)
++            {
++                Client.Tick();
++            }
++
++            TeleportTimer.Stop();
++
++            if (TeleportTimeout)
++            {
++                TeleportMessage = &quot;Teleport timed out.&quot;;
++                TeleportStat = TeleportStatus.Failed;
++
++                if (OnTeleport != null) { OnTeleport(TeleportMessage, TeleportStat); }
++            }
++            else
++            {
++                if (OnTeleport != null) { OnTeleport(TeleportMessage, TeleportStat); }
++            }
++
++            return (TeleportStat == TeleportStatus.Finished);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public bool Teleport(string simName, LLVector3 position)
++        {
++            //position.Z = 0; //why was this here?
++            return Teleport(simName, position, new LLVector3(0, 1.0F, 0));
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public bool Teleport(string simName, LLVector3 position, LLVector3 lookAt)
++        {
++            int attempts = 0;
++            TeleportStat = TeleportStatus.None;
++
++            simName = simName.ToLower();
++
++            GridRegion region = Client.Grid.GetGridRegion(simName);
++
++            if (region != null)
++            {
++                return Teleport(region.RegionHandle, position, lookAt);
++            }
++            else
++            {
++                while (attempts++ &lt; 5)
++                {
++                    region = Client.Grid.GetGridRegion(simName);
++
++                    if (region != null)
++                    {
++                        return Teleport(region.RegionHandle, position, lookAt);
++                    }
++                    else
++                    {
++                        // Request the region info again
++                        Client.Grid.AddSim(simName);
++
++                        System.Threading.Thread.Sleep(1000);
++                    }
++                }
++            }
++
++            if (OnTeleport != null)
++            {
++                TeleportMessage = &quot;Unable to resolve name: &quot; + simName;
++                TeleportStat = TeleportStatus.Failed;
++                OnTeleport(TeleportMessage, TeleportStat);
++            }
++
++            return false;
++        }
++
++        /// &lt;summary&gt;
++        /// Respond to a teleport lure by either accepting it and initiating 
++        /// the teleport, or denying it
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;requesterID&quot;&gt;UUID of the avatar requesting the teleport&lt;/param&gt;
++        /// &lt;param name=&quot;accept&quot;&gt;Accept the teleport request or deny it&lt;/param&gt;
++        public void TeleportLureRespond(LLUUID requesterID, bool accept)
++        {
++            ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
++
++            im.AgentData.AgentID = Client.Network.AgentID;
++            im.AgentData.SessionID = Client.Network.SessionID;
++            im.MessageBlock.BinaryBucket = new byte[0];
++            im.MessageBlock.FromAgentName = Helpers.StringToField(this.FirstName + &quot; &quot; + this.LastName);
++            im.MessageBlock.FromGroup = false;
++            im.MessageBlock.ID = Client.Network.AgentID;
++            im.MessageBlock.Message = new byte[0];
++            im.MessageBlock.Offline = 0;
++            im.MessageBlock.ParentEstateID = 0;
++            im.MessageBlock.Position = this.Position;
++            im.MessageBlock.RegionID = LLUUID.Zero;
++            im.MessageBlock.Timestamp = 0;
++            im.MessageBlock.ToAgentID = requesterID;
++
++            if (accept)
++            {
++                im.MessageBlock.Dialog = (byte)InstantMessageDialog.AcceptTeleport;
++
++                Client.Network.SendPacket(im);
++
++                TeleportLureRequestPacket lure = new TeleportLureRequestPacket();
++
++                lure.Info.AgentID = Client.Network.AgentID;
++                lure.Info.SessionID = Client.Network.SessionID;
++                lure.Info.LureID = Client.Network.AgentID;
++                lure.Info.TeleportFlags = 4; // TODO: What does this mean?
++
++                Client.Network.SendPacket(lure);
++            }
++            else
++            {
++                im.MessageBlock.Dialog = (byte)InstantMessageDialog.DenyTeleport;
++
++                Client.Network.SendPacket(im);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Grabs an object
++        /// &lt;/summary&gt;
++        public void Grab(uint objectLocalID)
++        {
++            ObjectGrabPacket grab = new ObjectGrabPacket();
++            grab.AgentData.AgentID = Client.Network.AgentID;
++            grab.AgentData.SessionID = Client.Network.SessionID;
++            grab.ObjectData.LocalID = objectLocalID;
++            grab.ObjectData.GrabOffset = new LLVector3(0, 0, 0);
++            Client.Network.SendPacket(grab);
++        }
++
++        /// &lt;summary&gt;
++        /// Drags on an object
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;objectID&quot;&gt;Strangely, LLUID instead of local ID&lt;/param&gt;
++        /// &lt;param name=&quot;grabPosition&quot;&gt;Drag target in region coordinates&lt;/param&gt;
++        public void GrabUpdate(LLUUID objectID, LLVector3 grabPosition)
++        {
++            ObjectGrabUpdatePacket grab = new ObjectGrabUpdatePacket();
++            grab.AgentData.AgentID = Client.Network.AgentID;
++            grab.AgentData.SessionID = Client.Network.SessionID;
++            grab.ObjectData.ObjectID = objectID;
++            grab.ObjectData.GrabOffsetInitial = new LLVector3(0, 0, 0);
++            grab.ObjectData.GrabPosition = grabPosition;
++            grab.ObjectData.TimeSinceLast = 0;
++            Client.Network.SendPacket(grab);
++        }
++
++        /// &lt;summary&gt;
++        /// Releases a grabbed object
++        /// &lt;/summary&gt;
++        public void DeGrab(uint objectLocalID)
++        {
++            ObjectDeGrabPacket degrab = new ObjectDeGrabPacket();
++            degrab.AgentData.AgentID = Client.Network.AgentID;
++            degrab.AgentData.SessionID = Client.Network.SessionID;
++            degrab.ObjectData.LocalID = objectLocalID;
++            Client.Network.SendPacket(degrab);
++        }
++
++        /// &lt;summary&gt;
++        /// Touches an object
++        /// &lt;/summary&gt;
++        public void Touch(uint objectLocalID)
++        {
++            Client.Self.Grab(objectLocalID);
++            Client.Self.DeGrab(objectLocalID);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        public void CompleteAgentMovement(Simulator simulator)
++        {
++            CompleteAgentMovementPacket move = new CompleteAgentMovementPacket();
++
++            move.AgentData.AgentID = Client.Network.AgentID;
++            move.AgentData.SessionID = Client.Network.SessionID;
++            move.AgentData.CircuitCode = simulator.CircuitCode;
++
++            Client.Network.SendPacket(move, simulator);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reliable&quot;&gt;&lt;/param&gt;
++        public void UpdateCamera(Avatar.AgentUpdateFlags controlFlags, LLVector3 position, LLVector3 forwardAxis,
++            LLVector3 leftAxis, LLVector3 upAxis, LLQuaternion bodyRotation, LLQuaternion headRotation, float farClip,
++            bool reliable)
++        {
++            AgentUpdatePacket update = new AgentUpdatePacket();
++            update.AgentData.AgentID = Client.Network.AgentID;
++            update.AgentData.SessionID = Client.Network.SessionID;
++            update.AgentData.State = 0;
++            // Semi-sane default values
++            update.AgentData.BodyRotation = bodyRotation; //new LLQuaternion(0, 0.6519076f, 0, 0);
++            update.AgentData.HeadRotation = headRotation; //LLQuaternion.Identity;
++            update.AgentData.CameraCenter = position; //new LLVector3(9.549901f, 7.033957f, 11.75f);
++            update.AgentData.CameraAtAxis = forwardAxis; //new LLVector3(0.7f, 0.7f, 0);
++            update.AgentData.CameraLeftAxis = leftAxis; //new LLVector3(-0.7f, 0.7f, 0);
++            update.AgentData.CameraUpAxis = upAxis; //new LLVector3(0.1822026f, 0.9828722f, 0);
++            update.AgentData.Far = farClip;
++            update.AgentData.ControlFlags = (uint)controlFlags;
++            update.AgentData.Flags = 0;
++            update.Header.Reliable = reliable;
++
++            Client.Network.SendPacket(update);
++
++            // Send an AgentFOV packet widening our field of vision
++            /*AgentFOVPacket fovPacket = new AgentFOVPacket();
++            fovPacket.AgentData.AgentID = this.ID;
++            fovPacket.AgentData.SessionID = Client.Network.SessionID;
++            fovPacket.AgentData.CircuitCode = simulator.CircuitCode;
++            fovPacket.FOVBlock.GenCounter = 0;
++            fovPacket.FOVBlock.VerticalAngle = 6.28318531f;
++            fovPacket.Header.Reliable = true;
++            Client.Network.SendPacket((Packet)fovPacket);*/
++        }
++
++        /// &lt;summary&gt;
++        /// [UNUSED - for now]
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        private void CoarseLocationHandler(Packet packet, Simulator simulator)
++        {
++            // TODO: This will be useful one day
++        }
++
++        /// &lt;summary&gt;
++        /// Take an incoming ImprovedInstantMessage packet, auto-parse, and if
++        ///   OnInstantMessage is defined call that with the appropriate arguments.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming ImprovedInstantMessagePacket&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        private void InstantMessageHandler(Packet packet, Simulator simulator)
++        {
++            if (packet.Type == PacketType.ImprovedInstantMessage)
++            {
++                ImprovedInstantMessagePacket im = (ImprovedInstantMessagePacket)packet;
++
++                if (OnInstantMessage != null)
++                {
++                    OnInstantMessage(
++                        im.AgentData.AgentID
++                        , Helpers.FieldToString(im.MessageBlock.FromAgentName),
++                        im.MessageBlock.ToAgentID
++                        , im.MessageBlock.ParentEstateID
++                        , im.MessageBlock.RegionID
++                        , im.MessageBlock.Position
++                        , im.MessageBlock.Dialog
++                        , im.MessageBlock.FromGroup
++                        , im.MessageBlock.ID
++                        , new DateTime(im.MessageBlock.Timestamp)
++                        , Helpers.FieldToString(im.MessageBlock.Message)
++                        , im.MessageBlock.Offline
++                        , im.MessageBlock.BinaryBucket
++                        );
++                }
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Take an incoming Chat packet, auto-parse, and if OnChat is defined call 
++        ///   that with the appropriate arguments.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming ChatFromSimulatorPacket&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        private void ChatHandler(Packet packet, Simulator simulator)
++        {
++            if (packet.Type == PacketType.ChatFromSimulator)
++            {
++                ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
++
++                if (OnChat != null)
++                {
++                    OnChat(Helpers.FieldToString(chat.ChatData.Message)
++                            , chat.ChatData.Audible
++                            , chat.ChatData.ChatType
++                            , chat.ChatData.SourceType
++                            , Helpers.FieldToString(chat.ChatData.FromName)
++                            , chat.ChatData.SourceID
++                            , chat.ChatData.OwnerID
++                            , chat.ChatData.Position
++                            );
++                }
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Update client's Position and LookAt from incoming packet
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming AgentMovementCompletePacket&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        private void MovementCompleteHandler(Packet packet, Simulator simulator)
++        {
++            AgentMovementCompletePacket movement = (AgentMovementCompletePacket)packet;
++
++            this.Position = movement.Data.Position;
++            this.LookAt = movement.Data.LookAt;
++        }
++
++        /// &lt;summary&gt;
++        /// Update Client Avatar's health via incoming packet
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming HealthMessagePacket&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        private void HealthHandler(Packet packet, Simulator simulator)
++        {
++            health = ((HealthMessagePacket)packet).HealthData.Health;
++        }
++
++        /// &lt;summary&gt;
++        /// Update Client Avatar's L$ balance from incoming packet
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming MoneyBalanceReplyPacket&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        private void BalanceHandler(Packet packet, Simulator simulator)
++        {
++            if (packet.Type == PacketType.MoneyBalanceReply)
++            {
++                balance = ((MoneyBalanceReplyPacket)packet).MoneyData.MoneyBalance;
++            }
++            else if (packet.Type == PacketType.MoneySummaryReply)
++            {
++                balance = ((MoneySummaryReplyPacket)packet).MoneyData.Balance;
++            }
++            else if (packet.Type == PacketType.AdjustBalance)
++            {
++                balance += ((AdjustBalancePacket)packet).AgentData.Delta;
++            }
++
++            if (OnBalanceUpdated != null)
++            {
++                OnBalanceUpdated(balance);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        private void TeleportHandler(Packet packet, Simulator simulator)
++        {
++            if (packet.Type == PacketType.TeleportStart)
++            {
++                Client.DebugLog(&quot;TeleportStart received from &quot; + simulator.ToString());
++
++                TeleportMessage = &quot;Teleport started&quot;;
++                TeleportStat = TeleportStatus.Start;
++
++                if (OnBeginTeleport != null)
++                {
++                    OnBeginTeleport(TeleportMessage, TeleportStat);
++                }
++            }
++            else if (packet.Type == PacketType.TeleportProgress)
++            {
++                Client.DebugLog(&quot;TeleportProgress received from &quot; + simulator.ToString());
++
++                TeleportMessage = Helpers.FieldToString(((TeleportProgressPacket)packet).Info.Message);
++                TeleportStat = TeleportStatus.Progress;
++
++                if (OnBeginTeleport != null)
++                {
++                    OnBeginTeleport(TeleportMessage, TeleportStat);
++                }
++            }
++            else if (packet.Type == PacketType.TeleportFailed)
++            {
++                Client.DebugLog(&quot;TeleportFailed received from &quot; + simulator.ToString());
++
++                TeleportMessage = Helpers.FieldToString(((TeleportFailedPacket)packet).Info.Reason);
++                TeleportStat = TeleportStatus.Failed;
++
++                if (OnBeginTeleport != null)
++                {
++                    OnBeginTeleport(TeleportMessage, TeleportStat);
++                }
++
++                OnBeginTeleport = null;
++            }
++            else if (packet.Type == PacketType.TeleportFinish)
++            {
++                Client.DebugLog(&quot;TeleportFinish received from &quot; + simulator.ToString());
++
++                TeleportFinishPacket finish = (TeleportFinishPacket)packet;
++
++                // Connect to the new sim
++                Simulator sim = Client.Network.Connect(new IPAddress((long)finish.Info.SimIP), finish.Info.SimPort,
++                    simulator.CircuitCode, true);
++
++                if (sim != null)
++                {
++                    TeleportMessage = &quot;Teleport finished&quot;;
++                    TeleportStat = TeleportStatus.Finished;
++
++                    // Move the avatar in to the new sim
++                    CompleteAgentMovementPacket move = new CompleteAgentMovementPacket();
++                    move.AgentData.AgentID = Client.Network.AgentID;
++                    move.AgentData.SessionID = Client.Network.SessionID;
++                    move.AgentData.CircuitCode = simulator.CircuitCode;
++                    Client.Network.SendPacket(move, sim);
++
++                    Client.Log(&quot;Moved to new sim &quot; + sim.ToString(), Helpers.LogLevel.Info);
++
++                    if (OnBeginTeleport != null)
++                    {
++                        OnBeginTeleport(TeleportMessage, TeleportStat);
++                    }
++                    else
++                    {
++                        // Sleep a little while so we can collect parcel information
++                        // FIXME: This doesn't belong in libsecondlife
++                        System.Threading.Thread.Sleep(1000);
++                    }
++                }
++                else
++                {
++                    TeleportMessage = &quot;Failed to connect to the new sim after a teleport&quot;;
++                    TeleportStat = TeleportStatus.Failed;
++
++                    Client.Log(TeleportMessage, Helpers.LogLevel.Warning);
++
++                    if (OnBeginTeleport != null)
++                    {
++                        OnBeginTeleport(TeleportMessage, TeleportStat);
++                    }
++                }
++
++                OnBeginTeleport = null;
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;ea&quot;&gt;&lt;/param&gt;
++        private void TeleportTimerEvent(object source, System.Timers.ElapsedEventArgs ea)
++        {
++            TeleportTimeout = true;
++        }
++    }
++
++}
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-08 09:06:13 UTC (rev 694)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-09 00:45:40 UTC (rev 695)
+@@ -107,6 +107,7 @@
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;AvatarManager.cs&quot; /&gt;
++    &lt;Compile Include=&quot;MainAvatar.cs&quot; /&gt;
+     &lt;Compile Include=&quot;EstateTools.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000052.html">[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+	<LI>Next message: <A HREF="000054.html">[Libsecondlife-commits] r696 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r765 - branches/aditi/data
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r765%20-%20branches/aditi/data&In-Reply-To=%3C200612271527.kBRFRoH5008057%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000136.html">
+   <LINK REL="Next"  HREF="000138.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r765 - branches/aditi/data</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r765%20-%20branches/aditi/data&In-Reply-To=%3C200612271527.kBRFRoH5008057%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r765 - branches/aditi/data">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 27 16:27:50 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000136.html">[Libsecondlife-commits] [Patch #1760] SLProxy: initial caps support	(ADITI). FOR TESTING ONLY.
+</A></li>
+        <LI>Next message: <A HREF="000138.html">[Libsecondlife-commits] r766 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-27 16:27:49 +0100 (Wed, 27 Dec 2006)
+New Revision: 765
+
+Modified:
+   branches/aditi/data/message_template.msg
+Log:
+Message template for ADITI (version 1.13.2.0)
+
+Modified: branches/aditi/data/message_template.msg
+===================================================================
+--- branches/aditi/data/message_template.msg	2006-12-23 14:13:02 UTC (rev 764)
++++ branches/aditi/data/message_template.msg	2006-12-27 15:27:49 UTC (rev 765)
+@@ -657,18 +657,14 @@
+ 		{   OwnerID			LLUUID  }
+ 		{   LastOwnerID		LLUUID  }
+ 		{   CreatorID		LLUUID  }
+-		{	SimName			Variable	1	}
++		{	RegionID		LLUUID	}
++		{   AbuserID		LLUUID  }
++		{	AbuseRegionName	Variable	1	}
++		{	AbuseRegionID	LLUUID	}
+ 		{   Summary			Variable	1   }
+ 		{   Details 		Variable	2   }
+ 		{	VersionString	Variable	1	}
+ 	}
+-	{
+-		MeanCollision		Variable
+-		{	Perp			LLUUID	}
+-		{	Time			U32		}
+-		{	Mag				F32		}
+-		{	Type			U8		}
+-	}
+ }
+ 
+ // SetSimStatusInDatabase
+@@ -1044,6 +1040,7 @@
+ 		{	QueryText		Variable	1	}
+ 		{	QueryFlags		U32				}
+ 		{	Category		U32				}
++		{	QueryStart	S32					}
+ 	}
+ }
+ 
+@@ -1063,6 +1060,7 @@
+ 		{	Category		U32				}
+ 		{	EstateID		U32				}
+ 		{	Godlike			BOOL			}
++		{	QueryStart	S32					}
+ 	}
+ }
+ 
+@@ -1294,9 +1292,10 @@
+ 		QueryData			Single
+ 		{	QueryID			LLUUID	}
+ 		{	QueryFlags		U32		}
+-		{	ForSale			BOOL	}
+-		{	Auction			BOOL	}
+-		{	ReservedNewbie	BOOL	}
++		{	SearchType		U32		}
++		{	Price			S32		}
++		{	Area			S32		}
++		{	QueryStart		S32		}
+ 	}
+ }
+ 
+@@ -1312,9 +1311,10 @@
+ 		QueryData			Single
+ 		{	QueryID			LLUUID	}
+ 		{	QueryFlags		U32		}
+-		{	ForSale			BOOL	}
+-		{	Auction			BOOL	}
+-		{	ReservedNewbie	BOOL	}
++		{	SearchType		U32		}
++		{	Price			S32		}
++		{	Area			S32		}
++		{	QueryStart		S32		}
+ 		{	EstateID		U32		}
+ 		{	Godlike			BOOL	}
+ 	}
+@@ -1798,9 +1798,12 @@
+ 	{
+ 		Info	Single
+ 		{	LureType 		U8	 			}
+-		{	TargetID		LLUUID			}
+ 		{	Message			Variable	1	}
+ 	}
++	{
++		TargetData Variable
++		{	TargetID		LLUUID			}
++	}
+ }
+ 
+ // TeleportLureRequest viewer-&gt;sim
+@@ -3340,17 +3343,13 @@
+ 		{   CheckFlags		U8	} // checkboxflags
+ 		{   ScreenshotID	LLUUID  }
+ 		{   ObjectID		LLUUID  }
++		{   AbuserID		LLUUID  }
++		{	AbuseRegionName	Variable	1	}
++		{	AbuseRegionID	LLUUID	}
+ 		{   Summary			Variable	1   }
+ 		{   Details 		Variable	2   }
+ 		{	VersionString	Variable	1	}
+ 	}
+-	{
+-		MeanCollision		Variable
+-		{	Perp			LLUUID	}
+-		{	Time			U32		}
+-		{	Mag				F32		}
+-		{	Type			U8		}
+-	}
+ }
+ 
+ 
+@@ -3949,6 +3948,7 @@
+ 		{	TargetType		S32	}
+ 		{	Status			S32	}
+ 		{	Size			S32	}
++		{	Params			Variable	2	}
+ 	}
+ }
+ 
+@@ -6227,7 +6227,6 @@
+ 	{
+ 		InventoryData		Variable
+ 		{	ItemID			LLUUID	}  // null if list is actually empty (but has one entry 'cause it can't have none)
+-		{	NewAssetID		LLUUID	}
+ 	}
+ }
+ 
+@@ -6634,8 +6633,10 @@
+ //
+ // Sim outgoing only (to dataserver, to viewer)
+ // NOT viewer to sim, sim should not have handler, ever
++// This message is currently only uses objects, so the viewer ignores
++// the asset id.
+ {
+-	SaveAssetIntoInventory Low NotTrusted Unencoded
++	SaveAssetIntoInventory Low Trusted Unencoded
+ 	{
+ 		AgentData		Single
+ 		{	AgentID			LLUUID	}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000136.html">[Libsecondlife-commits] [Patch #1760] SLProxy: initial caps support	(ADITI). FOR TESTING ONLY.
+</A></li>
+	<LI>Next message: <A HREF="000138.html">[Libsecondlife-commits] r766 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

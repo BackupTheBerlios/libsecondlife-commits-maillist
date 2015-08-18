@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r849%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701180103.l0I13boO020048%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000263.html">
+   <LINK REL="Next"  HREF="000265.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r849%20-%0A%09trunk/libsecondlife-cs/InventorySystem&In-Reply-To=%3C200701180103.l0I13boO020048%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 18 02:03:37 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000263.html">[Libsecondlife-commits] r848 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+        <LI>Next message: <A HREF="000265.html">[Libsecondlife-commits] r850 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#264">[ date ]</a>
+              <a href="thread.html#264">[ thread ]</a>
+              <a href="subject.html#264">[ subject ]</a>
+              <a href="author.html#264">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-18 02:03:32 +0100 (Thu, 18 Jan 2007)
+New Revision: 849
+
+Modified:
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+Log:
+Asset/Inventory : Lets try this again, and we'll add tests for .Body, and .j2cData
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-18 00:20:55 UTC (rev 848)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-18 01:03:32 UTC (rev 849)
+@@ -14,8 +14,8 @@
+ 		{
+ 			get
+ 			{
+-				if( Asset != null ) 
+-				{
++                if (_Asset != null)
++                {
+ 					return ((AssetImage)Asset).J2CData;
+ 				} 
+ 				else 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-18 00:20:55 UTC (rev 848)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-18 01:03:32 UTC (rev 849)
+@@ -130,6 +130,7 @@
+                 {
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+                     {
++                        Console.WriteLine(&quot;Using the base asset download&quot;);
+                         AssetRequestDownload request = base.iManager.AssetManager.RequestInventoryAsset(this);
+                         if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
+                         {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-18 00:20:55 UTC (rev 848)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-18 01:03:32 UTC (rev 849)
+@@ -14,7 +14,7 @@
+ 		{
+ 			get
+ 			{
+-				if( Asset != null ) 
++				if( _Asset != null ) 
+ 				{
+ 					return ((AssetNotecard)Asset).Body;
+ 				} else {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-18 00:20:55 UTC (rev 848)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-18 01:03:32 UTC (rev 849)
+@@ -11,7 +11,7 @@
+         {
+             get
+             {
+-                if ( Asset != null )
++                if (_Asset != null)
+                 {
+                     return ((AssetScript)Asset).Source;
+                 }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000263.html">[Libsecondlife-commits] r848 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+</A></li>
+	<LI>Next message: <A HREF="000265.html">[Libsecondlife-commits] r850 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#264">[ date ]</a>
+              <a href="thread.html#264">[ thread ]</a>
+              <a href="subject.html#264">[ subject ]</a>
+              <a href="author.html#264">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

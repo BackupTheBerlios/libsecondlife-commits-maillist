@@ -1,0 +1,2566 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r684 - in trunk/libsecondlife-cs: . XmlRpcCS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r684%20-%20in%20trunk/libsecondlife-cs%3A%20.%20XmlRpcCS&In-Reply-To=%3C200612052329.kB5NT17Y028430%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000041.html">
+   <LINK REL="Next"  HREF="000043.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r684 - in trunk/libsecondlife-cs: . XmlRpcCS</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r684%20-%20in%20trunk/libsecondlife-cs%3A%20.%20XmlRpcCS&In-Reply-To=%3C200612052329.kB5NT17Y028430%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r684 - in trunk/libsecondlife-cs: . XmlRpcCS">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec  6 00:29:01 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000041.html">[Libsecondlife-commits] r683 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+        <LI>Next message: <A HREF="000043.html">[Libsecondlife-commits] r685 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-06 00:28:59 +0100 (Wed, 06 Dec 2006)
+New Revision: 684
+
+Added:
+   trunk/libsecondlife-cs/XmlRpcCS/SimpleHttpRequest.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcBoxcarRequest.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcClientProxy.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcExposedAttribute.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponder.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSystemObject.cs
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/ParticleSystem.cs
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/SerializableDictionary.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/XmlRpcCS/Logger.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcDeserializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcException.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestDeserializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestSerializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponse.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseDeserializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseSerializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSerializer.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcXmlTokens.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Upgraded to the latest version of XmlRpcCS, and removed a lot of the fancy XML serialization stuff to try and make it work
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -26,6 +26,7 @@
+ 
+ using System;
+ using System.Timers;
++using System.Collections;
+ using System.Collections.Generic;
+ using System.Net;
+ using System.Net.Sockets;
+@@ -632,7 +633,7 @@
+         /// The complete dictionary of all the login values returned by the 
+         /// RPC login server, converted to native data types wherever possible
+         /// &lt;/summary&gt;
+-        public Dictionary&lt;string, object&gt; LoginValues;
++        public Dictionary&lt;string, object&gt; LoginValues = new Dictionary&lt;string,object&gt;();
+         /// &lt;summary&gt;
+         /// Shows whether the network layer is logged in to the grid or not
+         /// &lt;/summary&gt;
+@@ -651,9 +652,9 @@
+         /// &lt;/summary&gt;
+         public DisconnectCallback OnDisconnected;
+ 
+-        private Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt; Callbacks;
+         private SecondLife Client;
+-        private List&lt;Simulator&gt; Simulators;
++        private Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt; Callbacks = new Dictionary&lt;PacketType,List&lt;PacketCallback&gt;&gt;();
++        private List&lt;Simulator&gt; Simulators = new List&lt;Simulator&gt;();
+         private System.Timers.Timer DisconnectTimer;
+         private bool connected;
+ 
+@@ -667,10 +668,7 @@
+         public NetworkManager(SecondLife client)
+         {
+             Client = client;
+-            Simulators = new List&lt;Simulator&gt;();
+-            Callbacks = new Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt;();
+             CurrentSim = null;
+-            LoginValues = null;
+ 
+             // Register the internal callbacks
+             RegisterCallback(PacketType.RegionHandshake, new PacketCallback(RegionHandshakeHandler));
+@@ -951,11 +949,30 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Login(Dictionary&lt;string, object&gt; loginParams, string url)
+         {
++            // Rebuild the Dictionary&lt;&gt; in to a Hashtable for compatibility with XmlRpcCS
++            Hashtable loginValues = new Hashtable(loginParams.Count);
++            foreach (KeyValuePair&lt;string, object&gt; kvp in loginParams)
++            {
++                if (kvp.Value is IList)
++                {
++                    IList list = ((IList)kvp.Value);
++                    ArrayList array = new ArrayList(list.Count);
++                    foreach (object obj in list)
++                    {
++                        array.Add(obj);
++                    }
++                }
++                else
++                {
++                    loginValues[kvp.Key] = kvp.Value;
++                }
++            }
++
+             XmlRpcResponse result;
+             XmlRpcRequest xmlrpc = new XmlRpcRequest();
+             xmlrpc.MethodName = &quot;login_to_simulator&quot;;
+             xmlrpc.Params.Clear();
+-            xmlrpc.Params.Add(loginParams);
++            xmlrpc.Params.Add(loginValues);
+ 
+             try
+             {
+@@ -964,7 +981,7 @@
+             catch (Exception e)
+             {
+                 LoginError = &quot;XML-RPC Error: &quot; + e.Message;
+-                LoginValues = null;
++                LoginValues.Clear();
+                 return false;
+             }
+ 
+@@ -972,11 +989,15 @@
+             {
+                 Client.Log(&quot;Fault &quot; + result.FaultCode + &quot;: &quot; + result.FaultString, Helpers.LogLevel.Error);
+                 LoginError = &quot;XML-RPC Fault: &quot; + result.FaultCode + &quot;: &quot; + result.FaultString;
+-                LoginValues = null;
++                LoginValues.Clear();
+                 return false;
+             }
+ 
+-            LoginValues = (Dictionary&lt;string, object&gt;)result.Value;
++            Hashtable values = (Hashtable)result.Value;
++            foreach (DictionaryEntry entry in values)
++            {
++                LoginValues[(string)entry.Key] = entry.Value;
++            }
+ 
+             if ((string)LoginValues[&quot;login&quot;] == &quot;indeterminate&quot;)
+             {
+
+Modified: trunk/libsecondlife-cs/ParticleSystem.cs
+===================================================================
+--- trunk/libsecondlife-cs/ParticleSystem.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/ParticleSystem.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -7,6 +7,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class ParticleSystem
+     {
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/Prims.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -95,7 +95,7 @@
+     /// &lt;summary&gt;
+     /// Sweet delicious prims.
+     /// &lt;/summary&gt;
+-    [Serializable, XmlRoot(&quot;prim&quot;)]
++    [Serializable]
+     public class PrimObject
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -161,19 +161,19 @@
+         /// &lt;summary&gt;&lt;/summary&gt;
+         [XmlElement(&quot;position&quot;)] public LLVector3 Position = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;scale&quot;)] public LLVector3 Scale = LLVector3.Zero;
++        /*[XmlElement(&quot;scale&quot;)]*/ public LLVector3 Scale = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;rotation&quot;)] public LLQuaternion Rotation = LLQuaternion.Identity;
++        /*[XmlElement(&quot;rotation&quot;)]*/ public LLQuaternion Rotation = LLQuaternion.Identity;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;textures&quot;)] public TextureEntry Textures = new TextureEntry();
++        /*[XmlElement(&quot;textures&quot;)]*/ public TextureEntry Textures = new TextureEntry();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;textureanimation&quot;)] public TextureAnimation TextureAnim = new TextureAnimation();
++        /*[XmlElement(&quot;textureanimation&quot;)]*/ public TextureAnimation TextureAnim = new TextureAnimation();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;flexible&quot;)] public PrimFlexibleData Flexible = new PrimFlexibleData();
++        /*[XmlElement(&quot;flexible&quot;)]*/ public PrimFlexibleData Flexible = new PrimFlexibleData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;light&quot;)] public PrimLightData Light = new PrimLightData();
++        /*[XmlElement(&quot;light&quot;)]*/ public PrimLightData Light = new PrimLightData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;particles&quot;)] public ParticleSystem ParticleSys = new ParticleSystem();
++        /*[XmlElement(&quot;particles&quot;)]*/ public ParticleSystem ParticleSys = new ParticleSystem();
+ 
+         /// &lt;summary&gt;
+         /// Default constructor, zeroes out or sets default prim parameters
+@@ -487,6 +487,7 @@
+     /// &lt;summary&gt;
+     /// OMG Flexi
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class PrimFlexibleData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -558,6 +559,7 @@
+     /// &lt;summary&gt;
+     /// Information on the light property associated with a prim
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class PrimLightData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/SerializableDictionary.cs
+===================================================================
+--- trunk/libsecondlife-cs/SerializableDictionary.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/SerializableDictionary.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -35,7 +35,7 @@
+     /// &lt;/summary&gt;
+     /// &lt;typeparam name=&quot;TKey&quot;&gt;Key type, used as indices to values&lt;/typeparam&gt;
+     /// &lt;typeparam name=&quot;TValue&quot;&gt;Value type&lt;/typeparam&gt;
+-    [XmlRoot(&quot;dictionary&quot;)]
++    [Serializable]
+     public class SerializableDictionary&lt;TKey, TValue&gt; : Dictionary&lt;TKey, TValue&gt;, IXmlSerializable
+     {
+         #region IXmlSerializable Members
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/Textures.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -139,6 +139,7 @@
+     /// you have a TextureEntry with a default texture uuid of X, and face 72
+     /// has a texture UUID of Y, every face would be textured with X except for
+     /// face 72 that uses Y.&lt;/remarks&gt;
++    [Serializable]
+     public class TextureEntry
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -620,7 +621,7 @@
+     /// A single textured face. Don't instantiate this class yourself, use the
+     /// methods in TextureEntry
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;face&quot;)]
++    [Serializable]
+     public class TextureEntryFace
+     {
+         [XmlAttribute(&quot;rgba&quot;)] private uint rgba;
+@@ -829,6 +830,7 @@
+     /// &lt;summary&gt;
+     /// Controls the texture animation of a particular prim
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class TextureAnimation
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/Types.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -34,7 +34,7 @@
+     /// A 128-bit Universally Unique Identifier, used throughout the Second
+     /// Life networking protocol
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;uuid&quot;)]
++    [Serializable]
+     public class LLUUID : IXmlSerializable
+ 	{
+         /// &lt;summary&gt;The 16 bytes that make up the UUID&lt;/summary&gt;
+@@ -306,7 +306,7 @@
+     /// &lt;summary&gt;
+     /// A three-dimensional vector with floating-point values
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;vector3&quot;)]
++    [Serializable]
+ 	public class LLVector3
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+@@ -500,7 +500,7 @@
+     /// &lt;summary&gt;
+     /// A double-precision three-dimensional vector
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;vector3d&quot;)]
++    [Serializable]
+ 	public class LLVector3d
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+@@ -599,7 +599,7 @@
+     /// &lt;summary&gt;
+     /// A four-dimensional vector
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;vector4&quot;)]
++    [Serializable]
+ 	public class LLVector4
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -691,7 +691,7 @@
+     /// &lt;summary&gt;
+     /// A quaternion, used for rotations
+     /// &lt;/summary&gt;
+-    [XmlRoot(&quot;quaternion&quot;)]
++    [Serializable]
+ 	public class LLQuaternion
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/Logger.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/Logger.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/Logger.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,46 +1,46 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
++    using System;
+ 
+-  /// &lt;summary&gt;Define levels of logging.&lt;/summary&gt;&lt;remarks&gt; This duplicates
+-  /// similar enumerations in System.Diagnostics.EventLogEntryType. The 
+-  /// duplication was merited because .NET Compact Framework lacked the EventLogEntryType enum.&lt;/remarks&gt;
+-  public enum LogLevel
+-  {
+-    /// &lt;summary&gt;Information level, log entry for informational reasons only.&lt;/summary&gt;
+-    Information,
+-    /// &lt;summary&gt;Warning level, indicates a possible problem.&lt;/summary&gt;
+-    Warning,
+-    /// &lt;summary&gt;Error level, implies a significant problem.&lt;/summary&gt;
+-    Error
+-  }
++    /// &lt;summary&gt;Define levels of logging.&lt;/summary&gt;&lt;remarks&gt; This duplicates
++    /// similar enumerations in System.Diagnostics.EventLogEntryType. The 
++    /// duplication was merited because .NET Compact Framework lacked the EventLogEntryType enum.&lt;/remarks&gt;
++    public enum LogLevel
++    {
++        /// &lt;summary&gt;Information level, log entry for informational reasons only.&lt;/summary&gt;
++        Information,
++        /// &lt;summary&gt;Warning level, indicates a possible problem.&lt;/summary&gt;
++        Warning,
++        /// &lt;summary&gt;Error level, implies a significant problem.&lt;/summary&gt;
++        Error
++    }
+ 
+-  ///&lt;summary&gt;
+-  ///Logging singleton with swappable output delegate.
+-  ///&lt;/summary&gt;
+-  ///&lt;remarks&gt;
+-  ///This singleton provides a centralized log. The actual WriteEntry calls are passed
+-  ///off to a delegate however. Having a delegate do the actual logginh allows you to
+-  ///implement different logging mechanism and have them take effect throughout the system.
+-  ///&lt;/remarks&gt;
+-  public class Logger
+-  {
+-    ///&lt;summary&gt;Delegate definition for logging.&lt;/summary&gt;
+-    ///&lt;param name=&quot;message&quot;&gt;The message &lt;c&gt;String&lt;/c&gt; to log.&lt;/param&gt;
+-    ///&lt;param name=&quot;level&quot;&gt;The &lt;c&gt;LogLevel&lt;/c&gt; of your message.&lt;/param&gt;
+-    public delegate void LoggerDelegate(String message, LogLevel level);
+-    ///&lt;summary&gt;The LoggerDelegate that will recieve WriteEntry requests.&lt;/summary&gt;
+-    static public LoggerDelegate Delegate = null;
+-
+     ///&lt;summary&gt;
+-    ///Method logging events are sent to.
++    ///Logging singleton with swappable output delegate.
+     ///&lt;/summary&gt;
+-    ///&lt;param name=&quot;message&quot;&gt;The message &lt;c&gt;String&lt;/c&gt; to log.&lt;/param&gt;
+-    ///&lt;param name=&quot;level&quot;&gt;The &lt;c&gt;LogLevel&lt;/c&gt; of your message.&lt;/param&gt;
+-    static public void WriteEntry(String message, LogLevel level)
+-      {
+-	if (Delegate != null)
+-	  Delegate(message, level);
+-      }
+-  }
++    ///&lt;remarks&gt;
++    ///This singleton provides a centralized log. The actual WriteEntry calls are passed
++    ///off to a delegate however. Having a delegate do the actual logginh allows you to
++    ///implement different logging mechanism and have them take effect throughout the system.
++    ///&lt;/remarks&gt;
++    public class Logger
++    {
++        ///&lt;summary&gt;Delegate definition for logging.&lt;/summary&gt;
++        ///&lt;param name=&quot;message&quot;&gt;The message &lt;c&gt;String&lt;/c&gt; to log.&lt;/param&gt;
++        ///&lt;param name=&quot;level&quot;&gt;The &lt;c&gt;LogLevel&lt;/c&gt; of your message.&lt;/param&gt;
++        public delegate void LoggerDelegate(String message, LogLevel level);
++        ///&lt;summary&gt;The LoggerDelegate that will recieve WriteEntry requests.&lt;/summary&gt;
++        static public LoggerDelegate Delegate = null;
++
++        ///&lt;summary&gt;
++        ///Method logging events are sent to.
++        ///&lt;/summary&gt;
++        ///&lt;param name=&quot;message&quot;&gt;The message &lt;c&gt;String&lt;/c&gt; to log.&lt;/param&gt;
++        ///&lt;param name=&quot;level&quot;&gt;The &lt;c&gt;LogLevel&lt;/c&gt; of your message.&lt;/param&gt;
++        static public void WriteEntry(String message, LogLevel level)
++        {
++            if (Delegate != null)
++                Delegate(message, level);
++        }
++    }
+ }
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/SimpleHttpRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/SimpleHttpRequest.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/SimpleHttpRequest.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,204 @@
++namespace Nwc.XmlRpc
++{
++    using System;
++    using System.IO;
++    using System.Net.Sockets;
++    using System.Collections;
++
++    ///&lt;summary&gt;Very basic HTTP request handler.&lt;/summary&gt;
++    ///&lt;remarks&gt;This class is designed to accept a TcpClient and treat it as an HTTP request.
++    /// It will do some basic header parsing and manage the input and output streams associated
++    /// with the request.&lt;/remarks&gt;
++    public class SimpleHttpRequest
++    {
++        private String _httpMethod = null;
++        private String _protocol;
++        private String _filePathFile = null;
++        private String _filePathDir = null;
++        private String __filePath;
++        private TcpClient _client;
++        private StreamReader _input;
++        private StreamWriter _output;
++        private Hashtable _headers;
++
++        /// &lt;summary&gt;A constructor which accepts the TcpClient.&lt;/summary&gt;
++        /// &lt;remarks&gt;It creates the associated input and output streams, determines the request type,
++        /// and parses the remaining HTTP header.&lt;/remarks&gt;
++        /// &lt;param name=&quot;client&quot;&gt;The &lt;c&gt;TcpClient&lt;/c&gt; associated with the HTTP connection.&lt;/param&gt;
++        public SimpleHttpRequest(TcpClient client)
++        {
++            _client = client;
++            _output = new StreamWriter(client.GetStream());
++            _input = new StreamReader(client.GetStream());
++            GetRequestMethod();
++            GetRequestHeaders();
++        }
++
++        /// &lt;summary&gt;The output &lt;c&gt;StreamWriter&lt;/c&gt; associated with the request.&lt;/summary&gt;
++        public StreamWriter Output
++        {
++            get { return _output; }
++        }
++
++        /// &lt;summary&gt;The input &lt;c&gt;StreamReader&lt;/c&gt; associated with the request.&lt;/summary&gt;
++        public StreamReader Input
++        {
++            get { return _input; }
++        }
++
++        /// &lt;summary&gt;The &lt;c&gt;TcpClient&lt;/c&gt; with the request.&lt;/summary&gt;
++        public TcpClient Client
++        {
++            get { return _client; }
++        }
++
++        private String _filePath
++        {
++            get { return __filePath; }
++            set
++            {
++                __filePath = value;
++                _filePathDir = null;
++                _filePathFile = null;
++            }
++        }
++
++        /// &lt;summary&gt;The type of HTTP request (i.e. PUT, GET, etc.).&lt;/summary&gt;
++        public String HttpMethod
++        {
++            get { return _httpMethod; }
++        }
++
++        /// &lt;summary&gt;The level of the HTTP protocol.&lt;/summary&gt;
++        public String Protocol
++        {
++            get { return _protocol; }
++        }
++
++        /// &lt;summary&gt;The &quot;path&quot; which is part of any HTTP request.&lt;/summary&gt;
++        public String FilePath
++        {
++            get { return _filePath; }
++        }
++
++        /// &lt;summary&gt;The file portion of the &quot;path&quot; which is part of any HTTP request.&lt;/summary&gt;
++        public String FilePathFile
++        {
++            get
++            {
++                if (_filePathFile != null)
++                    return _filePathFile;
++
++                int i = FilePath.LastIndexOf(&quot;/&quot;);
++
++                if (i == -1)
++                    return &quot;&quot;;
++
++                i++;
++                _filePathFile = FilePath.Substring(i, FilePath.Length - i);
++                return _filePathFile;
++            }
++        }
++
++        /// &lt;summary&gt;The directory portion of the &quot;path&quot; which is part of any HTTP request.&lt;/summary&gt;
++        public String FilePathDir
++        {
++            get
++            {
++                if (_filePathDir != null)
++                    return _filePathDir;
++
++                int i = FilePath.LastIndexOf(&quot;/&quot;);
++
++                if (i == -1)
++                    return &quot;&quot;;
++
++                i++;
++                _filePathDir = FilePath.Substring(0, i);
++                return _filePathDir;
++            }
++        }
++
++        private void GetRequestMethod()
++        {
++            string req = _input.ReadLine();
++            if (req == null)
++                throw new ApplicationException(&quot;Void request.&quot;);
++
++            if (0 == String.Compare(&quot;GET &quot;, req.Substring(0, 4), true))
++                _httpMethod = &quot;GET&quot;;
++            else if (0 == String.Compare(&quot;POST &quot;, req.Substring(0, 5), true))
++                _httpMethod = &quot;POST&quot;;
++            else
++                throw new InvalidOperationException(&quot;Unrecognized method in query: &quot; + req);
++
++            req = req.TrimEnd();
++            int idx = req.IndexOf(' ') + 1;
++            if (idx &gt;= req.Length)
++                throw new ApplicationException(&quot;What do you want?&quot;);
++
++            string page_protocol = req.Substring(idx);
++            int idx2 = page_protocol.IndexOf(' ');
++            if (idx2 == -1)
++                idx2 = page_protocol.Length;
++
++            _filePath = page_protocol.Substring(0, idx2).Trim();
++            _protocol = page_protocol.Substring(idx2).Trim();
++        }
++
++        private void GetRequestHeaders()
++        {
++            String line;
++            int idx;
++
++            _headers = new Hashtable();
++
++            while ((line = _input.ReadLine()) != &quot;&quot;)
++            {
++                if (line == null)
++                {
++                    break;
++                }
++
++                idx = line.IndexOf(':');
++                if (idx == -1 || idx == line.Length - 1)
++                {
++                    Logger.WriteEntry(&quot;Malformed header line: &quot; + line, LogLevel.Information);
++                    continue;
++                }
++
++                String key = line.Substring(0, idx);
++                String value = line.Substring(idx + 1);
++
++                try
++                {
++                    _headers.Add(key, value);
++                }
++                catch (Exception)
++                {
++                    Logger.WriteEntry(&quot;Duplicate header key in line: &quot; + line, LogLevel.Information);
++                }
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// Format the object contents into a useful string representation.
++        /// &lt;/summary&gt;
++        ///&lt;returns&gt;&lt;c&gt;String&lt;/c&gt; representation of the &lt;c&gt;SimpleHttpRequest&lt;/c&gt; as the &lt;i&gt;HttpMethod FilePath Protocol&lt;/i&gt;.&lt;/returns&gt;
++        override public String ToString()
++        {
++            return HttpMethod + &quot; &quot; + FilePath + &quot; &quot; + Protocol;
++        }
++
++        /// &lt;summary&gt;
++        /// Close the &lt;c&gt;SimpleHttpRequest&lt;/c&gt;. This flushes and closes all associated io streams.
++        /// &lt;/summary&gt;
++        public void Close()
++        {
++            _output.Flush();
++            _output.Close();
++            _input.Close();
++            _client.Close();
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcBoxcarRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcBoxcarRequest.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcBoxcarRequest.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,51 @@
++namespace Nwc.XmlRpc
++{
++  using System;
++  using System.Collections;
++  using System.IO;
++  using System.Xml;
++  using System.Net;
++  using System.Text;
++  using System.Reflection;
++
++  /// &lt;summary&gt;Class that collects individual &lt;c&gt;XmlRpcRequest&lt;/c&gt; objects and submits them as a &lt;i&gt;boxcarred&lt;/i&gt; request.&lt;/summary&gt;
++  /// &lt;remarks&gt;A boxcared request is when a number of request are collected before being sent via XML-RPC, and then are sent via
++  /// a single HTTP connection. This results in a speed up from reduced connection time.  The results are then retuned collectively
++  /// as well.
++  ///&lt;/remarks&gt;
++  /// &lt;seealso cref=&quot;XmlRpcRequest&quot;/&gt;
++  public class XmlRpcBoxcarRequest : XmlRpcRequest
++  {
++    /// &lt;summary&gt;ArrayList to collect the requests to boxcar.&lt;/summary&gt;
++    public IList Requests = new ArrayList();
++
++    /// &lt;summary&gt;Basic constructor.&lt;/summary&gt;
++    public XmlRpcBoxcarRequest()
++      {
++      }
++
++    /// &lt;summary&gt;Returns the &lt;c&gt;String&lt;/c&gt; &quot;system.multiCall&quot; which is the server method that handles boxcars.&lt;/summary&gt;
++    public override String MethodName
++      {
++	get { return  &quot;system.multiCall&quot;;  }
++      }
++
++    /// &lt;summary&gt;The &lt;c&gt;ArrayList&lt;/c&gt; of boxcarred &lt;paramref&gt;Requests&lt;/paramref&gt; as properly formed parameters.&lt;/summary&gt;
++    public override IList Params
++      {
++	get {
++	  _params.Clear();
++	  ArrayList reqArray = new ArrayList();
++	  foreach (XmlRpcRequest request in Requests)
++	    {
++	      Hashtable requestEntry = new Hashtable();
++	      requestEntry.Add(XmlRpcXmlTokens.METHOD_NAME, request.MethodName);
++	      requestEntry.Add(XmlRpcXmlTokens.PARAMS, request.Params);
++	      reqArray.Add(requestEntry);
++	    }
++	  _params.Add(reqArray);
++	  return _params;
++	}
++      }
++  }
++}
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcClientProxy.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcClientProxy.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcClientProxy.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,61 @@
++namespace Nwc.XmlRpc
++{
++  using System;
++  using System.Runtime.Remoting.Proxies;
++  using System.Runtime.Remoting.Messaging;
++
++  /// &lt;summary&gt;This class provides support for creating local proxies of XML-RPC remote objects&lt;/summary&gt;
++  /// &lt;remarks&gt;
++  /// To create a local proxy you need to create a local C# interface and then, via &lt;i&gt;createProxy&lt;/i&gt;
++  /// associate that interface with a remote object at a given URL.
++  /// &lt;/remarks&gt;
++public class XmlRpcClientProxy : RealProxy
++{
++  private String _remoteObjectName;
++  private String _url;
++  private XmlRpcRequest _client = new XmlRpcRequest();
++
++  /// &lt;summary&gt;Factory method to create proxies.&lt;/summary&gt;
++  /// &lt;remarks&gt;
++  /// To create a local proxy you need to create a local C# interface with methods that mirror those of the server object.
++  /// Next, pass that interface into &lt;c&gt;createProxy&lt;/c&gt; along with the object name and URL of the remote object and 
++  /// cast the resulting object to the specifice interface.
++  /// &lt;/remarks&gt;
++  /// &lt;param name=&quot;remoteObjectName&quot;&gt;&lt;c&gt;String&lt;/c&gt; The name of the remote object.&lt;/param&gt;
++  /// &lt;param name=&quot;url&quot;&gt;&lt;c&gt;String&lt;/c&gt; The URL of the remote object.&lt;/param&gt;
++  /// &lt;param name=&quot;anInterface&quot;&gt;&lt;c&gt;Type&lt;/c&gt; The typeof() of a C# interface.&lt;/param&gt;
++  /// &lt;returns&gt;&lt;c&gt;Object&lt;/c&gt; A proxy for your specified interface. Cast to appropriate type.&lt;/returns&gt;
++  public static Object createProxy(String remoteObjectName, String url, Type anInterface)
++    {
++      return new XmlRpcClientProxy(remoteObjectName, url, anInterface).GetTransparentProxy();
++    }
++
++  private XmlRpcClientProxy(String remoteObjectName, String url, Type t) : base(t)
++    {
++      _remoteObjectName = remoteObjectName;
++      _url = url;
++    }
++
++  /// &lt;summary&gt;The local method dispatcher - do not invoke.&lt;/summary&gt;
++  override public IMessage Invoke(IMessage msg)
++    {
++      IMethodCallMessage methodMessage = (IMethodCallMessage)msg;
++
++      _client.MethodName = _remoteObjectName + &quot;.&quot; + methodMessage.MethodName;
++      _client.Params.Clear();
++      foreach (Object o in methodMessage.Args)
++	_client.Params.Add(o);
++
++      try
++	{
++	  Object ret = _client.Invoke(_url);
++	  return new ReturnMessage(ret,null,0,
++				   methodMessage.LogicalCallContext, methodMessage);
++	}
++      catch (Exception e)
++	{
++	  return new ReturnMessage(e, methodMessage);
++	}
++    }
++}
++}
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcDeserializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcDeserializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcDeserializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,7 +1,7 @@
+ namespace Nwc.XmlRpc
+ {
+     using System;
+-    using System.Collections.Generic;
++    using System.Collections;
+     using System.IO;
+     using System.Xml;
+     using System.Globalization;
+@@ -22,7 +22,7 @@
+         private static DateTimeFormatInfo _dateFormat = new DateTimeFormatInfo();
+ 
+         private Object _container;
+-        private Stack&lt;Object&gt; _containerStack;
++        private Stack _containerStack;
+ 
+         /// &lt;summary&gt;Protected reference to last text.&lt;/summary&gt;
+         protected String _text;
+@@ -31,6 +31,7 @@
+         /// &lt;summary&gt;Protected reference to last name field.&lt;/summary&gt;
+         protected String _name;
+ 
++
+         /// &lt;summary&gt;Basic constructor.&lt;/summary&gt;
+         public XmlRpcDeserializer()
+         {
+@@ -65,11 +66,11 @@
+                             break;
+                         case STRUCT:
+                             PushContext();
+-                            _container = new Dictionary&lt;string, object&gt;();
++                            _container = new Hashtable();
+                             break;
+                         case ARRAY:
+                             PushContext();
+-                            _container = new List&lt;object&gt;();
++                            _container = new ArrayList();
+                             break;
+                     }
+                     break;
+@@ -92,7 +93,7 @@
+                             _value = _text;
+                             break;
+                         case DOUBLE:
+-                            _value = Double.Parse(_text, CultureInfo.InvariantCulture);
++                            _value = Double.Parse(_text);
+                             break;
+                         case INT:
+                         case ALT_INT:
+@@ -112,12 +113,12 @@
+                             if (_value == null)
+                                 _value = _text; // some kits don't use &lt;string&gt; tag, they just do &lt;value&gt;
+ 
+-                            if ((_container != null) &amp;&amp; (_container is List&lt;object&gt;)) // in an array?  If so add value to it.
+-                                ((List&lt;object&gt;)_container).Add(_value);
++                            if ((_container != null) &amp;&amp; (_container is IList)) // in an array?  If so add value to it.
++                                ((IList)_container).Add(_value);
+                             break;
+                         case MEMBER:
+-                            if ((_container != null) &amp;&amp; (_container is Dictionary&lt;string, object&gt;)) // in an struct?  If so add value to it.
+-                                ((Dictionary&lt;string, object&gt;)_container).Add(_name, _value);
++                            if ((_container != null) &amp;&amp; (_container is IDictionary)) // in an struct?  If so add value to it.
++                                ((IDictionary)_container).Add(_name, _value);
+                             break;
+                         case ARRAY:
+                         case STRUCT:
+@@ -172,8 +173,22 @@
+             _value = null;
+             _name = null;
+             _container = null;
+-            _containerStack = new Stack&lt;object&gt;();
++            _containerStack = new Stack();
+         }
++
++#if __MONO__
++    private DateTime DateParse(String str)
++      {
++	int year = Int32.Parse(str.Substring(0,4));
++	int month = Int32.Parse(str.Substring(4,2));
++	int day = Int32.Parse(str.Substring(6,2));
++	int hour = Int32.Parse(str.Substring(9,2));
++	int min = Int32.Parse(str.Substring(12,2));
++	int sec = Int32.Parse(str.Substring(15,2));
++	return new DateTime(year,month,day,hour,min,sec);
++      }
++#endif
++
+     }
+ }
+ 
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,15 +1,53 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
++    using System;
+ 
+-  /// &lt;summary&gt;Standard XML-RPC error codes&lt;/summary&gt;
+-  public class XmlRpcErrorCodes
+-  {
+-    // -32400 ---&gt; system error
+-    
+-    /// &lt;summary&gt;Transport error&lt;/summary&gt;
+-    public const int TRANSPORT_ERROR = -32300;
+-    /// &lt;summary&gt;Transport error message&lt;/summary&gt;
+-    public const String TRANSPORT_ERROR_MSG = &quot;Transport Layer Error&quot;;
+-  }
++    /// &lt;summary&gt;Standard XML-RPC error codes.&lt;/summary&gt;
++    public class XmlRpcErrorCodes
++    {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int PARSE_ERROR_MALFORMED = -32700;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String PARSE_ERROR_MALFORMED_MSG = &quot;Parse Error, not well formed&quot;;
++
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int PARSE_ERROR_ENCODING = -32701;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String PARSE_ERROR_ENCODING_MSG = &quot;Parse Error, unsupported encoding&quot;;
++
++        /**
++           -32702 ---&gt; parse error. invalid character for encoding
++           -32600 ---&gt; server error. invalid xml-rpc. not conforming to spec.
++        **/
++
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int SERVER_ERROR_METHOD = -32601;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String SERVER_ERROR_METHOD_MSG = &quot;Server Error, requested method not found&quot;;
++
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int SERVER_ERROR_PARAMS = -32602;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String SERVER_ERROR_PARAMS_MSG = &quot;Server Error, invalid method parameters&quot;;
++
++        /**
++           -32603 ---&gt; server error. internal xml-rpc error
++        **/
++
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int APPLICATION_ERROR = -32500;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String APPLICATION_ERROR_MSG = &quot;Application Error&quot;;
++
++        /**
++           -32400 ---&gt; system error
++        **/
++
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const int TRANSPORT_ERROR = -32300;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public const String TRANSPORT_ERROR_MSG = &quot;Transport Layer Error&quot;;
++    }
+ }
++
++
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcException.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcException.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcException.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,38 +1,39 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
++    using System;
+ 
+-  /// &lt;summary&gt;An XML-RPC Exception.&lt;/summary&gt;
+-  /// &lt;remarks&gt;Maps a C# exception to an XML-RPC fault. Normal exceptions
+-  /// include a message so this adds the code needed by XML-RPC.&lt;/remarks&gt;
+-  public class XmlRpcException : Exception
++    /// &lt;summary&gt;An XML-RPC Exception.&lt;/summary&gt;
++    /// &lt;remarks&gt;Maps a C# exception to an XML-RPC fault. Normal exceptions
++    /// include a message so this adds the code needed by XML-RPC.&lt;/remarks&gt;
++    public class XmlRpcException : Exception
+     {
+-      private int _code;
+-  
+-      /// &lt;summary&gt;Instantiate an &lt;c&gt;XmlRpcException&lt;/c&gt; with a code and message.&lt;/summary&gt;
+-      /// &lt;param name=&quot;code&quot;&gt;&lt;c&gt;Int&lt;/c&gt; faultCode associated with this exception.&lt;/param&gt;
+-      /// &lt;param name=&quot;message&quot;&gt;&lt;c&gt;String&lt;/c&gt; faultMessage associated with this exception.&lt;/param&gt;
+-      public XmlRpcException(int code, String message) : base(message)
+-	{
+-	  _code = code;
+-	}
++        private int _code;
+ 
+-      /// &lt;summary&gt;The value of the faults message, i.e. the faultString.&lt;/summary&gt;
+-      public String FaultString
+-	{
+-	  get { return Message; }
+-	}
++        /// &lt;summary&gt;Instantiate an &lt;c&gt;XmlRpcException&lt;/c&gt; with a code and message.&lt;/summary&gt;
++        /// &lt;param name=&quot;code&quot;&gt;&lt;c&gt;Int&lt;/c&gt; faultCode associated with this exception.&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;c&gt;String&lt;/c&gt; faultMessage associated with this exception.&lt;/param&gt;
++        public XmlRpcException(int code, String message)
++            : base(message)
++        {
++            _code = code;
++        }
+ 
+-      /// &lt;summary&gt;The value of the faults code, i.e. the faultCode.&lt;/summary&gt;
+-      public int FaultCode
+-	{
+-	  get { return _code; }
+-	}
++        /// &lt;summary&gt;The value of the faults message, i.e. the faultString.&lt;/summary&gt;
++        public String FaultString
++        {
++            get { return Message; }
++        }
+ 
+-      /// &lt;summary&gt;Format the message to include the code.&lt;/summary&gt;
+-      override public String ToString()
+-	{
+-	  return &quot;Code: &quot; + FaultCode + &quot; Message: &quot; + base.ToString();
+-	}
++        /// &lt;summary&gt;The value of the faults code, i.e. the faultCode.&lt;/summary&gt;
++        public int FaultCode
++        {
++            get { return _code; }
++        }
++
++        /// &lt;summary&gt;Format the message to include the code.&lt;/summary&gt;
++        override public String ToString()
++        {
++            return &quot;Code: &quot; + FaultCode + &quot; Message: &quot; + base.ToString();
++        }
+     }
+ }
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcExposedAttribute.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcExposedAttribute.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcExposedAttribute.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,60 @@
++namespace Nwc.XmlRpc
++{
++    using System;
++    using System.Reflection;
++
++    /// &lt;summary&gt;
++    /// Simple tagging attribute to indicate participation is XML-RPC exposure.
++    /// &lt;/summary&gt;
++    /// &lt;remarks&gt;
++    /// If present at the class level it indicates that this class does explicitly 
++    /// expose methods. If present at the method level it denotes that the method
++    /// is exposed.
++    /// &lt;/remarks&gt;
++    [AttributeUsage(
++          AttributeTargets.Class | AttributeTargets.Method,
++          AllowMultiple = false,
++          Inherited = true
++      )]
++    public class XmlRpcExposedAttribute : Attribute
++    {
++        /// &lt;summary&gt;Check if &lt;paramref&gt;obj&lt;/paramref&gt; is an object utilizing the XML-RPC exposed Attribute.&lt;/summary&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;&lt;c&gt;Object&lt;/c&gt; of a class or method to check for attribute.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;Boolean&lt;/c&gt; true if attribute present.&lt;/returns&gt;
++        public static Boolean ExposedObject(Object obj)
++        {
++            return IsExposed(obj.GetType());
++        }
++
++        /// &lt;summary&gt;Check if &lt;paramref&gt;obj&lt;/paramref&gt;.&lt;paramref&gt;methodName&lt;/paramref&gt; is an XML-RPC exposed method.&lt;/summary&gt;
++        /// &lt;remarks&gt;A method is considered to be exposed if it exists and, either, the object does not use the XmlRpcExposed attribute,
++        /// or the object does use the XmlRpcExposed attribute and the method has the XmlRpcExposed attribute as well.&lt;/remarks&gt;
++        /// &lt;returns&gt;&lt;c&gt;Boolean&lt;/c&gt; true if the  method is exposed.&lt;/returns&gt;
++        public static Boolean ExposedMethod(Object obj, String methodName)
++        {
++            Type type = obj.GetType();
++            MethodInfo method = type.GetMethod(methodName);
++
++            if (method == null)
++                throw new MissingMethodException(&quot;Method &quot; + methodName + &quot; not found.&quot;);
++
++            if (!IsExposed(type))
++                return true;
++
++            return IsExposed(method);
++        }
++
++        /// &lt;summary&gt;Check if &lt;paramref&gt;mi&lt;/paramref&gt; is XML-RPC exposed.&lt;/summary&gt;
++        /// &lt;param name=&quot;mi&quot;&gt;&lt;c&gt;MemberInfo&lt;/c&gt; of a class or method to check for attribute.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;Boolean&lt;/c&gt; true if attribute present.&lt;/returns&gt;
++        public static Boolean IsExposed(MemberInfo mi)
++        {
++            foreach (Attribute attr in mi.GetCustomAttributes(true))
++            {
++                if (attr is XmlRpcExposedAttribute)
++                    return true;
++            }
++            return false;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,9 +1,7 @@
+-#pragma warning disable 0618
+-
+ namespace Nwc.XmlRpc
+ {
+     using System;
+-    using System.Collections.Generic;
++    using System.Collections;
+     using System.IO;
+     using System.Xml;
+     using System.Net;
+@@ -36,17 +34,27 @@
+         private XmlRpcResponseDeserializer _deserializer = new XmlRpcResponseDeserializer();
+ 
+         /// &lt;summary&gt;&lt;c&gt;ArrayList&lt;/c&gt; containing the parameters.&lt;/summary&gt;
+-        protected List&lt;object&gt; _params = null;
++        protected IList _params = null;
+ 
+         /// &lt;summary&gt;Instantiate an &lt;c&gt;XmlRpcRequest&lt;/c&gt;&lt;/summary&gt;
+         public XmlRpcRequest()
+         {
+-            _params = new List&lt;object&gt;();
++            _params = new ArrayList();
+         }
+ 
+-        /// &lt;summary&gt;&lt;c&gt;ArrayList&lt;/c&gt; containing the parameters for the request.&lt;/summary&gt;
+-        public virtual List&lt;object&gt; Params
++        /// &lt;summary&gt;Instantiate an &lt;c&gt;XmlRpcRequest&lt;/c&gt; for a specified method and parameters.&lt;/summary&gt;
++        /// &lt;param name=&quot;methodName&quot;&gt;&lt;c&gt;String&lt;/c&gt; designating the &lt;i&gt;object.method&lt;/i&gt; on the server the request
++        /// should be directed to.&lt;/param&gt;
++        /// &lt;param name=&quot;parameters&quot;&gt;&lt;c&gt;ArrayList&lt;/c&gt; of XML-RPC type parameters to invoke the request with.&lt;/param&gt;
++        public XmlRpcRequest(String methodName, IList parameters)
+         {
++            MethodName = methodName;
++            _params = parameters;
++        }
++
++        /// &lt;summary&gt;&lt;c&gt;ArrayList&lt;/c&gt; conntaining the parameters for the request.&lt;/summary&gt;
++        public virtual IList Params
++        {
+             get { return _params; }
+         }
+ 
+@@ -57,16 +65,56 @@
+             set { _methodName = value; }
+         }
+ 
++        /// &lt;summary&gt;&lt;c&gt;String&lt;/c&gt; object name portion of the method name.&lt;/summary&gt;
++        public String MethodNameObject
++        {
++            get
++            {
++                int index = MethodName.IndexOf(&quot;.&quot;);
++
++                if (index == -1)
++                    return MethodName;
++
++                return MethodName.Substring(0, index);
++            }
++        }
++
++        /// &lt;summary&gt;&lt;c&gt;String&lt;/c&gt; method name portion of the object.method name.&lt;/summary&gt;
++        public String MethodNameMethod
++        {
++            get
++            {
++                int index = MethodName.IndexOf(&quot;.&quot;);
++
++                if (index == -1)
++                    return MethodName;
++
++                return MethodName.Substring(index + 1, MethodName.Length - index - 1);
++            }
++        }
++
++        /// &lt;summary&gt;Invoke this request on the server.&lt;/summary&gt;
++        /// &lt;param name=&quot;url&quot;&gt;&lt;c&gt;String&lt;/c&gt; The url of the XML-RPC server.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;Object&lt;/c&gt; The value returned from the method invocation on the server.&lt;/returns&gt;
++        /// &lt;exception cref=&quot;XmlRpcException&quot;&gt;If an exception generated on the server side.&lt;/exception&gt;
++        public Object Invoke(String url)
++        {
++            XmlRpcResponse res = Send(url, 10000);
++
++            if (res.IsFault)
++                throw new XmlRpcException(res.FaultCode, res.FaultString);
++
++            return res.Value;
++        }
++
+         /// &lt;summary&gt;Send the request to the server.&lt;/summary&gt;
+         /// &lt;param name=&quot;url&quot;&gt;&lt;c&gt;String&lt;/c&gt; The url of the XML-RPC server.&lt;/param&gt;
++        /// &lt;param name=&quot;timeout&quot;&gt;Milliseconds before the connection times out.&lt;/param&gt;
+         /// &lt;returns&gt;&lt;c&gt;XmlRpcResponse&lt;/c&gt; The response generated.&lt;/returns&gt;
+         public XmlRpcResponse Send(String url, int timeout)
+         {
+             // Override SSL authentication mechanisms
+             ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
+-            //ServicePointManager.ServerCertificateValidationCallback += 
+-            //    delegate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+-            //    { return true; };
+ 
+             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+             if (request == null)
+@@ -75,8 +123,7 @@
+             request.Method = &quot;POST&quot;;
+             request.ContentType = &quot;text/xml&quot;;
+             request.AllowWriteStreamBuffering = true;
+-            request.KeepAlive = false;
+-            request.Timeout = timeout; // miliseconds adjust as you see fit
++            request.Timeout = timeout;
+ 
+             Stream stream = request.GetRequestStream();
+             XmlTextWriter xml = new XmlTextWriter(stream, _encoding);
+@@ -93,15 +140,6 @@
+             return resp;
+         }
+ 
+-        private bool CheckValidationResult(Object sender,
+-            System.Security.Cryptography.X509Certificates.X509Certificate certificate, 
+-            System.Security.Cryptography.X509Certificates.X509Chain chain, 
+-            System.Net.Security.SslPolicyErrors sslPolicyErrors)
+-        {
+-            // Always accept
+-            return true;
+-        }
+-
+         /// &lt;summary&gt;Produce &lt;c&gt;String&lt;/c&gt; representation of the object.&lt;/summary&gt;
+         /// &lt;returns&gt;&lt;c&gt;String&lt;/c&gt; representation of the object.&lt;/returns&gt;
+         override public String ToString()
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestDeserializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestDeserializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestDeserializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,64 +1,64 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
+-  using System.Collections.Generic;
+-  using System.Diagnostics;
+-  using System.IO;
+-  using System.Xml;
++    using System;
++    using System.Collections;
++    using System.Diagnostics;
++    using System.IO;
++    using System.Xml;
+ 
+-  /// &lt;summary&gt;Class to deserialize XML data representing a request.&lt;/summary&gt;
+-  public class XmlRpcRequestDeserializer : XmlRpcDeserializer
+-  {
+-    static private XmlRpcRequestDeserializer _singleton;
+-    /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
+-    [Obsolete(&quot;This object is now thread safe, just use an instance.&quot;,false)]
+-    static public XmlRpcRequestDeserializer Singleton
+-      {
+-	get
+-	  {
+-	    if (_singleton == null)
+-	      _singleton = new XmlRpcRequestDeserializer();
++    /// &lt;summary&gt;Class to deserialize XML data representing a request.&lt;/summary&gt;
++    public class XmlRpcRequestDeserializer : XmlRpcDeserializer
++    {
++        static private XmlRpcRequestDeserializer _singleton;
++        /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
++        [Obsolete(&quot;This object is now thread safe, just use an instance.&quot;, false)]
++        static public XmlRpcRequestDeserializer Singleton
++        {
++            get
++            {
++                if (_singleton == null)
++                    _singleton = new XmlRpcRequestDeserializer();
+ 
+-	    return _singleton;
+-	  }
+-      }
++                return _singleton;
++            }
++        }
+ 
+-    /// &lt;summary&gt;Static method that parses XML data into a request using the Singleton.&lt;/summary&gt;
+-    /// &lt;param name=&quot;xmlData&quot;&gt;&lt;c&gt;StreamReader&lt;/c&gt; containing an XML-RPC request.&lt;/param&gt;
+-    /// &lt;returns&gt;&lt;c&gt;XmlRpcRequest&lt;/c&gt; object resulting from the parse.&lt;/returns&gt;
+-    override public Object Deserialize(TextReader xmlData)
+-      {
+-	XmlTextReader reader = new XmlTextReader(xmlData);
+-	XmlRpcRequest request = new XmlRpcRequest();
+-	bool done = false;
++        /// &lt;summary&gt;Static method that parses XML data into a request using the Singleton.&lt;/summary&gt;
++        /// &lt;param name=&quot;xmlData&quot;&gt;&lt;c&gt;StreamReader&lt;/c&gt; containing an XML-RPC request.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;XmlRpcRequest&lt;/c&gt; object resulting from the parse.&lt;/returns&gt;
++        override public Object Deserialize(TextReader xmlData)
++        {
++            XmlTextReader reader = new XmlTextReader(xmlData);
++            XmlRpcRequest request = new XmlRpcRequest();
++            bool done = false;
+ 
+-	lock(this)
+-	  {
+-	    Reset();
+-	    while (!done &amp;&amp; reader.Read())
+-	      {
+-		DeserializeNode(reader); // Parent parse...
+-		switch (reader.NodeType)
+-		  {
+-		  case XmlNodeType.EndElement:
+-		    switch (reader.Name)
+-		      {
+-		      case METHOD_NAME:
+-			request.MethodName = _text;
+-			break;
+-		      case METHOD_CALL:
+-			done = true;
+-			break;
+-		      case PARAM:
+-			request.Params.Add(_value);
+-			_text = null;
+-			break;
+-		      }
+-		    break;
+-		  }	
+-	      }
+-	  }
+-	return request;
+-      }
+-  }
++            lock (this)
++            {
++                Reset();
++                while (!done &amp;&amp; reader.Read())
++                {
++                    DeserializeNode(reader); // Parent parse...
++                    switch (reader.NodeType)
++                    {
++                        case XmlNodeType.EndElement:
++                            switch (reader.Name)
++                            {
++                                case METHOD_NAME:
++                                    request.MethodName = _text;
++                                    break;
++                                case METHOD_CALL:
++                                    done = true;
++                                    break;
++                                case PARAM:
++                                    request.Params.Add(_value);
++                                    _text = null;
++                                    break;
++                            }
++                            break;
++                    }
++                }
++            }
++            return request;
++        }
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestSerializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestSerializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequestSerializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,38 +1,51 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
+-  using System.Collections.Generic;
+-  using System.Xml;
+-  using System.IO;
++    using System;
++    using System.Collections;
++    using System.Xml;
++    using System.IO;
+ 
+-  /// &lt;summary&gt;Class responsible for serializing an XML-RPC request.&lt;/summary&gt;
+-  /// &lt;remarks&gt;This class handles the request envelope, depending on &lt;c&gt;XmlRpcSerializer&lt;/c&gt;
+-  /// to serialize the payload.&lt;/remarks&gt;
+-  /// &lt;seealso cref=&quot;XmlRpcSerializer&quot;/&gt;
+-  public class XmlRpcRequestSerializer : XmlRpcSerializer
+-  {
+-    /// &lt;summary&gt;Serialize the &lt;c&gt;XmlRpcRequest&lt;/c&gt; to the output stream.&lt;/summary&gt;
+-    /// &lt;param name=&quot;output&quot;&gt;An &lt;c&gt;XmlTextWriter&lt;/c&gt; stream to write data to.&lt;/param&gt;
+-    /// &lt;param name=&quot;obj&quot;&gt;An &lt;c&gt;XmlRpcRequest&lt;/c&gt; to serialize.&lt;/param&gt;
+-    /// &lt;seealso cref=&quot;XmlRpcRequest&quot;/&gt;
+-    override public void Serialize(XmlTextWriter output, Object obj)
+-      {
+-	XmlRpcRequest request = (XmlRpcRequest)obj;
+-	output.WriteStartDocument();
+-	output.WriteStartElement(METHOD_CALL);
+-	output.WriteElementString(METHOD_NAME,request.MethodName);
+-	output.WriteStartElement(PARAMS);
+-	foreach (Object param in request.Params)
+-	  {
+-	    output.WriteStartElement(PARAM);
+-	    output.WriteStartElement(VALUE);
+-	    SerializeObject(output, param);
+-	    output.WriteEndElement();
+-	    output.WriteEndElement();
+-	  }
++    /// &lt;summary&gt;Class responsible for serializing an XML-RPC request.&lt;/summary&gt;
++    /// &lt;remarks&gt;This class handles the request envelope, depending on &lt;c&gt;XmlRpcSerializer&lt;/c&gt;
++    /// to serialize the payload.&lt;/remarks&gt;
++    /// &lt;seealso cref=&quot;XmlRpcSerializer&quot;/&gt;
++    public class XmlRpcRequestSerializer : XmlRpcSerializer
++    {
++        static private XmlRpcRequestSerializer _singleton;
++        /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
++        static public XmlRpcRequestSerializer Singleton
++        {
++            get
++            {
++                if (_singleton == null)
++                    _singleton = new XmlRpcRequestSerializer();
+ 
+-	output.WriteEndElement();
+-	output.WriteEndElement();
+-      }
+-  }
++                return _singleton;
++            }
++        }
++
++        /// &lt;summary&gt;Serialize the &lt;c&gt;XmlRpcRequest&lt;/c&gt; to the output stream.&lt;/summary&gt;
++        /// &lt;param name=&quot;output&quot;&gt;An &lt;c&gt;XmlTextWriter&lt;/c&gt; stream to write data to.&lt;/param&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;An &lt;c&gt;XmlRpcRequest&lt;/c&gt; to serialize.&lt;/param&gt;
++        /// &lt;seealso cref=&quot;XmlRpcRequest&quot;/&gt;
++        override public void Serialize(XmlTextWriter output, Object obj)
++        {
++            XmlRpcRequest request = (XmlRpcRequest)obj;
++            output.WriteStartDocument();
++            output.WriteStartElement(METHOD_CALL);
++            output.WriteElementString(METHOD_NAME, request.MethodName);
++            output.WriteStartElement(PARAMS);
++            foreach (Object param in request.Params)
++            {
++                output.WriteStartElement(PARAM);
++                output.WriteStartElement(VALUE);
++                SerializeObject(output, param);
++                output.WriteEndElement();
++                output.WriteEndElement();
++            }
++
++            output.WriteEndElement();
++            output.WriteEndElement();
++        }
++    }
+ }
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponder.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponder.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponder.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,98 @@
++namespace Nwc.XmlRpc
++{
++    using System;
++    using System.Xml;
++    using System.Net.Sockets;
++
++    /// &lt;summary&gt;The class is a container of the context of an XML-RPC dialog on the server side.&lt;/summary&gt;
++    /// &lt;remarks&gt;Instances of this class maintain the context for an individual XML-RPC server
++    /// side dialog. Namely they manage an inbound deserializer and an outbound serializer. &lt;/remarks&gt;
++    public class XmlRpcResponder
++    {
++        private XmlRpcRequestDeserializer _deserializer = new XmlRpcRequestDeserializer();
++        private XmlRpcResponseSerializer _serializer = new XmlRpcResponseSerializer();
++        private XmlRpcServer _server;
++        private TcpClient _client;
++        private SimpleHttpRequest _httpReq;
++
++        /// &lt;summary&gt;The SimpleHttpRequest based on the TcpClient.&lt;/summary&gt;
++        public SimpleHttpRequest HttpReq
++        {
++            get { return _httpReq; }
++        }
++
++        /// &lt;summary&gt;Basic constructor.&lt;/summary&gt;
++        /// &lt;param name=&quot;server&quot;&gt;XmlRpcServer that this XmlRpcResponder services.&lt;/param&gt;
++        /// &lt;param name=&quot;client&quot;&gt;TcpClient with the connection.&lt;/param&gt;
++        public XmlRpcResponder(XmlRpcServer server, TcpClient client)
++        {
++            _server = server;
++            _client = client;
++            _httpReq = new SimpleHttpRequest(_client);
++        }
++
++        /// &lt;summary&gt;Call close to insure proper shutdown.&lt;/summary&gt;
++        ~XmlRpcResponder()
++        {
++            Close();
++        }
++
++        ///&lt;summary&gt;Respond using this responders HttpReq.&lt;/summary&gt;
++        public void Respond()
++        {
++            Respond(HttpReq);
++        }
++
++        /// &lt;summary&gt;Handle an HTTP request containing an XML-RPC request.&lt;/summary&gt;
++        /// &lt;remarks&gt;This method deserializes the XML-RPC request, invokes the 
++        /// described method, serializes the response (or fault) and sends the XML-RPC response
++        /// back as a valid HTTP page.
++        /// &lt;/remarks&gt;
++        /// &lt;param name=&quot;httpReq&quot;&gt;&lt;c&gt;SimpleHttpRequest&lt;/c&gt; containing the request.&lt;/param&gt;
++        public void Respond(SimpleHttpRequest httpReq)
++        {
++            XmlRpcRequest xmlRpcReq = (XmlRpcRequest)_deserializer.Deserialize(httpReq.Input);
++            XmlRpcResponse xmlRpcResp = new XmlRpcResponse();
++
++            try
++            {
++                xmlRpcResp.Value = _server.Invoke(xmlRpcReq);
++            }
++            catch (XmlRpcException e)
++            {
++                xmlRpcResp.SetFault(e.FaultCode, e.FaultString);
++            }
++            catch (Exception e2)
++            {
++                xmlRpcResp.SetFault(XmlRpcErrorCodes.APPLICATION_ERROR,
++                      XmlRpcErrorCodes.APPLICATION_ERROR_MSG + &quot;: &quot; + e2.Message);
++            }
++
++            if (Logger.Delegate != null)
++                Logger.WriteEntry(xmlRpcResp.ToString(), LogLevel.Information);
++
++            XmlRpcServer.HttpHeader(httpReq.Protocol, &quot;text/xml&quot;, 0, &quot; 200 OK&quot;, httpReq.Output);
++            httpReq.Output.Flush();
++            XmlTextWriter xml = new XmlTextWriter(httpReq.Output);
++            _serializer.Serialize(xml, xmlRpcResp);
++            xml.Flush();
++            httpReq.Output.Flush();
++        }
++
++        ///&lt;summary&gt;Close all contained resources, both the HttpReq and client.&lt;/summary&gt;
++        public void Close()
++        {
++            if (_httpReq != null)
++            {
++                _httpReq.Close();
++                _httpReq = null;
++            }
++
++            if (_client != null)
++            {
++                _client.Close();
++                _client = null;
++            }
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponse.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponse.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponse.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,7 +1,7 @@
+ namespace Nwc.XmlRpc
+ {
+     using System;
+-    using System.Collections.Generic;
++    using System.Collections;
+     using System.IO;
+     using System.Xml;
+ 
+@@ -19,6 +19,15 @@
+             IsFault = false;
+         }
+ 
++        /// &lt;summary&gt;Constructor for a fault.&lt;/summary&gt;
++        /// &lt;param name=&quot;code&quot;&gt;&lt;c&gt;int&lt;/c&gt; the numeric faultCode value.&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;c&gt;String&lt;/c&gt; the faultString value.&lt;/param&gt;
++        public XmlRpcResponse(int code, String message)
++            : this()
++        {
++            SetFault(code, message);
++        }
++
+         /// &lt;summary&gt;The data value of the response, may be fault data.&lt;/summary&gt;
+         public Object Value
+         {
+@@ -38,7 +47,7 @@
+                 if (!IsFault)
+                     return 0;
+                 else
+-                    return (int)((Dictionary&lt;string, object&gt;)_value)[XmlRpcXmlTokens.FAULT_CODE];
++                    return (int)((Hashtable)_value)[XmlRpcXmlTokens.FAULT_CODE];
+             }
+         }
+ 
+@@ -50,7 +59,7 @@
+                 if (!IsFault)
+                     return &quot;&quot;;
+                 else
+-                    return (String)((Dictionary&lt;string, object&gt;)_value)[XmlRpcXmlTokens.FAULT_STRING];
++                    return (String)((Hashtable)_value)[XmlRpcXmlTokens.FAULT_STRING];
+             }
+         }
+ 
+@@ -59,7 +68,7 @@
+         /// &lt;param name=&quot;message&quot;&gt;&lt;c&gt;String&lt;/c&gt; the faultString value.&lt;/param&gt;
+         public void SetFault(int code, String message)
+         {
+-            Dictionary&lt;string, object&gt; fault = new Dictionary&lt;string,object&gt;();
++            Hashtable fault = new Hashtable();
+             fault.Add(&quot;faultCode&quot;, code);
+             fault.Add(&quot;faultString&quot;, message);
+             Value = fault;
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseDeserializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseDeserializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseDeserializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,51 +1,65 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
+-  using System.Collections.Generic;
+-  using System.IO;
+-  using System.Xml;
++    using System;
++    using System.Collections;
++    using System.IO;
++    using System.Xml;
+ 
+-  /// &lt;summary&gt;Class to deserialize XML data representing a response.&lt;/summary&gt;
+-  public class XmlRpcResponseDeserializer : XmlRpcDeserializer
+-  {
+-    /// &lt;summary&gt;Static method that parses XML data into a response using the Singleton.&lt;/summary&gt;
+-    /// &lt;param name=&quot;xmlData&quot;&gt;&lt;c&gt;StreamReader&lt;/c&gt; containing an XML-RPC response.&lt;/param&gt;
+-    /// &lt;returns&gt;&lt;c&gt;XmlRpcResponse&lt;/c&gt; object resulting from the parse.&lt;/returns&gt;
+-    override public Object Deserialize(TextReader xmlData)
+-      {
+-	XmlTextReader reader = new XmlTextReader(xmlData);
+-	XmlRpcResponse response = new XmlRpcResponse();
+-	bool done = false;
+-	
+-	lock(this)
+-	  {
+-	    Reset();
+-	    
+-	    while (!done &amp;&amp; reader.Read())
+-	      {
+-		DeserializeNode(reader); // Parent parse...
+-		switch (reader.NodeType)
+-		  {
+-		  case XmlNodeType.EndElement:
+-		    switch (reader.Name)
+-		      {
+-		      case FAULT:
+-			response.Value = _value;
+-			response.IsFault = true;
+-			break;
+-		      case PARAM:
+-			response.Value = _value;
+-			_value = null;
+-			_text = null;
+-			break;
+-		      }
+-		    break;
+-		  default:
+-		    break;
+-		  }	
+-	      }
+-	  }
+-	return response;
+-      }
+-  }
++    /// &lt;summary&gt;Class to deserialize XML data representing a response.&lt;/summary&gt;
++    public class XmlRpcResponseDeserializer : XmlRpcDeserializer
++    {
++        static private XmlRpcResponseDeserializer _singleton;
++        /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
++        [Obsolete(&quot;This object is now thread safe, just use an instance.&quot;, false)]
++        static public XmlRpcResponseDeserializer Singleton
++        {
++            get
++            {
++                if (_singleton == null)
++                    _singleton = new XmlRpcResponseDeserializer();
++
++                return _singleton;
++            }
++        }
++
++        /// &lt;summary&gt;Static method that parses XML data into a response using the Singleton.&lt;/summary&gt;
++        /// &lt;param name=&quot;xmlData&quot;&gt;&lt;c&gt;StreamReader&lt;/c&gt; containing an XML-RPC response.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;XmlRpcResponse&lt;/c&gt; object resulting from the parse.&lt;/returns&gt;
++        override public Object Deserialize(TextReader xmlData)
++        {
++            XmlTextReader reader = new XmlTextReader(xmlData);
++            XmlRpcResponse response = new XmlRpcResponse();
++            bool done = false;
++
++            lock (this)
++            {
++                Reset();
++
++                while (!done &amp;&amp; reader.Read())
++                {
++                    DeserializeNode(reader); // Parent parse...
++                    switch (reader.NodeType)
++                    {
++                        case XmlNodeType.EndElement:
++                            switch (reader.Name)
++                            {
++                                case FAULT:
++                                    response.Value = _value;
++                                    response.IsFault = true;
++                                    break;
++                                case PARAM:
++                                    response.Value = _value;
++                                    _value = null;
++                                    _text = null;
++                                    break;
++                            }
++                            break;
++                        default:
++                            break;
++                    }
++                }
++            }
++            return response;
++        }
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseSerializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseSerializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcResponseSerializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,57 +1,57 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
+-  using System.Collections.Generic;
+-  using System.Xml;
++    using System;
++    using System.Collections;
++    using System.Xml;
+ 
+-  /// &lt;summary&gt;Class responsible for serializing an XML-RPC response.&lt;/summary&gt;
+-  /// &lt;remarks&gt;This class handles the response envelope, depending on XmlRpcSerializer
+-  /// to serialize the payload.&lt;/remarks&gt;
+-  /// &lt;seealso cref=&quot;XmlRpcSerializer&quot;/&gt;
+-  public class XmlRpcResponseSerializer : XmlRpcSerializer
+-  {
+-    static private XmlRpcResponseSerializer _singleton;
+-    /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
+-    static public XmlRpcResponseSerializer Singleton
+-      {
+-	get
+-	  {
+-	    if (_singleton == null)
+-	      _singleton = new XmlRpcResponseSerializer();
++    /// &lt;summary&gt;Class responsible for serializing an XML-RPC response.&lt;/summary&gt;
++    /// &lt;remarks&gt;This class handles the response envelope, depending on XmlRpcSerializer
++    /// to serialize the payload.&lt;/remarks&gt;
++    /// &lt;seealso cref=&quot;XmlRpcSerializer&quot;/&gt;
++    public class XmlRpcResponseSerializer : XmlRpcSerializer
++    {
++        static private XmlRpcResponseSerializer _singleton;
++        /// &lt;summary&gt;A static singleton instance of this deserializer.&lt;/summary&gt;
++        static public XmlRpcResponseSerializer Singleton
++        {
++            get
++            {
++                if (_singleton == null)
++                    _singleton = new XmlRpcResponseSerializer();
+ 
+-	    return _singleton;
+-	  }
+-      }
++                return _singleton;
++            }
++        }
+ 
+-    /// &lt;summary&gt;Serialize the &lt;c&gt;XmlRpcResponse&lt;/c&gt; to the output stream.&lt;/summary&gt;
+-    /// &lt;param name=&quot;output&quot;&gt;An &lt;c&gt;XmlTextWriter&lt;/c&gt; stream to write data to.&lt;/param&gt;
+-    /// &lt;param name=&quot;obj&quot;&gt;An &lt;c&gt;Object&lt;/c&gt; to serialize.&lt;/param&gt;
+-    /// &lt;seealso cref=&quot;XmlRpcResponse&quot;/&gt;
+-    override public void Serialize(XmlTextWriter output, Object obj)
+-      {
+-	XmlRpcResponse response = (XmlRpcResponse) obj;
++        /// &lt;summary&gt;Serialize the &lt;c&gt;XmlRpcResponse&lt;/c&gt; to the output stream.&lt;/summary&gt;
++        /// &lt;param name=&quot;output&quot;&gt;An &lt;c&gt;XmlTextWriter&lt;/c&gt; stream to write data to.&lt;/param&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;An &lt;c&gt;Object&lt;/c&gt; to serialize.&lt;/param&gt;
++        /// &lt;seealso cref=&quot;XmlRpcResponse&quot;/&gt;
++        override public void Serialize(XmlTextWriter output, Object obj)
++        {
++            XmlRpcResponse response = (XmlRpcResponse)obj;
+ 
+-	output.WriteStartDocument();
+-	output.WriteStartElement(METHOD_RESPONSE);
++            output.WriteStartDocument();
++            output.WriteStartElement(METHOD_RESPONSE);
+ 
+-	if (response.IsFault)
+-	  output.WriteStartElement(FAULT);
+-	else
+-	  {
+-	    output.WriteStartElement(PARAMS);
+-	    output.WriteStartElement(PARAM);
+-	  }
++            if (response.IsFault)
++                output.WriteStartElement(FAULT);
++            else
++            {
++                output.WriteStartElement(PARAMS);
++                output.WriteStartElement(PARAM);
++            }
+ 
+-	output.WriteStartElement(VALUE);
++            output.WriteStartElement(VALUE);
+ 
+-	SerializeObject(output,response.Value);
++            SerializeObject(output, response.Value);
+ 
+-	output.WriteEndElement();
++            output.WriteEndElement();
+ 
+-	output.WriteEndElement();
+-	if (!response.IsFault)
+-	  output.WriteEndElement();
+-	output.WriteEndElement();
+-      }
+-  }
++            output.WriteEndElement();
++            if (!response.IsFault)
++                output.WriteEndElement();
++            output.WriteEndElement();
++        }
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSerializer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSerializer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSerializer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,7 +1,7 @@
+ namespace Nwc.XmlRpc
+ {
+     using System;
+-    using System.Collections.Generic;
++    using System.Collections;
+     using System.IO;
+     using System.Xml;
+ 
+@@ -72,13 +72,13 @@
+             {
+                 output.WriteElementString(BOOLEAN, ((((Boolean)obj) == true) ? &quot;1&quot; : &quot;0&quot;));
+             }
+-            else if (obj is List&lt;object&gt;)
++            else if (obj is IList)
+             {
+                 output.WriteStartElement(ARRAY);
+                 output.WriteStartElement(DATA);
+-                if (((List&lt;object&gt;)obj).Count &gt; 0)
++                if (((ArrayList)obj).Count &gt; 0)
+                 {
+-                    foreach (Object member in ((List&lt;object&gt;)obj))
++                    foreach (Object member in ((IList)obj))
+                     {
+                         output.WriteStartElement(VALUE);
+                         SerializeObject(output, member);
+@@ -88,9 +88,9 @@
+                 output.WriteEndElement();
+                 output.WriteEndElement();
+             }
+-            else if (obj is Dictionary&lt;string, object&gt;)
++            else if (obj is IDictionary)
+             {
+-                Dictionary&lt;string, object&gt; h = (Dictionary&lt;string, object&gt;)obj;
++                IDictionary h = (IDictionary)obj;
+                 output.WriteStartElement(STRUCT);
+                 foreach (String key in h.Keys)
+                 {
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,237 @@
++namespace Nwc.XmlRpc
++{
++    using System;
++    using System.Collections;
++    using System.IO;
++    using System.Net;
++    using System.Net.Sockets;
++    using System.Text;
++    using System.Threading;
++    using System.Xml;
++
++    /// &lt;summary&gt;A restricted HTTP server for use with XML-RPC.&lt;/summary&gt;
++    /// &lt;remarks&gt;It only handles POST requests, and only POSTs representing XML-RPC calls.
++    /// In addition to dispatching requests it also provides a registry for request handlers. 
++    /// &lt;/remarks&gt;
++    public class XmlRpcServer : IEnumerable
++    {
++        const int RESPONDER_COUNT = 10;
++        private TcpListener _myListener;
++        private int _port;
++        private IPAddress _address;
++        private IDictionary _handlers;
++        private XmlRpcSystemObject _system;
++        private WaitCallback _wc;
++
++        ///&lt;summary&gt;Constructor with port and address.&lt;/summary&gt;
++        ///&lt;remarks&gt;This constructor sets up a TcpListener listening on the
++        ///given port and address. It also calls a Thread on the method StartListen().&lt;/remarks&gt;
++        ///&lt;param name=&quot;address&quot;&gt;&lt;c&gt;IPAddress&lt;/c&gt; value of the address to listen on.&lt;/param&gt;
++        ///&lt;param name=&quot;port&quot;&gt;&lt;c&gt;Int&lt;/c&gt; value of the port to listen on.&lt;/param&gt;
++        public XmlRpcServer(IPAddress address, int port)
++        {
++            _port = port;
++            _address = address;
++            _handlers = new Hashtable();
++            _system = new XmlRpcSystemObject(this);
++            _wc = new WaitCallback(WaitCallback);
++        }
++
++        ///&lt;summary&gt;Basic constructor.&lt;/summary&gt;
++        ///&lt;remarks&gt;This constructor sets up a TcpListener listening on the
++        ///given port. It also calls a Thread on the method StartListen(). IPAddress.Any
++        ///is assumed as the address here.&lt;/remarks&gt;
++        ///&lt;param name=&quot;port&quot;&gt;&lt;c&gt;Int&lt;/c&gt; value of the port to listen on.&lt;/param&gt;
++        public XmlRpcServer(int port) : this(IPAddress.Any, port) { }
++
++        /// &lt;summary&gt;Start the server.&lt;/summary&gt;
++        public void Start()
++        {
++            try
++            {
++                Stop();
++                //start listing on the given port
++                //	    IPAddress addr = IPAddress.Parse(&quot;127.0.0.1&quot;);
++                lock (this)
++                {
++                    _myListener = new TcpListener(IPAddress.Any, _port);
++                    _myListener.Start();
++                    //start the thread which calls the method 'StartListen'
++                    Thread th = new Thread(new ThreadStart(StartListen));
++                    th.Start();
++                }
++            }
++            catch (Exception e)
++            {
++                Logger.WriteEntry(&quot;An Exception Occurred while Listening :&quot; + e.ToString(), LogLevel.Error);
++            }
++        }
++
++        /// &lt;summary&gt;Stop the server.&lt;/summary&gt;
++        public void Stop()
++        {
++            try
++            {
++                if (_myListener != null)
++                {
++                    lock (this)
++                    {
++                        _myListener.Stop();
++                        _myListener = null;
++                    }
++                }
++            }
++            catch (Exception e)
++            {
++                Logger.WriteEntry(&quot;An Exception Occurred while stopping :&quot; +
++                      e.ToString(), LogLevel.Error);
++            }
++        }
++
++        /// &lt;summary&gt;Get an enumeration of my XML-RPC handlers.&lt;/summary&gt;
++        /// &lt;returns&gt;&lt;c&gt;IEnumerable&lt;/c&gt; the handler enumeration.&lt;/returns&gt;
++        public IEnumerator GetEnumerator()
++        {
++            return _handlers.GetEnumerator();
++        }
++
++        /// &lt;summary&gt;Retrieve a handler by name.&lt;/summary&gt;
++        /// &lt;param name=&quot;name&quot;&gt;&lt;c&gt;String&lt;/c&gt; naming a handler&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;Object&lt;/c&gt; that is the handler.&lt;/returns&gt;
++        public Object this[String name]
++        {
++            get { return _handlers[name]; }
++        }
++
++        ///&lt;summary&gt;
++        ///This method Accepts new connections and dispatches them when appropriate.
++        ///&lt;/summary&gt;
++        public void StartListen()
++        {
++            while (true &amp;&amp; _myListener != null)
++            {
++                //Accept a new connection
++                XmlRpcResponder responder = new XmlRpcResponder(this, _myListener.AcceptTcpClient());
++                ThreadPool.QueueUserWorkItem(_wc, responder);
++            }
++        }
++
++
++        ///&lt;summary&gt;
++        ///Add an XML-RPC handler object by name.
++        ///&lt;/summary&gt;
++        ///&lt;param name=&quot;name&quot;&gt;&lt;c&gt;String&lt;/c&gt; XML-RPC dispatch name of this object.&lt;/param&gt;
++        ///&lt;param name=&quot;obj&quot;&gt;&lt;c&gt;Object&lt;/c&gt; The object that is the XML-RPC handler.&lt;/param&gt;
++        public void Add(String name, Object obj)
++        {
++            _handlers.Add(name, obj);
++        }
++
++        ///&lt;summary&gt;Return a C# object.method name for and XML-RPC object.method name pair.&lt;/summary&gt;
++        ///&lt;param name=&quot;methodName&quot;&gt;The XML-RPC object.method.&lt;/param&gt;
++        ///&lt;returns&gt;&lt;c&gt;String&lt;/c&gt; of form object.method for the underlying C# method.&lt;/returns&gt;
++        public String MethodName(String methodName)
++        {
++            int dotAt = methodName.LastIndexOf('.');
++
++            if (dotAt == -1)
++            {
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: Bad method name &quot; + methodName);
++            }
++
++            String objectName = methodName.Substring(0, dotAt);
++            Object target = _handlers[objectName];
++
++            if (target == null)
++            {
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: Object &quot; + objectName + &quot; not found&quot;);
++            }
++
++            return target.GetType().FullName + &quot;.&quot; + methodName.Substring(dotAt + 1);
++        }
++
++        ///&lt;summary&gt;Invoke a method described in a request.&lt;/summary&gt;
++        ///&lt;param name=&quot;req&quot;&gt;&lt;c&gt;XmlRpcRequest&lt;/c&gt; containing a method descriptions.&lt;/param&gt;
++        /// &lt;seealso cref=&quot;XmlRpcSystemObject.Invoke&quot;/&gt;
++        /// &lt;seealso cref=&quot;XmlRpcServer.Invoke(String,String,IList)&quot;/&gt;
++        public Object Invoke(XmlRpcRequest req)
++        {
++            return Invoke(req.MethodNameObject, req.MethodNameMethod, req.Params);
++        }
++
++        ///&lt;summary&gt;Invoke a method on a named handler.&lt;/summary&gt;
++        ///&lt;param name=&quot;objectName&quot;&gt;&lt;c&gt;String&lt;/c&gt; The name of the handler.&lt;/param&gt;
++        ///&lt;param name=&quot;methodName&quot;&gt;&lt;c&gt;String&lt;/c&gt; The name of the method to invoke on the handler.&lt;/param&gt;
++        ///&lt;param name=&quot;parameters&quot;&gt;&lt;c&gt;IList&lt;/c&gt; The parameters to invoke the method with.&lt;/param&gt;
++        /// &lt;seealso cref=&quot;XmlRpcSystemObject.Invoke&quot;/&gt;
++        public Object Invoke(String objectName, String methodName, IList parameters)
++        {
++            Object target = _handlers[objectName];
++
++            if (target == null)
++            {
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: Object &quot; + objectName + &quot; not found&quot;);
++            }
++
++            return XmlRpcSystemObject.Invoke(target, methodName, parameters);
++        }
++
++        /// &lt;summary&gt;The method the thread pool invokes when a thread is available to handle an HTTP request.&lt;/summary&gt;
++        /// &lt;param name=&quot;responder&quot;&gt;TcpClient from the socket accept.&lt;/param&gt;
++        public void WaitCallback(object responder)
++        {
++            XmlRpcResponder resp = (XmlRpcResponder)responder;
++
++            if (resp.HttpReq.HttpMethod == &quot;POST&quot;)
++            {
++                try
++                {
++                    resp.Respond();
++                }
++                catch (Exception e)
++                {
++                    Logger.WriteEntry(&quot;Failed on post: &quot; + e, LogLevel.Error);
++                }
++            }
++            else
++            {
++                Logger.WriteEntry(&quot;Only POST methods are supported: &quot; + resp.HttpReq.HttpMethod +
++                          &quot; ignored&quot;, LogLevel.Error);
++            }
++
++            resp.Close();
++        }
++
++        /// &lt;summary&gt;
++        /// This function send the Header Information to the client (Browser)
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;sHttpVersion&quot;&gt;HTTP Version&lt;/param&gt;
++        /// &lt;param name=&quot;sMIMEHeader&quot;&gt;Mime Type&lt;/param&gt;
++        /// &lt;param name=&quot;iTotBytes&quot;&gt;Total Bytes to be sent in the body&lt;/param&gt;
++        /// &lt;param name=&quot;sStatusCode&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;output&quot;&gt;Socket reference&lt;/param&gt;
++        static public void HttpHeader(string sHttpVersion, string sMIMEHeader, long iTotBytes, string sStatusCode, TextWriter output)
++        {
++            String sBuffer = &quot;&quot;;
++
++            // if Mime type is not provided set default to text/html
++            if (sMIMEHeader.Length == 0)
++            {
++                sMIMEHeader = &quot;text/html&quot;;  // Default Mime Type is text/html
++            }
++
++            sBuffer += sHttpVersion + sStatusCode + &quot;\r\n&quot;;
++            sBuffer += &quot;Connection: close\r\n&quot;;
++            if (iTotBytes &gt; 0)
++                sBuffer += &quot;Content-Length: &quot; + iTotBytes + &quot;\r\n&quot;;
++            sBuffer += &quot;Server: XmlRpcServer \r\n&quot;;
++            sBuffer += &quot;Content-Type: &quot; + sMIMEHeader + &quot;\r\n&quot;;
++            sBuffer += &quot;\r\n&quot;;
++
++            output.Write(sBuffer);
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSystemObject.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSystemObject.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcSystemObject.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -0,0 +1,252 @@
++namespace Nwc.XmlRpc
++{
++    using System;
++    using System.Collections;
++    using System.Reflection;
++
++    /// &lt;summary&gt; XML-RPC System object implementation of extended specifications.&lt;/summary&gt;
++    [XmlRpcExposed]
++    public class XmlRpcSystemObject
++    {
++        private XmlRpcServer _server;
++        static private IDictionary _methodHelp = new Hashtable();
++
++        /// &lt;summary&gt;Static &lt;c&gt;IDictionary&lt;/c&gt; to hold mappings of method name to associated documentation String&lt;/summary&gt;
++        static public IDictionary MethodHelp
++        {
++            get { return _methodHelp; }
++        }
++
++        /// &lt;summary&gt;Constructor.&lt;/summary&gt;
++        /// &lt;param name=&quot;server&quot;&gt;&lt;c&gt;XmlRpcServer&lt;/c&gt; server to be the system object for.&lt;/param&gt;
++        public XmlRpcSystemObject(XmlRpcServer server)
++        {
++            _server = server;
++            server.Add(&quot;system&quot;, this);
++            _methodHelp.Add(this.GetType().FullName + &quot;.methodHelp&quot;, &quot;Return a string description.&quot;);
++        }
++
++        /// &lt;summary&gt;Invoke a method on a given object.&lt;/summary&gt;
++        /// &lt;remarks&gt;Using reflection, and respecting the &lt;c&gt;XmlRpcExposed&lt;/c&gt; attribute,
++        /// invoke the &lt;paramref&gt;methodName&lt;/paramref&gt; method on the &lt;paramref&gt;target&lt;/paramref&gt;
++        /// instance with the &lt;paramref&gt;parameters&lt;/paramref&gt; provided. All this packages other &lt;c&gt;Invoke&lt;/c&gt; methods 
++        /// end up calling this.&lt;/remarks&gt;
++        /// &lt;returns&gt;&lt;c&gt;Object&lt;/c&gt; the value the invoked method returns.&lt;/returns&gt;
++        /// &lt;exception cref=&quot;XmlRpcException&quot;&gt;If method does not exist, is not exposed, parameters invalid, or invocation
++        /// results in an exception. Note, the &lt;c&gt;XmlRpcException.Code&lt;/c&gt; will indicate cause.&lt;/exception&gt;
++        static public Object Invoke(Object target, String methodName, IList parameters)
++        {
++            if (target == null)
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: Invalid target object.&quot;);
++
++            Type type = target.GetType();
++            MethodInfo method = type.GetMethod(methodName);
++
++            try
++            {
++                if (!XmlRpcExposedAttribute.ExposedMethod(target, methodName))
++                    throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: Method &quot; + methodName + &quot; is not exposed.&quot;);
++            }
++            catch (MissingMethodException me)
++            {
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_METHOD,
++                              XmlRpcErrorCodes.SERVER_ERROR_METHOD_MSG + &quot;: &quot; + me.Message);
++            }
++
++            Object[] args = new Object[parameters.Count];
++
++            int index = 0;
++            foreach (Object arg in parameters)
++            {
++                args[index] = arg;
++                index++;
++            }
++
++            try
++            {
++                Object retValue = method.Invoke(target, args);
++                if (retValue == null)
++                    throw new XmlRpcException(XmlRpcErrorCodes.APPLICATION_ERROR,
++                              XmlRpcErrorCodes.APPLICATION_ERROR_MSG + &quot;: Method returned NULL.&quot;);
++                return retValue;
++            }
++            catch (XmlRpcException e)
++            {
++                throw e;
++            }
++            catch (ArgumentException ae)
++            {
++                Logger.WriteEntry(XmlRpcErrorCodes.SERVER_ERROR_PARAMS_MSG + &quot;: &quot; + ae.Message,
++                          LogLevel.Information);
++                String call = methodName + &quot;( &quot;;
++                foreach (Object o in args)
++                {
++                    call += o.GetType().Name;
++                    call += &quot; &quot;;
++                }
++                call += &quot;)&quot;;
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_PARAMS,
++                              XmlRpcErrorCodes.SERVER_ERROR_PARAMS_MSG + &quot;: Arguement type mismatch invoking &quot; + call);
++            }
++            catch (TargetParameterCountException tpce)
++            {
++                Logger.WriteEntry(XmlRpcErrorCodes.SERVER_ERROR_PARAMS_MSG + &quot;: &quot; + tpce.Message,
++                          LogLevel.Information);
++                throw new XmlRpcException(XmlRpcErrorCodes.SERVER_ERROR_PARAMS,
++                              XmlRpcErrorCodes.SERVER_ERROR_PARAMS_MSG + &quot;: Arguement count mismatch invoking &quot; + methodName);
++            }
++            catch (TargetInvocationException tie)
++            {
++                throw new XmlRpcException(XmlRpcErrorCodes.APPLICATION_ERROR,
++                              XmlRpcErrorCodes.APPLICATION_ERROR_MSG + &quot; Invoked method &quot; + methodName + &quot;: &quot; + tie.Message);
++            }
++        }
++
++        /// &lt;summary&gt;List methods available on all handlers of this server.&lt;/summary&gt;
++        /// &lt;returns&gt;&lt;c&gt;IList&lt;/c&gt; An array of &lt;c&gt;Strings&lt;/c&gt;, each &lt;c&gt;String&lt;/c&gt; will have form &quot;object.method&quot;.&lt;/returns&gt;
++        [XmlRpcExposed]
++        public IList listMethods()
++        {
++            IList methods = new ArrayList();
++            Boolean considerExposure;
++
++            foreach (DictionaryEntry handlerEntry in _server)
++            {
++                considerExposure = XmlRpcExposedAttribute.IsExposed(handlerEntry.Value.GetType());
++
++                foreach (MemberInfo mi in handlerEntry.Value.GetType().GetMembers())
++                {
++                    if (mi.MemberType != MemberTypes.Method)
++                        continue;
++
++                    if (!((MethodInfo)mi).IsPublic)
++                        continue;
++
++                    if (considerExposure &amp;&amp; !XmlRpcExposedAttribute.IsExposed(mi))
++                        continue;
++
++                    methods.Add(handlerEntry.Key + &quot;.&quot; + mi.Name);
++                }
++            }
++
++            return methods;
++        }
++
++        /// &lt;summary&gt;Given a method name return the possible signatures for it.&lt;/summary&gt;
++        /// &lt;param name=&quot;name&quot;&gt;&lt;c&gt;String&lt;/c&gt; The object.method name to look up.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;IList&lt;/c&gt; Of arrays of signatures.&lt;/returns&gt;
++        [XmlRpcExposed]
++        public IList methodSignature(String name)
++        {
++            IList signatures = new ArrayList();
++            int index = name.IndexOf('.');
++
++            if (index &lt; 0)
++                return signatures;
++
++            String oName = name.Substring(0, index);
++            Object obj = _server[oName];
++
++            if (obj == null)
++                return signatures;
++
++            MemberInfo[] mi = obj.GetType().GetMember(name.Substring(index + 1));
++
++            if (mi == null || mi.Length != 1) // for now we want a single signature
++                return signatures;
++
++            MethodInfo method;
++
++            try
++            {
++                method = (MethodInfo)mi[0];
++            }
++            catch (Exception e)
++            {
++                Logger.WriteEntry(&quot;Attempted methodSignature call on &quot; + mi[0] + &quot; caused: &quot; + e,
++                          LogLevel.Information);
++                return signatures;
++            }
++
++            if (!method.IsPublic)
++                return signatures;
++
++            IList signature = new ArrayList();
++            signature.Add(method.ReturnType.Name);
++
++            foreach (ParameterInfo param in method.GetParameters())
++            {
++                signature.Add(param.ParameterType.Name);
++            }
++
++
++            signatures.Add(signature);
++
++            return signatures;
++        }
++
++        /// &lt;summary&gt;Help for given method signature. Not implemented yet.&lt;/summary&gt;
++        /// &lt;param name=&quot;name&quot;&gt;&lt;c&gt;String&lt;/c&gt; The object.method name to look up.&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;String&lt;/c&gt; help text. Rich HTML text.&lt;/returns&gt;
++        [XmlRpcExposed]
++        public String methodHelp(String name)
++        {
++            String help = null;
++
++            try
++            {
++                help = (String)_methodHelp[_server.MethodName(name)];
++            }
++            catch (XmlRpcException e)
++            {
++                throw e;
++            }
++            catch (Exception) { /* ignored */ };
++
++            if (help == null)
++                help = &quot;No help available for: &quot; + name;
++
++            return help;
++        }
++
++        /// &lt;summary&gt;Boxcarring support method.&lt;/summary&gt;
++        /// &lt;param name=&quot;calls&quot;&gt;&lt;c&gt;IList&lt;/c&gt; of calls&lt;/param&gt;
++        /// &lt;returns&gt;&lt;c&gt;ArrayList&lt;/c&gt; of results/faults.&lt;/returns&gt;
++        [XmlRpcExposed]
++        public IList multiCall(IList calls)
++        {
++            IList responses = new ArrayList();
++            XmlRpcResponse fault = new XmlRpcResponse();
++
++            foreach (IDictionary call in calls)
++            {
++                try
++                {
++                    XmlRpcRequest req = new XmlRpcRequest((String)call[XmlRpcXmlTokens.METHOD_NAME],
++                                          (ArrayList)call[XmlRpcXmlTokens.PARAMS]);
++                    Object results = _server.Invoke(req);
++                    IList response = new ArrayList();
++                    response.Add(results);
++                    responses.Add(response);
++                }
++                catch (XmlRpcException e)
++                {
++                    fault.SetFault(e.FaultCode, e.FaultString);
++                    responses.Add(fault.Value);
++                }
++                catch (Exception e2)
++                {
++                    fault.SetFault(XmlRpcErrorCodes.APPLICATION_ERROR,
++                               XmlRpcErrorCodes.APPLICATION_ERROR_MSG + &quot;: &quot; + e2.Message);
++                    responses.Add(fault.Value);
++                }
++            }
++
++            return responses;
++        }
++
++    }
++}
++
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcXmlTokens.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcXmlTokens.cs	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcXmlTokens.cs	2006-12-05 23:28:59 UTC (rev 684)
+@@ -1,76 +1,76 @@
+ namespace Nwc.XmlRpc
+ {
+-  using System;
++    using System;
+ 
+-  /// &lt;summary&gt;Class collecting &lt;c&gt;String&lt;/c&gt; tokens that are part of XML-RPC files.&lt;/summary&gt;
+-  public class XmlRpcXmlTokens
+-  {
+-    /// &lt;summary&gt;C# formatting string to describe an ISO 8601 date.&lt;/summary&gt;
+-    public const String ISO_DATETIME = &quot;yyyyMMdd\\THH\\:mm\\:ss&quot;;
+-    /// &lt;summary&gt;Base64 field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;base64&gt; tag.&lt;/remarks&gt;
+-    public const String BASE64 = &quot;base64&quot;;
+-    /// &lt;summary&gt;String field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;string&gt; tag.&lt;/remarks&gt;
+-    public const String STRING = &quot;string&quot;;
+-    /// &lt;summary&gt;Integer field integer.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;i4&gt; tag.&lt;/remarks&gt;
+-    public const String INT = &quot;i4&quot;;
+-    /// &lt;summary&gt;Alternate integer field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;int&gt; tag.&lt;/remarks&gt;
+-    public const String ALT_INT = &quot;int&quot;;    
+-    /// &lt;summary&gt;Date field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;dateTime.iso8601&gt; tag.&lt;/remarks&gt;
+-    public const String DATETIME = &quot;dateTime.iso8601&quot;;
+-    /// &lt;summary&gt;Boolean field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;boolean&gt; tag.&lt;/remarks&gt;
+-    public const String BOOLEAN = &quot;boolean&quot;;
+-    /// &lt;summary&gt;Value token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;value&gt; tag.&lt;/remarks&gt;
+-    public const String VALUE = &quot;value&quot;;
+-    /// &lt;summary&gt;Name token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;name&gt; tag.&lt;/remarks&gt;
+-    public const String NAME = &quot;name&quot;;
+-    /// &lt;summary&gt;Array field indicator..&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;array&gt; tag.&lt;/remarks&gt;
+-    public const String ARRAY = &quot;array&quot;;
+-    /// &lt;summary&gt;Data token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;data&gt; tag.&lt;/remarks&gt;
+-    public const String DATA = &quot;data&quot;;
+-    /// &lt;summary&gt;Member token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;member&gt; tag.&lt;/remarks&gt;
+-    public const String MEMBER = &quot;member&quot;;
+-    /// &lt;summary&gt;Stuct field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;struct&gt; tag.&lt;/remarks&gt;
+-    public const String STRUCT = &quot;struct&quot;;
+-    /// &lt;summary&gt;Double field indicator.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;double&gt; tag.&lt;/remarks&gt;
+-    public const String DOUBLE = &quot;double&quot;;
+-    /// &lt;summary&gt;Param token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;param&gt; tag.&lt;/remarks&gt;
+-    public const String PARAM = &quot;param&quot;;
+-    /// &lt;summary&gt;Params token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;params&gt; tag.&lt;/remarks&gt;
+-    public const String PARAMS = &quot;params&quot;;
+-    /// &lt;summary&gt;MethodCall token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;methodCall&gt; tag.&lt;/remarks&gt;
+-    public const String METHOD_CALL = &quot;methodCall&quot;;
+-    /// &lt;summary&gt;MethodName token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;methodName&gt; tag.&lt;/remarks&gt;
+-    public const String METHOD_NAME = &quot;methodName&quot;;
+-    /// &lt;summary&gt;MethodResponse token&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;methodResponse&gt; tag.&lt;/remarks&gt;
+-    public const String METHOD_RESPONSE = &quot;methodResponse&quot;;
+-    /// &lt;summary&gt;Fault response token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;fault&gt; tag.&lt;/remarks&gt;
+-    public const String FAULT = &quot;fault&quot;;
+-    /// &lt;summary&gt;FaultCode token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;faultCode&gt; tag.&lt;/remarks&gt;
+-    public const String FAULT_CODE = &quot;faultCode&quot;;
+-    /// &lt;summary&gt;FaultString token.&lt;/summary&gt;
+-    /// &lt;remarks&gt;Corresponds to the &lt;faultString&gt; tag.&lt;/remarks&gt;
+-    public const String FAULT_STRING = &quot;faultString&quot;;
+-  }
++    /// &lt;summary&gt;Class collecting &lt;c&gt;String&lt;/c&gt; tokens that are part of XML-RPC files.&lt;/summary&gt;
++    public class XmlRpcXmlTokens
++    {
++        /// &lt;summary&gt;C# formatting string to describe an ISO 8601 date.&lt;/summary&gt;
++        public const String ISO_DATETIME = &quot;yyyyMMdd\\THH\\:mm\\:ss&quot;;
++        /// &lt;summary&gt;Base64 field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;base64&gt; tag.&lt;/remarks&gt;
++        public const String BASE64 = &quot;base64&quot;;
++        /// &lt;summary&gt;String field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;string&gt; tag.&lt;/remarks&gt;
++        public const String STRING = &quot;string&quot;;
++        /// &lt;summary&gt;Integer field integer.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;i4&gt; tag.&lt;/remarks&gt;
++        public const String INT = &quot;i4&quot;;
++        /// &lt;summary&gt;Alternate integer field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;int&gt; tag.&lt;/remarks&gt;
++        public const String ALT_INT = &quot;int&quot;;
++        /// &lt;summary&gt;Date field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;dateTime.iso8601&gt; tag.&lt;/remarks&gt;
++        public const String DATETIME = &quot;dateTime.iso8601&quot;;
++        /// &lt;summary&gt;Boolean field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;boolean&gt; tag.&lt;/remarks&gt;
++        public const String BOOLEAN = &quot;boolean&quot;;
++        /// &lt;summary&gt;Value token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;value&gt; tag.&lt;/remarks&gt;
++        public const String VALUE = &quot;value&quot;;
++        /// &lt;summary&gt;Name token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;name&gt; tag.&lt;/remarks&gt;
++        public const String NAME = &quot;name&quot;;
++        /// &lt;summary&gt;Array field indicator..&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;array&gt; tag.&lt;/remarks&gt;
++        public const String ARRAY = &quot;array&quot;;
++        /// &lt;summary&gt;Data token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;data&gt; tag.&lt;/remarks&gt;
++        public const String DATA = &quot;data&quot;;
++        /// &lt;summary&gt;Member token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;member&gt; tag.&lt;/remarks&gt;
++        public const String MEMBER = &quot;member&quot;;
++        /// &lt;summary&gt;Stuct field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;struct&gt; tag.&lt;/remarks&gt;
++        public const String STRUCT = &quot;struct&quot;;
++        /// &lt;summary&gt;Double field indicator.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;double&gt; tag.&lt;/remarks&gt;
++        public const String DOUBLE = &quot;double&quot;;
++        /// &lt;summary&gt;Param token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;param&gt; tag.&lt;/remarks&gt;
++        public const String PARAM = &quot;param&quot;;
++        /// &lt;summary&gt;Params token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;params&gt; tag.&lt;/remarks&gt;
++        public const String PARAMS = &quot;params&quot;;
++        /// &lt;summary&gt;MethodCall token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;methodCall&gt; tag.&lt;/remarks&gt;
++        public const String METHOD_CALL = &quot;methodCall&quot;;
++        /// &lt;summary&gt;MethodName token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;methodName&gt; tag.&lt;/remarks&gt;
++        public const String METHOD_NAME = &quot;methodName&quot;;
++        /// &lt;summary&gt;MethodResponse token&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;methodResponse&gt; tag.&lt;/remarks&gt;
++        public const String METHOD_RESPONSE = &quot;methodResponse&quot;;
++        /// &lt;summary&gt;Fault response token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;fault&gt; tag.&lt;/remarks&gt;
++        public const String FAULT = &quot;fault&quot;;
++        /// &lt;summary&gt;FaultCode token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;faultCode&gt; tag.&lt;/remarks&gt;
++        public const String FAULT_CODE = &quot;faultCode&quot;;
++        /// &lt;summary&gt;FaultString token.&lt;/summary&gt;
++        /// &lt;remarks&gt;Corresponds to the &lt;faultString&gt; tag.&lt;/remarks&gt;
++        public const String FAULT_STRING = &quot;faultString&quot;;
++    }
+ }
+ 
+ 
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-05 23:01:06 UTC (rev 683)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-05 23:28:59 UTC (rev 684)
+@@ -168,6 +168,7 @@
+     &lt;Compile Include=&quot;XmlRpcCS\Logger.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;XmlRpcCS\SimpleHttpRequest.cs&quot; /&gt;
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcDeserializer.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+@@ -177,6 +178,7 @@
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcException.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;XmlRpcCS\XmlRpcExposedAttribute.cs&quot; /&gt;
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcRequest.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+@@ -186,6 +188,7 @@
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcRequestSerializer.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;XmlRpcCS\XmlRpcResponder.cs&quot; /&gt;
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcResponse.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+@@ -198,6 +201,8 @@
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcSerializer.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;XmlRpcCS\XmlRpcServer.cs&quot; /&gt;
++    &lt;Compile Include=&quot;XmlRpcCS\XmlRpcSystemObject.cs&quot; /&gt;
+     &lt;Compile Include=&quot;XmlRpcCS\XmlRpcXmlTokens.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000041.html">[Libsecondlife-commits] r683 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+	<LI>Next message: <A HREF="000043.html">[Libsecondlife-commits] r685 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

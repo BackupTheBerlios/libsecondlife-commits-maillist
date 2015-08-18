@@ -1,0 +1,758 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r664 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r664%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands&In-Reply-To=%3C200611302113.kAULD6Jj021846%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000014.html">
+   <LINK REL="Next"  HREF="000016.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r664 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r664%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands&In-Reply-To=%3C200611302113.kAULD6Jj021846%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r664 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 30 22:13:06 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000014.html">[Libsecondlife-commits] r663 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000016.html">[Libsecondlife-commits] r665 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#15">[ date ]</a>
+              <a href="thread.html#15">[ thread ]</a>
+              <a href="subject.html#15">[ subject ]</a>
+              <a href="author.html#15">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-30 22:13:06 +0100 (Thu, 30 Nov 2006)
+New Revision: 664
+
+Modified:
+   trunk/libsecondlife-cs/ParticleSystem.cs
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+Log:
+PrimObject.ToXml() outputs cleaner XML that is capable of being imported and accurately recreates the exported object (in theory)
+
+Modified: trunk/libsecondlife-cs/ParticleSystem.cs
+===================================================================
+--- trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-30 18:47:44 UTC (rev 663)
++++ trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-30 21:13:06 UTC (rev 664)
+@@ -17,23 +17,17 @@
+         public enum SourcePattern : byte
+         {
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;None&quot;)]
+-            None = 0,
++            [XmlEnum(&quot;None&quot;)] None = 0,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;Drop&quot;)]
+-            Drop = 0x01,
++            [XmlEnum(&quot;Drop&quot;)] Drop = 0x01,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;Explode&quot;)]
+-            Explode = 0x02,
++            [XmlEnum(&quot;Explode&quot;)] Explode = 0x02,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;Angle&quot;)]
+-            Angle = 0x04,
++            [XmlEnum(&quot;Angle&quot;)] Angle = 0x04,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;AngleCone&quot;)]
+-            AngleCone = 0x08,
++            [XmlEnum(&quot;AngleCone&quot;)] AngleCone = 0x08,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            [XmlEnum(&quot;AngleConeEmpty&quot;)]
+-            AngleConeEmpty = 0x10
++            [XmlEnum(&quot;AngleConeEmpty&quot;)] AngleConeEmpty = 0x10
+         }
+ 
+         /// &lt;summary&gt;
+@@ -65,51 +59,40 @@
+         }
+ 
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint PartStartRGBA;
++        [XmlAttribute] public uint PartStartRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint PartEndRGBA;
++        [XmlAttribute] public uint PartEndRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PartMaxAge;
++        [XmlAttribute] public float PartMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcMaxAge;
++        [XmlAttribute] public float SrcMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcAngleBegin;
++        [XmlAttribute] public float SrcAngleBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcAngleEnd;
++        [XmlAttribute] public float SrcAngleEnd;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public int SrcBurstPartCount;
++        [XmlAttribute] public int SrcBurstPartCount;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcBurstRadius;
++        [XmlAttribute] public float SrcBurstRadius;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcBurstRate;
++        [XmlAttribute] public float SrcBurstRate;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcBurstSpeedMin;
++        [XmlAttribute] public float SrcBurstSpeedMin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float SrcBurstSpeedMax;
++        [XmlAttribute] public float SrcBurstSpeedMax;
+         /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint Version;
++        [XmlAttribute] public uint Version;
+         /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint StartTick;
++        [XmlAttribute] public uint StartTick;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public SourcePattern SrcPattern;
++        [XmlAttribute] public SourcePattern SrcPattern;
+         /// &lt;summary&gt;Various options that describe the behavior of this system&lt;/summary&gt;
+-        [XmlAttribute]
+-        public ParticleFlags PartFlags;
++        [XmlAttribute] public ParticleFlags PartFlags;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        public LLUUID SrcTargetKey = LLUUID.Zero;
++        /// &lt;summary&gt;Texture that will be applied to the particles&lt;/summary&gt;
++        public LLUUID SrcTexture = LLUUID.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 PartStartScale = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 PartEndScale = LLVector3.Zero;
+@@ -117,10 +100,6 @@
+         public LLVector3 SrcAccel = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 SrcOmega = LLVector3.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID SrcTargetKey = LLUUID.Zero;
+-        /// &lt;summary&gt;Texture that will be applied to the particles&lt;/summary&gt;
+-        public LLUUID SrcTexture = LLUUID.Zero;
+         
+         /// &lt;summary&gt;
+         /// 
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-11-30 18:47:44 UTC (rev 663)
++++ trunk/libsecondlife-cs/Prims.cs	2006-11-30 21:13:06 UTC (rev 664)
+@@ -88,11 +88,9 @@
+     public enum ExtraParamType : ushort
+     {
+         /// &lt;summary&gt;Whether this object has flexible parameters&lt;/summary&gt;
+-        [XmlEnum(&quot;Flexible&quot;)]
+-        Flexible = 0x10,
++        [XmlEnum(&quot;Flexible&quot;)] Flexible = 0x10,
+         /// &lt;summary&gt;Whether this object has light parameters&lt;/summary&gt;
+-        [XmlEnum(&quot;Light&quot;)]
+-        Light = 0x20
++        [XmlEnum(&quot;Light&quot;)] Light = 0x20
+     }
+ 
+     /// &lt;summary&gt;
+@@ -102,86 +100,59 @@
+     public class PrimObject
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-		public int PathTwistBegin = 0;
++        [XmlAttribute] public int PathTwistBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-		public float PathEnd = 0;
++        [XmlAttribute] public float PathEnd = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float ProfileBegin = 0;
++        [XmlAttribute] public float ProfileBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathRadiusOffset = 0;
++        [XmlAttribute] public float PathRadiusOffset = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathSkew = 0;
++        [XmlAttribute] public float PathSkew = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint ProfileCurve = 0;
++        [XmlAttribute] public uint ProfileCurve = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathScaleX = 0;
++        [XmlAttribute] public float PathScaleX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathScaleY = 0;
++        [XmlAttribute] public float PathScaleY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint LocalID = 0;
++        [XmlAttribute] public uint LocalID = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint ParentID = 0;
++        [XmlAttribute] public uint ParentID = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint Material = 0;
++        [XmlAttribute] public uint Material = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public string Name = &quot;&quot;;
++        [XmlAttribute] public string Name = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public string Description = &quot;&quot;;
++        [XmlAttribute] public string Description = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathShearX = 0;
++        [XmlAttribute] public float PathShearX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathShearY = 0;
++        [XmlAttribute] public float PathShearY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathTaperX = 0;
++        [XmlAttribute] public float PathTaperX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathTaperY = 0;
++        [XmlAttribute] public float PathTaperY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float ProfileEnd = 0;
++        [XmlAttribute] public float ProfileEnd = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathBegin = 0;
++        [XmlAttribute] public float PathBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint PathCurve = 0;
++        [XmlAttribute] public uint PathCurve = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public int PathTwist = 0;
++        [XmlAttribute] public int PathTwist = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint ProfileHollow = 0;
++        [XmlAttribute] public uint ProfileHollow = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public float PathRevolutions = 0;
++        [XmlAttribute] public float PathRevolutions = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public uint State;
++        [XmlAttribute] public uint State;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public string Text;
++        [XmlAttribute] public string Text;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public ObjectManager.PCode PCode = ObjectManager.PCode.Prim;
++        [field:NonSerialized] public ObjectManager.PCode PCode = ObjectManager.PCode.Prim;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute]
+-        public ulong RegionHandle;
++        [XmlAttribute] public ulong RegionHandle;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID ID = LLUUID.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -519,15 +490,15 @@
+     public class PrimFlexibleData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public int Softness;
++        [XmlAttribute] public int Softness;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Gravity;
++        [XmlAttribute] public float Gravity;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Drag;
++        [XmlAttribute] public float Drag;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Wind;
++        [XmlAttribute] public float Wind;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Tension;
++        [XmlAttribute] public float Tension;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 Force = LLVector3.Zero;
+ 
+@@ -591,13 +562,17 @@
+     public class PrimLightData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public byte R, G, B;
++        [XmlAttribute] public byte R;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Intensity;
++        [XmlAttribute] public byte G;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Radius;
++        [XmlAttribute] public byte B;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Falloff;
++        [XmlAttribute] public float Intensity;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute] public float Radius;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute] public float Falloff;
+ 
+         /// &lt;summary&gt;
+         /// 
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-11-30 18:47:44 UTC (rev 663)
++++ trunk/libsecondlife-cs/Textures.cs	2006-11-30 21:13:06 UTC (rev 664)
+@@ -591,7 +591,19 @@
+     [Serializable]
+     public class TextureEntryFace
+     {
+-        [Flags]
++        [XmlAttribute] protected uint rgba;
++        [XmlAttribute] protected float repeatU;
++        [XmlAttribute] protected float repeatV;
++        [XmlAttribute] protected float offsetU;
++        [XmlAttribute] protected float offsetV;
++        [XmlAttribute] protected float rotation;
++        [XmlAttribute] protected byte flags1;
++        [XmlAttribute] protected byte flags2;
++        protected LLUUID textureID;
++        protected TextureAttributes hasAttribute;
++        protected TextureEntryFace DefaultTexture;
++
++        [Flags, Serializable]
+         public enum TextureAttributes : uint
+         {
+             None      = 0,
+@@ -635,13 +647,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.TextureID) != 0)
+-                    return _TextureID;
++                    return textureID;
+                 else
+-                    return DefaultTexture._TextureID;
++                    return DefaultTexture.textureID;
+             }
+             set
+             {
+-                _TextureID = value;
++                textureID = value;
+                 hasAttribute |= TextureAttributes.TextureID;
+             }
+         }
+@@ -654,13 +666,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.RGBA) != 0)
+-                    return _RGBA;
++                    return rgba;
+                 else
+-                    return DefaultTexture._RGBA;
++                    return DefaultTexture.rgba;
+             }
+             set
+             {
+-                _RGBA = value;
++                rgba = value;
+                 hasAttribute |= TextureAttributes.RGBA;
+             }
+         }
+@@ -673,13 +685,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.RepeatU) != 0)
+-                    return _RepeatU;
++                    return repeatU;
+                 else
+-                    return DefaultTexture._RepeatU;
++                    return DefaultTexture.repeatU;
+             }
+             set
+             {
+-                _RepeatU = value;
++                repeatU = value;
+                 hasAttribute |= TextureAttributes.RepeatU;
+             }
+         }
+@@ -692,13 +704,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.RepeatV) != 0)
+-                    return _RepeatV;
++                    return repeatV;
+                 else
+-                    return DefaultTexture._RepeatV;
++                    return DefaultTexture.repeatV;
+             }
+             set
+             {
+-                _RepeatV = value;
++                repeatV = value;
+                 hasAttribute |= TextureAttributes.RepeatV;
+             }
+         }
+@@ -711,13 +723,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.OffsetU) != 0)
+-                    return _OffsetU;
++                    return offsetU;
+                 else
+-                    return DefaultTexture._OffsetU;
++                    return DefaultTexture.offsetU;
+             }
+             set
+             {
+-                _OffsetU = value;
++                offsetU = value;
+                 hasAttribute |= TextureAttributes.OffsetU;
+             }
+         }
+@@ -730,13 +742,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.OffsetV) != 0)
+-                    return _OffsetV;
++                    return offsetV;
+                 else
+-                    return DefaultTexture._OffsetV;
++                    return DefaultTexture.offsetV;
+             }
+             set
+             {
+-                _OffsetV = value;
++                offsetV = value;
+                 hasAttribute |= TextureAttributes.OffsetV;
+             }
+         }
+@@ -749,13 +761,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.Rotation) != 0)
+-                    return _Rotation;
++                    return rotation;
+                 else
+-                    return DefaultTexture._Rotation;
++                    return DefaultTexture.rotation;
+             }
+             set
+             {
+-                _Rotation = value;
++                rotation = value;
+                 hasAttribute |= TextureAttributes.Rotation;
+             }
+         }
+@@ -768,13 +780,13 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.Flags1) != 0)
+-                    return _Flags1;
++                    return flags1;
+                 else
+-                    return DefaultTexture._Flags1;
++                    return DefaultTexture.flags1;
+             }
+             set
+             {
+-                _Flags1 = value;
++                flags1 = value;
+                 hasAttribute |= TextureAttributes.Flags1;
+             }
+         }
+@@ -787,28 +799,16 @@
+             get
+             {
+                 if ((hasAttribute &amp; TextureAttributes.Flags2) != 0)
+-                    return _Flags2;
++                    return flags2;
+                 else
+-                    return DefaultTexture._Flags2;
++                    return DefaultTexture.flags2;
+             }
+             set
+             {
+-                _Flags2 = value;
++                flags2 = value;
+                 hasAttribute |= TextureAttributes.Flags2;
+             }
+         }
+-
+-        private TextureAttributes hasAttribute;
+-        private TextureEntryFace DefaultTexture;
+-        private LLUUID _TextureID;
+-        private uint _RGBA;
+-        private float _RepeatU;
+-        private float _RepeatV;
+-        private float _OffsetU;
+-        private float _OffsetV;
+-        private float _Rotation;
+-        private byte _Flags1;
+-        private byte _Flags2;
+     }
+ 
+     /// &lt;summary&gt;
+@@ -818,19 +818,19 @@
+     public class TextureAnimation
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public uint Flags;
++        [XmlAttribute] public uint Flags;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public uint Face;
++        [XmlAttribute] public uint Face;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public uint SizeX;
++        [XmlAttribute] public uint SizeX;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public uint SizeY;
++        [XmlAttribute] public uint SizeY;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Start;
++        [XmlAttribute] public float Start;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Length;
++        [XmlAttribute] public float Length;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Rate;
++        [XmlAttribute] public float Rate;
+ 
+         /// &lt;summary&gt;
+         /// Default constructor
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-11-30 18:47:44 UTC (rev 663)
++++ trunk/libsecondlife-cs/Types.cs	2006-11-30 21:13:06 UTC (rev 664)
+@@ -35,22 +35,21 @@
+     /// Life networking protocol
+     /// &lt;/summary&gt;
+     [XmlRoot(&quot;uuid&quot;)]
+-	public class LLUUID
++    public class LLUUID : IXmlSerializable
+ 	{
++        /// &lt;summary&gt;The 16 bytes that make up the UUID&lt;/summary&gt;
++        protected byte[] data = new byte[16];
+         /// &lt;summary&gt;Get a byte array of the 16 raw bytes making up the UUID&lt;/summary&gt;
+ 		public byte[] Data
+ 		{
+ 			get { return data; }
+ 		}
+ 
+-        private byte[] data = null;
+-
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+ 		public LLUUID()
+ 		{
+-			data = new byte[16];
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -59,8 +58,6 @@
+         /// &lt;param name=&quot;val&quot;&gt;&lt;/param&gt;
+ 		public LLUUID(string val)
+ 		{
+-			data = new byte[16];
+-
+ 			if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
+ 			
+ 			if (val.Length != 32) throw new Exception(&quot;Malformed data passed to LLUUID constructor: &quot; + val);
+@@ -78,8 +75,6 @@
+         /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
+ 		public LLUUID(byte[] byteArray, int pos)
+ 		{
+-			data = new byte[16];
+-
+ 			Array.Copy(byteArray, pos, data, 0, 16);
+ 		}
+ 
+@@ -131,6 +126,40 @@
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
++        public System.Xml.Schema.XmlSchema GetSchema()
++        {
++            return null;
++        }
++
++        public void ReadXml(System.Xml.XmlReader reader)
++        {
++            //reader.ReadStartElement(&quot;uuid&quot;);
++            string val = reader.ReadString();
++
++            if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
++
++            if (val.Length != 32) throw new Exception(&quot;Malformed data passed to LLUUID constructor: &quot; + val);
++
++            for (int i = 0; i &lt; 16; ++i)
++            {
++                data[i] = Convert.ToByte(val.Substring(i * 2, 2), 16);
++            }
++
++            //reader.ReadEndElement();
++            //reader.MoveToContent();
++        }
++
++        public void WriteXml(System.Xml.XmlWriter writer)
++        {
++            //writer.WriteStartElement(&quot;uuid&quot;);
++            writer.WriteString(this.ToString());
++            //writer.WriteEndElement();
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+ 		public override int GetHashCode()
+ 		{
+ 			return ToString().GetHashCode();
+@@ -271,11 +300,11 @@
+ 	public class LLVector3
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float X;
++		[XmlAttribute] public float X;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Y;
++        [XmlAttribute] public float Y;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Z;
++        [XmlAttribute] public float Z;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -458,11 +487,11 @@
+ 	public class LLVector3d
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public double X;
++        [XmlAttribute] public double X;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public double Y;
++        [XmlAttribute] public double Y;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public double Z;
++        [XmlAttribute] public double Z;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -546,13 +575,13 @@
+ 	public class LLVector4
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float X;
++        [XmlAttribute] public float X;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Y;
++        [XmlAttribute] public float Y;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Z;
++        [XmlAttribute] public float Z;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float S;
++        [XmlAttribute] public float S;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -627,13 +656,13 @@
+ 	public class LLQuaternion
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float X;
++        [XmlAttribute] public float X;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Y;
++        [XmlAttribute] public float Y;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float Z;
++        [XmlAttribute] public float Z;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float W;
++        [XmlAttribute] public float W;
+ 
+         /// &lt;summary&gt;
+         /// 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-11-30 18:47:44 UTC (rev 663)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-11-30 21:13:06 UTC (rev 664)
+@@ -52,7 +52,7 @@
+                         return ret;
+                     }
+ 
+-                    return &quot;&quot;;
++                    return &quot;Exported &quot; + id.ToString() + &quot; to &quot; + file;
+                 }
+             }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000014.html">[Libsecondlife-commits] r663 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000016.html">[Libsecondlife-commits] r665 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#15">[ date ]</a>
+              <a href="thread.html#15">[ thread ]</a>
+              <a href="subject.html#15">[ subject ]</a>
+              <a href="author.html#15">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

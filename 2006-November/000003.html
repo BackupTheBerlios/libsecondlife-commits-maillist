@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r646 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r646%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200611280755.kAS7tFM2023921%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000002.html">
+   <LINK REL="Next"  HREF="000004.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r646 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r646%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200611280755.kAS7tFM2023921%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r646 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 28 08:55:15 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000002.html">[Libsecondlife-commits] r645 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000004.html">[Libsecondlife-commits] r647 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-28 08:55:15 +0100 (Tue, 28 Nov 2006)
+New Revision: 646
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+Minor fixes in NetworkManager
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-11-28 07:48:43 UTC (rev 645)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-11-28 07:55:15 UTC (rev 646)
+@@ -456,37 +456,37 @@
+                 }
+ 
+                 // Check if we already received this packet
+-                lock (Inbox)
++                if (Inbox.Contains(packet.Header.Sequence))
+                 {
+-                    if (Inbox.Contains(packet.Header.Sequence))
+-                    {
+-                        Client.Log(&quot;Received a duplicate &quot; + packet.Type.ToString() + &quot;, sequence=&quot; +
+-                            packet.Header.Sequence + &quot;, resent=&quot; + ((packet.Header.Resent) ? &quot;Yes&quot; : &quot;No&quot; +
+-                            &quot;, Inbox.Count=&quot; + Inbox.Count + &quot;, NeedAck.Count=&quot; + NeedAck.Count),
+-                            Helpers.LogLevel.Info);
++                    Client.Log(&quot;Received a duplicate &quot; + packet.Type.ToString() + &quot;, sequence=&quot; +
++                        packet.Header.Sequence + &quot;, resent=&quot; + ((packet.Header.Resent) ? &quot;Yes&quot; : &quot;No&quot;) +
++                        &quot;, Inbox.Count=&quot; + Inbox.Count + &quot;, NeedAck.Count=&quot; + NeedAck.Count,
++                        Helpers.LogLevel.Info);
+ 
+-                        // Send an ACK for this packet immediately
+-                        SendAck(packet.Header.Sequence);
++                    // Send an ACK for this packet immediately
++                    SendAck(packet.Header.Sequence);
+ 
+-                        // Avoid firing a callback twice for the same packet
+-                        return;
+-                    }
+-                    else
++                    // Avoid firing a callback twice for the same packet
++                    return;
++                }
++                else
++                {
++                    lock (PendingAcks)
+                     {
+-                        lock (PendingAcks)
+-                        {
+-                            PendingAcks.Add((uint)packet.Header.Sequence);
+-                        }
++                        PendingAcks.Add((uint)packet.Header.Sequence);
+                     }
+                 }
+             }
+ 
+             // Add this packet to our inbox
+-            if (Inbox.Count &gt;= INBOX_SIZE)
++            lock (Inbox)
+             {
+-                Inbox.Dequeue();
++                if (Inbox.Count &gt;= INBOX_SIZE)
++                {
++                    Inbox.Dequeue();
++                }
++                Inbox.Enqueue(packet.Header.Sequence);
+             }
+-            Inbox.Enqueue(packet.Header.Sequence);
+ 
+             // Handle appended ACKs
+             if (packet.Header.AppendedAcks)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000002.html">[Libsecondlife-commits] r645 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000004.html">[Libsecondlife-commits] r647 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

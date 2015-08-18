@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r649 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r649%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611290032.kAT0WQh6000712%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000007.html">
+   <LINK REL="Next"  HREF="000008.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r649 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r649%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611290032.kAT0WQh6000712%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r649 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 29 01:32:26 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000007.html">[Libsecondlife-commits] r648 - in branches/aditi: data	libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000008.html">[Libsecondlife-commits] r650 - in branches/aditi: . SLProxy SLProxy/legacy applications applications/Decoder applications/FollowBot applications/SLIRC applications/TestBot applications/sceneviewer applications/sceneviewer/Prims applications/sceneviewer/Properties bin libjaspernet libsecondlife-cs libsecondlife-cs/AssetSystem libsecondlife-cs/InventorySystem libsecondlife-cs/JSON libsecondlife-cs/XmlRpcCS libsecondlife-cs/examples libsecondlife-cs/examples/AnimationSample libsecondlife-cs/examples/BodyPartMorphGenerator libsecondlife-cs/examples/IA_ImageTool libsecondlife-cs/examples/IA_InventoryManager libsecondlife-cs/examples/IA_MultiImageUpload libsecondlife-cs/examples/IA_NotecardTool libsecondlife-cs/examples/IA_SimpleInventory libsecondlife-cs/examples/IA_TestAsyncImage libsecondlife-cs/examples/ParcelDownload libsecondlife-cs/examples/Teleport libsecondlife-cs/examples/TestClient libsecondlife-cs/examples/groupmanager libsecondlife-cs/examples/name2key libsecondlife-cs/examples/prim! export libsecondlife-cs/examples/slaccountant libsecondlife-cs/examples/sldump libsecondlife-cs/mapgenerator libsecondlife-cs/tests
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-29 01:32:25 +0100 (Wed, 29 Nov 2006)
+New Revision: 649
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+More TestClient fixes, more networking tweaks, and AddPrim() no longer sets the TextureEntry field to accomodate for tomorrow's update
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -54,7 +54,7 @@
+ 
+         /// &lt;summary&gt;The maximum size of the sequence number inbox, used to 
+         /// check for resent and/or duplicate packets&lt;/summary&gt;
+-        public const int INBOX_SIZE = 100;
++        public const int INBOX_SIZE = 10000;
+ 
+         /// &lt;summary&gt;The Region class that this Simulator wraps&lt;/summary&gt;
+         public Region Region;
+@@ -112,7 +112,7 @@
+         // Every tick, all ACKs are sent out and the age of unACKed packets is checked
+         private int TickLength = 500;
+         // Number of milliseconds before a packet is assumed lost and resent
+-        private int ResendTimeout = 2500;
++        private int ResendTimeout = 4000;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -1274,12 +1274,6 @@
+             //update.AgentData.AgentID = AgentID;
+             //update.AgentData.SessionID = SessionID;
+             //SendPacket(update);
+-
+-            // TODO: What is the purpose of this? Information is currently unused
+-            RequestGrantedProxiesPacket proxies = new RequestGrantedProxiesPacket();
+-            proxies.AgentData.AgentID = AgentID;
+-            proxies.AgentData.SessionID = SessionID;
+-            SendPacket(proxies);
+         }
+ 
+         private void DisconnectTimer_Elapsed(object sender, ElapsedEventArgs ev)
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -512,7 +512,9 @@
+             packet.ObjectData.RayTargetID = LLUUID.Zero;
+             packet.ObjectData.BypassRaycast = 1;
+ 
+-            packet.ObjectData.TextureEntry = prim.Textures.GetBytes();
++            // TODO: This is no longer a field in ObjectAdd. Detect if there actually is 
++            // texture information for this prim and send an ObjectUpdate
++            //packet.ObjectData.TextureEntry = prim.Textures.GetBytes();
+ 
+             Client.Network.SendPacket(packet, simulator);
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -50,10 +50,13 @@
+ 		{
+             if (vecDist(followAvatar.Position, Client.Self.Position) &gt; DISTANCE_BUFFER)
+             {
+-                //move toward target
+-				ulong x = (ulong)(followAvatar.Position.X + (followAvatar.CurrentRegion.GridRegionData.X * 256));
+-				ulong y = (ulong)(followAvatar.Position.Y + (followAvatar.CurrentRegion.GridRegionData.Y * 256));
+-                Client.Self.AutoPilotLocal(Convert.ToInt32(followAvatar.Position.X), Convert.ToInt32(followAvatar.Position.Y), followAvatar.Position.Z);
++                if (followAvatar.CurrentRegion.GridRegionData != null)
++                {
++                    // move toward target
++                    ulong x = (ulong)(followAvatar.Position.X + (followAvatar.CurrentRegion.GridRegionData.X * 256));
++                    ulong y = (ulong)(followAvatar.Position.Y + (followAvatar.CurrentRegion.GridRegionData.Y * 256));
++                    Client.Self.AutoPilotLocal(Convert.ToInt32(followAvatar.Position.X), Convert.ToInt32(followAvatar.Position.Y), followAvatar.Position.Z);
++                }
+             }
+ 			//else
+ 			//{
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -8,33 +8,51 @@
+ {
+     public class GotoCommand: Command
+     {
++        private bool EstateLookupFinished = false;
++
+ 		public GotoCommand()
+ 		{
+ 			Name = &quot;goto&quot;;
+-			Description = &quot;Goto location. (e.g. \&quot;goto simname/100/100/30\&quot;)&quot;;
++			Description = &quot;Teleport to a location (e.g. \&quot;goto Hooper/100/100/30\&quot;)&quot;;
+ 		}
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+-                return &quot;Destination should be specified as: sim/x/y/z&quot;;
++                return &quot;usage: Destination should be specified as sim/x/y/z&quot;;
+ 
+-            char[] seps = { '/' };
+-            string[] destination = args[0].Split(seps);
+-            if( destination.Length != 4 )
+-                return &quot;Destination should be specified as: sim/x/y/z&quot;;
++            string destination = &quot;&quot;;
+ 
+-            string sim = destination[0];
++            // Handle multi-word sim names by combining the arguments
++            foreach (string arg in args)
++            {
++                destination += arg + &quot; &quot;;
++            }
++            destination = destination.Trim();
++
++            string[] tokens = destination.Split(new char[] { '/' });
++            if (tokens.Length != 4)
++                return &quot;usage: Destination should be specified as sim/x/y/z&quot;;
++
++            string sim = tokens[0];
+ 			float x = Client.Self.Position.X;
+ 			float y = Client.Self.Position.Y;
+ 			float z = Client.Self.Position.Z;
+-			float.TryParse(destination[1], out x);
+-			float.TryParse(destination[2], out y);
+-			float.TryParse(destination[3], out z);
++            float.TryParse(tokens[1], out x);
++            float.TryParse(tokens[2], out y);
++            float.TryParse(tokens[3], out z);
+ 
++            if (!EstateLookupFinished)
++            {
++                Client.Grid.AddEstateSims();
++                System.Threading.Thread.Sleep(3000);
++
++                EstateLookupFinished = true;
++            }
++
+ 			Client.Self.Teleport(sim, new LLVector3(x, y, z));
+ 
+-            return &quot;Teleported to &quot; + sim + &quot; {&quot; + x + &quot;,&quot; + y + &quot;,&quot; + z + &quot;}&quot;;
++            return &quot;Attempted to teleport to &quot; + sim + &quot; {&quot; + x + &quot;,&quot; + y + &quot;,&quot; + z + &quot;}&quot;;
+ 		}
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -23,7 +23,6 @@
+             account.FirstName = args[0];
+             account.LastName = args[1];
+             account.Password = args[2];
+-            account.Master = TestClient.Master;
+ 
+             // Check if this client is already logged in
+             foreach (SecondLife client in TestClient.Clients.Values)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -24,6 +24,7 @@
+             TestClient tester;
+             List&lt;LoginDetails&gt; accounts = new List&lt;LoginDetails&gt;();
+             LoginDetails account;
++            string master = &quot;&quot;;
+ 
+             if (args[0] == &quot;--file&quot;)
+             {
+@@ -47,11 +48,6 @@
+                                 account.LastName = tokens[1];
+                                 account.Password = tokens[2];
+ 
+-                                if (args.Length == 4)
+-                                {
+-                                    account.Master = args[2] + &quot; &quot; + args[3];
+-                                }
+-
+                                 accounts.Add(account);
+                             }
+                             else
+@@ -67,6 +63,11 @@
+                     Console.WriteLine(&quot;Error reading from &quot; + args[1]);
+                     return;
+                 }
++
++                if (args.Length == 4)
++                {
++                    master = args[2] + &quot; &quot; + args[3];
++                }
+             }
+             else if (args.Length == 3 || args.Length == 5)
+             {
+@@ -78,7 +79,7 @@
+ 
+                 if (args.Length == 5)
+                 {
+-                    account.Master = args[3] + &quot; &quot; + args[4];
++                    master = args[3] + &quot; &quot; + args[4];
+                 }
+ 
+                 accounts.Add(account);
+@@ -91,6 +92,7 @@
+ 
+             // Login the accounts and run the input loop
+             tester = new TestClient(accounts);
++            tester.Master = master;
+             tester.Run();
+         }
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-29 00:32:25 UTC (rev 649)
+@@ -12,7 +12,6 @@
+         public string FirstName;
+         public string LastName;
+         public string Password;
+-        public string Master;
+     }
+ 
+     public class TestClient
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-28 23:48:02 UTC (rev 648)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-29 00:32:25 UTC (rev 649)
+@@ -35,7 +35,6 @@
+   &lt;ItemGroup&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\TeleportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000007.html">[Libsecondlife-commits] r648 - in branches/aditi: data	libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000008.html">[Libsecondlife-commits] r650 - in branches/aditi: . SLProxy SLProxy/legacy applications applications/Decoder applications/FollowBot applications/SLIRC applications/TestBot applications/sceneviewer applications/sceneviewer/Prims applications/sceneviewer/Properties bin libjaspernet libsecondlife-cs libsecondlife-cs/AssetSystem libsecondlife-cs/InventorySystem libsecondlife-cs/JSON libsecondlife-cs/XmlRpcCS libsecondlife-cs/examples libsecondlife-cs/examples/AnimationSample libsecondlife-cs/examples/BodyPartMorphGenerator libsecondlife-cs/examples/IA_ImageTool libsecondlife-cs/examples/IA_InventoryManager libsecondlife-cs/examples/IA_MultiImageUpload libsecondlife-cs/examples/IA_NotecardTool libsecondlife-cs/examples/IA_SimpleInventory libsecondlife-cs/examples/IA_TestAsyncImage libsecondlife-cs/examples/ParcelDownload libsecondlife-cs/examples/Teleport libsecondlife-cs/examples/TestClient libsecondlife-cs/examples/groupmanager libsecondlife-cs/examples/name2key libsecondlife-cs/examples/prim! export libsecondlife-cs/examples/slaccountant libsecondlife-cs/examples/sldump libsecondlife-cs/mapgenerator libsecondlife-cs/tests
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

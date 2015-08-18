@@ -1,0 +1,814 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r751 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r751%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612220022.kBM0M7go023201%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000117.html">
+   <LINK REL="Next"  HREF="000119.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r751 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r751%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612220022.kBM0M7go023201%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r751 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 22 01:22:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000117.html">[Libsecondlife-commits] r750 - trunk/SLProxy
+</A></li>
+        <LI>Next message: <A HREF="000119.html">[Libsecondlife-commits] r752 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#118">[ date ]</a>
+              <a href="thread.html#118">[ thread ]</a>
+              <a href="subject.html#118">[ subject ]</a>
+              <a href="author.html#118">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-22 01:21:54 +0100 (Fri, 22 Dec 2006)
+New Revision: 751
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/Asset.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetImage.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetNotecard.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+Log:
+More work on the Inventory/Asset/AppearanceManager code...  there is now a WearOutfit() function.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -4,6 +4,7 @@
+ 
+ using libsecondlife;
+ using libsecondlife.AssetSystem;
++using libsecondlife.InventorySystem;
+ using libsecondlife.Packets;
+ 
+ 
+@@ -40,6 +41,62 @@
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+         }
+ 
++        public void WearOutfit(InventoryFolder outfitFolder)
++        {
++            // Refresh download of outfit folder
++            if (!outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(30000, false))
++            {
++                Console.WriteLine(&quot;An error occured while downloads the folder contents of : &quot; + outfitFolder.Name);
++            }
++
++            byte NumPieces = 0;
++
++            AgentIsNowWearingPacket nowWearing = new AgentIsNowWearingPacket();
++            nowWearing.AgentData.AgentID = Client.Network.AgentID;
++            nowWearing.AgentData.SessionID = Client.Network.SessionID;
++
++            nowWearing.WearableData = new AgentIsNowWearingPacket.WearableDataBlock[13];
++            for (byte i = 0; i &lt;= 12; i++)
++            {
++                nowWearing.WearableData[i] = new AgentIsNowWearingPacket.WearableDataBlock();
++                nowWearing.WearableData[i].WearableType = i;
++                nowWearing.WearableData[i].ItemID = LLUUID.Zero;
++            }
++
++            outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(3000, false);
++            foreach (InventoryBase ib in outfitFolder.GetContents())
++            {
++                if (ib is InventoryWearable)
++                {
++                    InventoryWearable iw = (InventoryWearable)ib;
++                    byte type = ((AssetWearable)iw.Asset).TypeFromAsset;
++                    nowWearing.WearableData[type].ItemID = iw.ItemID;
++                    NumPieces++;
++                }
++            }
++
++            // Flush the cached agent wearables so we can redefine them
++            AgentWearablesData = new AgentWearablesUpdatePacket.WearableDataBlock[NumPieces];
++            byte WearableDataEntry = 0;
++
++            for (byte i = 0; i &lt;= 12; i++)
++            {
++                if (nowWearing.WearableData[i].ItemID != LLUUID.Zero)
++                {
++                    AgentWearablesData[WearableDataEntry] = new AgentWearablesUpdatePacket.WearableDataBlock();
++                    nowWearing.WearableData[WearableDataEntry].WearableType = nowWearing.WearableData[i].WearableType;
++                    nowWearing.WearableData[WearableDataEntry].ItemID = nowWearing.WearableData[i].ItemID;
++                    WearableDataEntry++;
++                }
++            }
++
++            Client.Network.SendPacket(nowWearing);
++
++            // Update Appearance Info
++            GetAvatarAppearanceInfoFromWearableAssets();
++            SendAgentSetAppearance();
++        }
++
+         public AgentWearablesUpdatePacket.WearableDataBlock[] GetWearables()
+         {
+             AgentWearablesSignal = new ManualResetEvent(false);
+@@ -56,7 +113,8 @@
+ 
+         public void GetAvatarAppearanceInfoFromWearableAssets()
+         {
+-            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in GetWearables())
++            AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = GetWearables();
++            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in wdbs)
+             {
+                 if (wdb.ItemID == LLUUID.Zero)
+                 {
+@@ -80,11 +138,10 @@
+                 }
+ 
+                 
+-
+                 AManager.GetInventoryAsset(wearableAsset);
+-                if (wearableAsset.AssetData.Length == 0)
++                if ((wearableAsset.AssetData == null) || (wearableAsset.AssetData.Length == 0))
+                 {
+-                    Client.Log(&quot;Retrieval failed&quot;, Helpers.LogLevel.Warning);
++                    Client.Log(&quot;Asset retrieval failed for AssetID: &quot; + wearableAsset.AssetID, Helpers.LogLevel.Warning);
+                 }
+ 
+                 try
+@@ -186,6 +243,7 @@
+                 packetVal = (byte)(percentage * (byte)255);
+ 
+                 VisualParams[packetIdx] = packetVal;
++
+             }
+ 
+             return VisualParams;
+@@ -193,9 +251,16 @@
+ 
+         private LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;uint, byte&gt; VisualParams)
+         {
+-            float AV_Height_Range = 2.025506f - 1.50856f;
+-            float AV_Height = 1.50856f + (((float)VisualParams[25] / 255.0f) * AV_Height_Range);
+-            return new LLVector3(0.45f, 0.6f, AV_Height);
++            if (VisualParams.ContainsKey(25))
++            {
++                float AV_Height_Range = 2.025506f - 1.50856f;
++                float AV_Height = 1.50856f + (((float)VisualParams[25] / 255.0f) * AV_Height_Range);
++                return new LLVector3(0.45f, 0.6f, AV_Height);
++            }
++            else
++            {
++                return new LLVector3(0.45f, 0.6f, 1.0f);
++            }
+         }
+ 
+         public void SendAgentSetAppearance()
+
+Modified: trunk/libsecondlife-cs/AssetSystem/Asset.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/Asset.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/Asset.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -46,15 +46,14 @@
+ 		public bool Tempfile;
+ 
+ 
+-		private byte[] assetdata;
+-		public byte[] AssetData
+-		{
+-			get { return assetdata; }
+-			set
+-			{
+-				assetdata = value;
+-			}
+-		}
++		internal byte[] _AssetData;
++        public byte[] AssetData
++        {
++            get
++            {
++                return _AssetData;
++            }
++        }
+ 
+ 
+         /// &lt;summary&gt;
+@@ -68,7 +67,7 @@
+ 			AssetID		= assetID;
+ 			Type		= (sbyte)type;
+ 			Tempfile	= tempfile;
+-			AssetData	= assetData;
++			_AssetData	= assetData;
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -81,7 +80,7 @@
+ 			AssetID		= assetID;
+ 			Type		= (sbyte)type;
+ 			Tempfile	= false;
+-			AssetData	= assetData;
++			_AssetData	= assetData;
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -89,7 +88,12 @@
+         /// &lt;/summary&gt;
+ 		public string AssetDataToString()
+ 		{
+-            return Helpers.FieldToString((byte[])AssetData);
++            return Helpers.FieldToString((byte[])_AssetData);
+ 		}
++
++        public virtual void SetAssetData(byte[] data)
++        {
++            _AssetData = data;
++        }
+ 	}
+ }
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetImage.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetImage.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -39,7 +39,7 @@
+ 		{
+ 			get
+ 			{
+-				return base.AssetData;
++				return AssetData;
+ 			}
+ 		}
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -196,7 +196,7 @@
+ 
+             request.Completed.WaitOne();
+ 
+-            asset.AssetData = request.AssetData;
++            asset.SetAssetData(request.AssetData);
+             
+ 		}
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetNotecard.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetNotecard.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -64,7 +64,7 @@
+         public AssetNotecard(LLUUID assetID, byte[] assetData)
+             : base(assetID, Asset.ASSET_TYPE_NOTECARD, false, null)
+ 		{
+-			base.AssetData = assetData;
++			_AssetData = assetData;
+ 
+ 			string temp	= System.Text.Encoding.UTF8.GetString(assetData).Trim();
+ 
+@@ -108,7 +108,7 @@
+ 			byte[] assetData = new byte[stringBytes.Length + 1];
+ 			Array.Copy(stringBytes, 0, assetData, 0, stringBytes.Length);
+ 
+-			base.AssetData = assetData;
++			SetAssetData( assetData );
+ 		}
+ 	}
+ }
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -45,7 +45,7 @@
+         /// &lt;param name=&quot;asset&quot;&gt;&lt;/param&gt;
+         public static Packet AssetUploadRequest(Asset asset, LLUUID TransactionID)
+ 		{
+-            if (asset.AssetData.Length &gt; 1000)
++            if (asset._AssetData.Length &gt; 1000)
+             {
+                 throw new Exception(&quot;Asset too large to use AssetUploadRequest, use AssetUploadRequestHaderOnly() instead.&quot;);
+             }
+@@ -54,7 +54,7 @@
+             p.AssetBlock.TransactionID = TransactionID;
+             p.AssetBlock.Type          = asset.Type;
+             p.AssetBlock.Tempfile      = asset.Tempfile;
+-            p.AssetBlock.AssetData     = asset.AssetData;
++            p.AssetBlock.AssetData     = asset._AssetData;
+             p.AssetBlock.StoreLocal    = false;
+ 
+             return p;
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -78,7 +78,7 @@
+ 
+             CurrentPacket = 0;
+             resendCount = 0;
+-            _NumPackets = asset.AssetData.Length / 1000;
++            _NumPackets = asset._AssetData.Length / 1000;
+             if (_NumPackets &lt; 1)
+             {
+                 _NumPackets = 1;
+@@ -120,7 +120,7 @@
+         {
+             Packet packet;
+ 
+-            if (this.MyAsset.AssetData.Length &gt; 1000)
++            if (this.MyAsset._AssetData.Length &gt; 1000)
+             {
+                 packet = AssetPacketHelpers.AssetUploadRequestHeaderOnly(this.MyAsset, this.TransactionID);
+             }
+@@ -175,7 +175,7 @@
+                 uint packetNum = CurrentPacket; 
+                 if (packetNum == 0)
+                 {
+-                    if (MyAsset.AssetData.Length &lt;= 1000)
++                    if (MyAsset._AssetData.Length &lt;= 1000)
+                         throw new Exception(&quot;Should not use xfer for small assets&quot;);
+                     int dataSize = 1000;
+ 
+@@ -183,24 +183,24 @@
+ 
+                     // Prefix the first Xfer packet with the data length
+                     // FIXME: Apply endianness patch
+-                    Array.Copy(BitConverter.GetBytes((int)MyAsset.AssetData.Length), 0, packetData, 0, 4);
+-                    Array.Copy(MyAsset.AssetData, 0, packetData, 4, dataSize);
++                    Array.Copy(BitConverter.GetBytes((int)MyAsset._AssetData.Length), 0, packetData, 0, 4);
++                    Array.Copy(MyAsset._AssetData, 0, packetData, 4, dataSize);
+ 
+                     uploadPacket = AssetPacketHelpers.SendXferPacket(XferID, packetData, packetNum);
+                 }
+                 else if (packetNum &lt; this.NumPackets)
+                 {
+                     byte[] packetData = new byte[1000];
+-                    Array.Copy(this.MyAsset.AssetData, packetNum * 1000, packetData, 0, 1000);
++                    Array.Copy(this.MyAsset._AssetData, packetNum * 1000, packetData, 0, 1000);
+ 
+                     uploadPacket = AssetPacketHelpers.SendXferPacket(this.XferID, packetData, packetNum);
+                 }
+                 else
+                 {
+                     // The last packet has to be handled slightly differently
+-                    int lastLen = this.MyAsset.AssetData.Length - (this.NumPackets * 1000);
++                    int lastLen = this.MyAsset._AssetData.Length - (this.NumPackets * 1000);
+                     byte[] packetData = new byte[lastLen];
+-                    Array.Copy(this.MyAsset.AssetData, this.NumPackets * 1000, packetData, 0, lastLen);
++                    Array.Copy(this.MyAsset._AssetData, this.NumPackets * 1000, packetData, 0, lastLen);
+ 
+                     uint lastPacket = (uint)int.MaxValue + (uint)this.NumPackets + (uint)1;
+                     uploadPacket = AssetPacketHelpers.SendXferPacket(this.XferID, packetData, lastPacket);
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -34,22 +34,8 @@
+ 	/// &lt;summary&gt;
+     /// Asset for wearables such as Socks, Eyes, Gloves, Hair, Pants, Shape, Shirt, Shoes, Skin, Jacket, Skirt, Underpants
+ 	/// &lt;/summary&gt;
+-	internal class AssetWearable : Asset
++	public class AssetWearable : Asset
+ 	{
+-		public new byte[] AssetData
+-		{
+-			get
+-			{
+-				return base.AssetData;
+-			}
+-
+-            set
+-            {
+-                base.AssetData = value;
+-                UpdateFromAssetData();
+-            }
+-		}
+-
+         private string _Name = &quot;&quot;;
+         public string Name
+         {
+@@ -57,15 +43,17 @@
+             set
+             {
+                 _Name = value;
++                UpdateAssetData();
+             }
+         }
+-        private uint _TypeFromAsset = 0;
+-        public uint TypeFromAsset
++        private byte _TypeFromAsset = 0;
++        public byte TypeFromAsset
+         {
+             get { return _TypeFromAsset; }
+             set
+             {
+                 _TypeFromAsset = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -76,6 +64,7 @@
+             set
+             {
+                 _Sale_Type = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -86,6 +75,7 @@
+             set
+             {
+                 _Sale_Price = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -96,6 +86,7 @@
+             set
+             {
+                 _Creator_ID = value;
++                UpdateAssetData();
+             }
+         }
+         private LLUUID _Owner_ID = new LLUUID();
+@@ -105,6 +96,7 @@
+             set
+             {
+                 _Owner_ID = value;
++                UpdateAssetData();
+             }
+         }
+         private LLUUID _Last_Owner_ID = new LLUUID();
+@@ -114,6 +106,7 @@
+             set
+             {
+                 _Last_Owner_ID = value;
++                UpdateAssetData();
+             }
+         }
+         private LLUUID _Group_ID = new LLUUID();
+@@ -123,6 +116,7 @@
+             set
+             {
+                 _Group_ID = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -133,6 +127,7 @@
+             set
+             {
+                 _Permission_Base_Mask = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -143,6 +138,7 @@
+             set
+             {
+                 _Permission_Owner_Mask = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -153,6 +149,7 @@
+             set
+             {
+                 _Permission_Group_Mask = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -163,6 +160,7 @@
+             set
+             {
+                 _Permission_Everyone_Mask = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -173,6 +171,7 @@
+             set
+             {
+                 _Permission_Next_Owner_Mask = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -183,6 +182,7 @@
+             set
+             {
+                 _Parameters = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -193,6 +193,7 @@
+             set
+             {
+                 _Textures = value;
++                UpdateAssetData();
+             }
+         }
+ 
+@@ -204,6 +205,7 @@
+         public AssetWearable(LLUUID assetID, sbyte assetType, byte[] assetData)
+             : base(assetID, assetType, false, assetData)
+ 		{
++            UpdateFromAssetData();
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -213,11 +215,17 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+         internal void UpdateFromAssetData()
+         {
++            if ( AssetData == null)
++            {
++                return;
++            }
++
+             byte state = 0;
+             const byte parameters_block = 4;
+             const byte textures_block = 6;
+ 
+             Exception Corrupted = new Exception(&quot;Corrupted Body Part data&quot;);
++
+             string whole_enchilada = System.Text.Encoding.ASCII.GetString(AssetData);
+ 
+             //this seperates the whole enchilada into two, the header and the body.
+@@ -252,7 +260,7 @@
+                 {
+                     if (block.StartsWith(&quot;type &quot;))
+                     {
+-                        this._TypeFromAsset = uint.Parse(block.Substring(5));
++                        this._TypeFromAsset = byte.Parse(block.Substring(5));
+                     }
+                     else
+                     {
+@@ -370,7 +378,7 @@
+                 data += &quot;\n&quot; + texture.Key + &quot; &quot; + texture.Value.ToStringHyphenated();
+             }
+ 
+-            this.AssetData = System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
++            _AssetData = System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
+         }
+ 
+         private static string intToHex(uint i)
+@@ -378,5 +386,13 @@
+             return string.Format(&quot;{0:x8}&quot;, i);
+         }
+ 
++        public override void SetAssetData(byte[] data)
++        {
++            _AssetData = data;
++            if ( (_AssetData != null) &amp;&amp; (_AssetData.Length &gt; 0) )
++            {
++                UpdateFromAssetData();
++            }
++        }
+ 	}
+ }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -91,7 +91,7 @@
+ 			} 
+ 			else 
+ 			{
+-				Asset.AssetData = assetData;
++				Asset.SetAssetData(assetData);
+ 			}
+ 
+ 		}
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -130,7 +130,6 @@
+                 {
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+                     {
+-                        Console.WriteLine(&quot;Asset not downloaded yet, requesting...&quot;);
+                         base.iManager.AssetManager.GetInventoryAsset(this);
+                         return Asset;
+                     }
+@@ -446,7 +445,7 @@
+             }
+             else
+             {
+-                _Asset.AssetData = assetData;
++                _Asset.SetAssetData(assetData);
+             }
+         }
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -411,21 +411,14 @@
+                     slClient.Log(&quot;Time-out while waiting for packets (&quot; +
+                         ((curTick - LastPacketRecievedAtTick) / 1000) + &quot; seconds since last packet)&quot;,
+                         Helpers.LogLevel.Warning);
+-                    //Console.WriteLine(&quot;Current Status:&quot;);
+ 
+                     // have to make a seperate list otherwise we run into modifying the original array
+                     // while still enumerating it.
+                     List&lt;DownloadRequest_Folder&gt; alRestartList = new List&lt;DownloadRequest_Folder&gt;();
+ 
+-                    //if (FolderDownloadStatus[0] != null)
+-                    //{
+-                    //    Console.WriteLine(FolderDownloadStatus[0].GetType());
+-                    //}
+ 
+                     foreach (DownloadRequest_Folder dr in FolderDownloadStatus.Values)
+                     {
+-                        //Console.WriteLine(dr.FolderID + &quot; &quot; + dr.Expected + &quot; / &quot; + dr.Received + &quot; / &quot; + dr.LastReceivedAtTick);
+-
+                         alRestartList.Add(dr);
+                     }
+ 
+@@ -650,7 +643,6 @@
+                 else
+                 {
+                     FolderDownloadStatus[uuidFolderID] = dr;
+-                    //					Console.WriteLine( uuidFolderID + &quot; is expecting &quot; + (iDescendentsExpected - iStatus[1]) + &quot; more packets.&quot; );
+                 }
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -103,7 +103,7 @@
+ 			} 
+ 			else 
+ 			{
+-				_Asset.AssetData = assetData;
++				_Asset.SetAssetData(assetData);
+ 			}
+ 
+ 		}
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -93,9 +93,8 @@
+             }
+             else
+             {
+-                Asset.AssetData = assetData;
++                _Asset.SetAssetData(assetData);
+             }
+-
+         }
+ 
+         public override string GetDisplayType()
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-21 21:34:01 UTC (rev 750)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 00:21:54 UTC (rev 751)
+@@ -198,6 +198,10 @@
+                         loadwearables(curCmdLine);
+                         break;
+ 
++                    case &quot;outfit&quot;:
++                        outfit(curCmdLine);
++                        break;
++
+                     default:
+                         Console.WriteLine(&quot;Unknown command '&quot; + curCmdLine[0] + &quot;'.&quot;);
+                         Console.WriteLine(&quot;Type HELP for a list of available commands.&quot;);
+@@ -233,6 +237,47 @@
+             Console.WriteLine(&quot;QUIT        - Exit the Inventory Manager.&quot;);
+         }
+ 
++        private void outfit(string[] cmdLine)
++        {
++            if (cmdLine.Length &lt; 2 )
++            {
++                Console.WriteLine(&quot;Usage: outfit [folder]&quot;);
++                return;
++            }
++
++            // Resolve outfit folder
++            string targetDir = &quot;&quot;;
++
++            if (cmdLine[1].StartsWith(&quot;/&quot;))
++            {
++                targetDir += combineCmdArg(cmdLine);
++            }
++            else
++            {
++                if (!curDirectory.Equals(&quot;/&quot;))
++                {
++                    targetDir = curDirectory + &quot;/&quot;;
++
++                }
++
++                targetDir += combineCmdArg(cmdLine);
++            }
++
++            InventoryFolder iFolder = _Client.Inventory.getFolder(targetDir);
++
++            if (iFolder == null)
++            {
++                Console.WriteLine(&quot;Could not find directory: &quot; + targetDir);
++                return;
++            }
++            if (aManager == null)
++            {
++                aManager = new AppearanceManager(_Client);
++            }
++
++            aManager.WearOutfit(iFolder);
++        }
++
+         private void savewearables(string[] cmdLine)
+         {
+             if (aManager == null)
+@@ -386,7 +431,6 @@
+                 aManager = new AppearanceManager(_Client);
+             }
+ 
+-
+             aManager.SendAgentSetAppearance();
+ 
+         }
+@@ -550,11 +594,18 @@
+             if (cmdLine.Length == 3)
+             {
+                 // Arbitrary Asset
+-                Asset asset = new Asset(cmdLine[2], sbyte.Parse(cmdLine[1]), null);
++                try
++                {
++                    Asset asset = new Asset(cmdLine[2], sbyte.Parse(cmdLine[1]), null);
+ 
+-                _Client.Assets.GetInventoryAsset(asset);
++                    _Client.Assets.GetInventoryAsset(asset);
+ 
+-                Console.WriteLine(asset.AssetDataToString());
++                    Console.WriteLine(asset.AssetDataToString());
++                }
++                catch (Exception)
++                {
++                    Console.WriteLine(&quot;Unable to find an asset with a UUID of: &quot; + cmdLine[2]);
++                }
+             }
+             else
+             {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000117.html">[Libsecondlife-commits] r750 - trunk/SLProxy
+</A></li>
+	<LI>Next message: <A HREF="000119.html">[Libsecondlife-commits] r752 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#118">[ date ]</a>
+              <a href="thread.html#118">[ thread ]</a>
+              <a href="subject.html#118">[ subject ]</a>
+              <a href="author.html#118">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

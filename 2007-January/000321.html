@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r887 - trunk/libsecondlife-cs/AssetSystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r887%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200701230432.l0N4WusS018126%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000320.html">
+   <LINK REL="Next"  HREF="000322.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r887 - trunk/libsecondlife-cs/AssetSystem</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r887%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200701230432.l0N4WusS018126%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r887 - trunk/libsecondlife-cs/AssetSystem">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 23 05:32:56 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000320.html">[Libsecondlife-commits] r886 - in trunk/libsecondlife-cs: .	VisualParamGenerator mapgenerator
+</A></li>
+        <LI>Next message: <A HREF="000322.html">[Libsecondlife-commits] r888 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#321">[ date ]</a>
+              <a href="thread.html#321">[ thread ]</a>
+              <a href="subject.html#321">[ subject ]</a>
+              <a href="author.html#321">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-23 05:32:55 +0100 (Tue, 23 Jan 2007)
+New Revision: 887
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+Log:
+Changed ParamDictionary references to Params
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-23 04:30:43 UTC (rev 886)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-23 04:32:55 UTC (rev 887)
+@@ -359,11 +359,11 @@
+                 {
+                     int paramid = GetParamID(i + 1);
+ 
+-                    if (!libsecondlife.VisualParams.ParamDictionary.ContainsKey(paramid))
++                    if (!libsecondlife.VisualParams.Params.ContainsKey(paramid))
+                     {
+                         Client.Log(&quot;Unknown VisualParam ID encountered :: &quot; + paramid, Helpers.LogLevel.Debug);
+                     }
+-                    VisualParam vp = libsecondlife.VisualParams.ParamDictionary[paramid];
++                    VisualParam vp = libsecondlife.VisualParams.Params[paramid];
+ 
+                     float percentage = (vp.DefaultValue - vp.MinValue) / (vp.MaxValue - vp.MinValue);
+ 
+@@ -397,7 +397,7 @@
+             {
+                 packetIdx = AppearanceManager.GetAgentSetAppearanceIndex(kvp.Key) - 1; //TODO/FIXME: this should be zero indexed, not 1 based.
+ 
+-                VisualParam vp = libsecondlife.VisualParams.ParamDictionary[kvp.Key];
++                VisualParam vp = libsecondlife.VisualParams.Params[kvp.Key];
+ 
+                 percentage = (kvp.Value - vp.MinValue) / (vp.MaxValue - vp.MinValue);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000320.html">[Libsecondlife-commits] r886 - in trunk/libsecondlife-cs: .	VisualParamGenerator mapgenerator
+</A></li>
+	<LI>Next message: <A HREF="000322.html">[Libsecondlife-commits] r888 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#321">[ date ]</a>
+              <a href="thread.html#321">[ thread ]</a>
+              <a href="subject.html#321">[ subject ]</a>
+              <a href="author.html#321">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

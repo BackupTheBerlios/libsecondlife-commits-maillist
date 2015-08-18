@@ -1,0 +1,1150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r645 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r645%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples%20examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611280748.kAS7mi2o023345%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000001.html">
+   <LINK REL="Next"  HREF="000003.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r645 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r645%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples%20examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611280748.kAS7mi2o023345%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r645 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 28 08:48:44 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000001.html">[Libsecondlife-commits] r644 - in trunk/libsecondlife-cs:	AssetSystem examples/IA_ImageTool
+</A></li>
+        <LI>Next message: <A HREF="000003.html">[Libsecondlife-commits] r646 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-28 08:48:43 +0100 (Tue, 28 Nov 2006)
+New Revision: 645
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/examples/TestClient/Command.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/examples/examples.build
+Log:
+libsecondlife:
+* Publically exposed the Simulator reference to SecondLife
+* SecondLife.Debug = false; actually works now
+* All incoming packets are added to the simulator inbox now, and the inbox size has been cut in half to 100
+TestClient:
+* Completely revamped to support multiple clients
+* Added login/logout Commands
+* Added the all prefix for IM commands to send the command to all logged in bots
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -48,9 +48,13 @@
+     /// &lt;/summary&gt;
+     public class Simulator
+     {
++        /// &lt;summary&gt;A public reference to the client that this Simulator object
++        /// is attached to&lt;/summary&gt;
++        public SecondLife Client;
++
+         /// &lt;summary&gt;The maximum size of the sequence number inbox, used to 
+         /// check for resent and/or duplicate packets&lt;/summary&gt;
+-        public const int INBOX_SIZE = 200;
++        public const int INBOX_SIZE = 100;
+ 
+         /// &lt;summary&gt;The Region class that this Simulator wraps&lt;/summary&gt;
+         public Region Region;
+@@ -89,7 +93,6 @@
+         /// &lt;/summary&gt;
+         public bool DisconnectCandidate = false;
+ 
+-        private SecondLife Client;
+         private NetworkManager Network;
+         private Dictionary&lt;PacketType, List&lt;NetworkManager.PacketCallback&gt;&gt; Callbacks;
+         private ushort Sequence = 0;
+@@ -470,13 +473,6 @@
+                     }
+                     else
+                     {
+-                        if (Inbox.Count &gt;= INBOX_SIZE)
+-                        {
+-                            Inbox.Dequeue();
+-                        }
+-
+-                        Inbox.Enqueue(packet.Header.Sequence);
+-
+                         lock (PendingAcks)
+                         {
+                             PendingAcks.Add((uint)packet.Header.Sequence);
+@@ -485,6 +481,13 @@
+                 }
+             }
+ 
++            // Add this packet to our inbox
++            if (Inbox.Count &gt;= INBOX_SIZE)
++            {
++                Inbox.Dequeue();
++            }
++            Inbox.Enqueue(packet.Header.Sequence);
++
+             // Handle appended ACKs
+             if (packet.Header.AppendedAcks)
+             {
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -890,7 +890,7 @@
+                             break;
+                         case (byte)PCode.ParticleSystem:
+                             // FIXME: Handle ParticleSystem
+-                            Client.Log(&quot;Got an ObjectUpdate block with a ParticleSystem PCode&quot;, Helpers.LogLevel.Debug);
++                            Client.DebugLog(&quot;Got an ObjectUpdate block with a ParticleSystem PCode&quot;);
+                             break;
+                         default:
+                             break;
+@@ -1072,9 +1072,8 @@
+                                 byte Unknown1 = block.Data[i++];
+                                 byte Unknown2 = block.Data[i++];
+ 
+-                                Client.Log(&quot;Compressed object with Tree flag set: &quot; + Environment.NewLine +
+-                                    &quot;Unknown byte 1: &quot; + Unknown1 + Environment.NewLine +
+-                                    &quot;Unknown byte 2: &quot; + Unknown2, Helpers.LogLevel.Debug);
++                                Client.DebugLog(&quot;Compressed object with Tree flag set: &quot; + Environment.NewLine +
++                                    &quot;Unknown byte 1: &quot; + Unknown1 + Environment.NewLine + &quot;Unknown byte 2: &quot; + Unknown2);
+                             }
+ 
+                             if ((flags &amp; CompressedFlags.HasParent) != 0)
+@@ -1167,17 +1166,17 @@
+                             if ((flags &amp; CompressedFlags.Unknown1) != 0)
+                             {
+                                 // TODO: Is this even a valid flag?
+-                                Client.Log(&quot;Compressed object with Unknown1 flag set: &quot; + Environment.NewLine +
++                                Client.DebugLog(&quot;Compressed object with Unknown1 flag set: &quot; + Environment.NewLine +
+                                     &quot;Flags: &quot; + flags.ToString() + Environment.NewLine +
+-                                    Helpers.FieldToString(block.Data), Helpers.LogLevel.Debug);
++                                    Helpers.FieldToString(block.Data));
+                             }
+ 
+                             if ((flags &amp; CompressedFlags.Unknown2) != 0)
+                             {
+                                 // FIXME: Implement CompressedFlags.Unknown2
+-                                //Client.Log(&quot;Compressed object with Unknown2 flag set: &quot; + Environment.NewLine +
++                                //Client.DebugLog(&quot;Compressed object with Unknown2 flag set: &quot; + Environment.NewLine +
+                                 //    &quot;Flags: &quot; + flags.ToString() + Environment.NewLine +
+-                                //    Helpers.FieldToString(block.Data), Helpers.LogLevel.Debug);
++                                //    Helpers.FieldToString(block.Data));
+                             }
+ 
+                             prim.PathCurve = (uint)block.Data[i++];
+@@ -1240,8 +1239,7 @@
+                         else if (pcode == (byte)PCode.Grass || pcode == (byte)PCode.Tree || pcode == (byte)PCode.NewTree)
+                         {
+                             // FIXME: Implement this
+-                            //Client.Log(&quot;######### Got an ObjectUpdateCompressed for grass/tree, implement this! #########&quot;,
+-                            //    Helpers.LogLevel.Debug);
++                            //Client.DebugLog(&quot;######### Got an ObjectUpdateCompressed for grass/tree, implement this! #########&quot;);
+                         }
+                         else
+                         {
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/SecondLife.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -134,6 +134,8 @@
+         /// &lt;param name=&quot;level&quot;&gt;The severity of the log entry&lt;/param&gt;
+         public void Log(string message, Helpers.LogLevel level)
+         {
++            if (level == Helpers.LogLevel.Debug &amp;&amp; !Debug) return;
++
+             if (OnLogMessage != null)
+             {
+                 OnLogMessage(message, level);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Command.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Command.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Command.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -10,16 +10,10 @@
+     {
+ 		public string Name;
+ 		public string Description;
+-
+ 		public TestClient TestClient;
+ 
+-		public SecondLife Client
+-		{
+-			get { return TestClient.Client; }
+-		}
++		public abstract string Execute(SecondLife Client, string[] args, LLUUID fromAgentID);
+ 
+-		public abstract string Execute(string[] args, LLUUID fromAgentID);
+-
+ 		/// &lt;summary&gt;
+ 		/// When set to true, think will be called.
+ 		/// &lt;/summary&gt;
+@@ -28,7 +22,7 @@
+ 		/// &lt;summary&gt;
+ 		/// Called twice per second, when Command.Active is set to true.
+ 		/// &lt;/summary&gt;
+-		public virtual void Think()
++		public virtual void Think(SecondLife Client)
+ 		{
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Shows the amount of L$.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			return &quot;L$: &quot; + Client.Self.Balance;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Follow another avatar. (usage: follow FirstName LastName)&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			string target = String.Empty;
+ 			for (int ct = 0; ct &lt; args.Length;ct++)
+@@ -46,7 +46,7 @@
+             return false;
+         }
+ 
+-		public override void Think()
++		public override void Think(SecondLife Client)
+ 		{
+             if (vecDist(followAvatar.Position, Client.Self.Position) &gt; DISTANCE_BUFFER)
+             {
+@@ -62,7 +62,7 @@
+ 			//    Client.Self.AutoPilot((ulong)myPos.X, (ulong)myPos.Y, myPos.Z);
+ 			//}
+ 
+-			base.Think();
++			base.Think(Client);
+ 		}
+ 
+ 		//void SendAgentUpdate(uint ControlID)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Gives you all it's money.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (fromAgentID == null)
+ 				return &quot;Unable to send money to console.  This command only works when IMed.&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Goto location. (e.g. \&quot;goto simname/100/100/30\&quot;)&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+                 return &quot;Destination should be specified as: sim/x/y/z&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Lists available commands.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+ 			result.AppendFormat(&quot;\n\nHELP\nClient accept teleport lures from master and group members.\n&quot;);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Teleports to the specified height. (e.g. \&quot;jump 1000\&quot;)&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+                 return &quot;usage: jump 1000&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Show the location.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++		public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+             return &quot;CurrentSim: '&quot; + Client.Network.CurrentSim.Region.Name + &quot;' Position: &quot; + Client.Self.Position.ToString();
+ 		}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -0,0 +1,56 @@
++using System;
++using System.Collections.Generic;
++using System.Reflection;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class LoginCommand : Command
++    {
++        public LoginCommand()
++        {
++            Name = &quot;login&quot;;
++            Description = &quot;Logs in another avatar&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 3)
++                return &quot;usage: login firstname lastname password&quot;;
++
++            LoginDetails account = new LoginDetails();
++            account.FirstName = args[0];
++            account.LastName = args[1];
++            account.Password = args[2];
++            account.Master = TestClient.Master;
++
++            // Check if this client is already logged in
++            foreach (SecondLife client in TestClient.Clients.Values)
++            {
++                if (client.Self.FirstName == account.FirstName &amp;&amp; client.Self.LastName == account.LastName)
++                {
++                    TestClient.Clients.Remove(client.Network.AgentID);
++
++                    client.Network.Logout();
++
++                    break;
++                }
++            }
++
++            SecondLife newClient = TestClient.InitializeClient(account);
++
++            if (newClient.Network.Connected)
++            {
++                TestClient.Clients[newClient.Network.AgentID] = newClient;
++
++                return &quot;Logged in &quot; + newClient.ToString();
++            }
++            else
++            {
++                return &quot;Failed to login &quot; + account.FirstName + &quot; &quot; + account.LastName + &quot;: &quot; +
++                    newClient.Network.LoginError;
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -0,0 +1,35 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class LogoutCommand : Command
++    {
++        public LogoutCommand()
++        {
++            Name = &quot;logout&quot;;
++            Description = &quot;Log this avatar out&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            string name = Client.ToString();
++            TestClient.Clients.Remove(Client.Network.AgentID);
++            Client.Network.Logout();
++            Client = null;
++
++            if (TestClient.Clients.Count &gt; 0)
++            {
++                return &quot;Logged &quot; + name + &quot; out&quot;;
++            }
++            else
++            {
++                TestClient.Running = false;
++                return &quot;All avatars logged out&quot;;
++            }
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Shows the number of prims that have been received.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			return TestClient.Prims.Count.ToString();
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -11,14 +11,18 @@
+ 		public QuitCommand()
+ 		{
+ 			Name = &quot;quit&quot;;
+-			Description = &quot;Log off&quot;;
++			Description = &quot;Log all avatars out and shut down&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+-            Client.Network.Logout();
+-			TestClient.Running = false;
+-            return &quot;Logging off.&quot;;
++            foreach (SecondLife client in TestClient.Clients.Values)
++            {
++                client.Network.Logout();
++            }
++
++            TestClient.Running = false;
++            return &quot;All avatars logged out&quot;;
+ 		}
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Say something.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+                 return &quot;usage: say whatever&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -16,7 +16,7 @@
+ 			Description = &quot;Sets the user name of the master user.  The master user can IM to run commands.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			string masterName = String.Empty;
+ 			for (int ct = 0; ct &lt; args.Length;ct++)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Sit on closest touchable prim.&quot;;
+ 		}
+ 
+-		public string Sit(LLUUID target)
++		public string Sit(SecondLife Client, LLUUID target)
+ 		{
+ 		    AgentRequestSitPacket sitPacket = new AgentRequestSitPacket();
+ 			
+@@ -31,7 +31,7 @@
+ 		    return String.Empty;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 		    PrimObject closest = null;
+ 		    double closestDistance = Double.MaxValue;
+@@ -54,7 +54,7 @@
+ 
+ 		    if (closest != null)
+ 		    {
+-		        Sit(closest.ID);
++		        Sit(Client, closest.ID);
+ 		        return TestClient.Prims.Count + &quot; prims. Sat on &quot; + closest.ID + &quot;. Distance: &quot; + closestDistance;
+ 		    }
+ 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Rez a tree.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 		    if (args.Length == 1)
+ 		    {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -16,7 +16,7 @@
+ 			Description = &quot;Shows the login time and length of time logged on.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			return &quot;Up Since: &quot; + Created + &quot; (&quot; + (DateTime.Now - Created) + &quot;)&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -14,7 +14,7 @@
+ 			Description = &quot;Lists seen avatars.&quot;;
+ 		}
+ 
+-		public override string Execute(string[] args, LLUUID fromAgentID)
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+ 			foreach (Avatar av in TestClient.Avatars.Values)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -5,17 +5,47 @@
+ 
+ namespace libsecondlife.TestClient
+ {
+-	public class Program
+-	{
+-        	static void Main(string[] args)
+-        	{
+-			if(args.Length &lt; 3 || args.Length == 4)
+-			{
+-				Console.WriteLine(&quot;Usage: TestClient.ext firstname lastname password [master name]&quot;);
+-			}
+-			TestClient testTool = new TestClient(args[0], args[1], args[2]);
+-			if(args.Length &gt; 4) testTool.Master = args[3] + &quot; &quot; + args[4];
+-			testTool.Run();
+-		}
++    public class Program
++    {
++        static void Main(string[] args)
++        {
++            if (args.Length &lt; 1 || args.Length &gt; 5)
++            {
++                Console.WriteLine(&quot;Usage: &quot; + Environment.NewLine +
++                    &quot;TestClient.exe firstname lastname password [master name]&quot; + Environment.NewLine +
++                    &quot;TestClient.exe filename [master name]&quot;);
++            }
++
++            TestClient tester;
++            List&lt;LoginDetails&gt; accounts = new List&lt;LoginDetails&gt;();
++            LoginDetails account;
++
++            if (args.Length &lt;= 2)
++            {
++                // Loading names from a file
++                // FIXME:
++
++                Console.WriteLine(&quot;FIXME!&quot;);
++                return;
++            }
++            else
++            {
++                // Taking a single login off the command-line
++                account = new LoginDetails();
++                account.FirstName = args[0];
++                account.LastName = args[1];
++                account.Password = args[2];
++
++                if (args.Length == 5)
++                {
++                    account.Master = args[3] + &quot; &quot; + args[4];
++                }
++
++                accounts.Add(account);
++            }
++
++            tester = new TestClient(accounts);
++            tester.Run();
+         }
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-28 07:48:43 UTC (rev 645)
+@@ -7,145 +7,263 @@
+ 
+ namespace libsecondlife.TestClient
+ {
++    public struct LoginDetails
++    {
++        public string FirstName;
++        public string LastName;
++        public string Password;
++        public string Master;
++    }
++
+     public class TestClient
+     {
+-        public SecondLife Client;
+-        public LLUUID GroupID;
++        public Dictionary&lt;LLUUID, SecondLife&gt; Clients = new Dictionary&lt;LLUUID, SecondLife&gt;();
++        public LLUUID GroupID = LLUUID.Zero;
+         public Dictionary&lt;LLUUID, GroupMember&gt; GroupMembers;
+         public Dictionary&lt;uint, PrimObject&gt; Prims = new Dictionary&lt;uint,PrimObject&gt;();
+         public Dictionary&lt;uint, Avatar&gt; Avatars = new Dictionary&lt;uint,Avatar&gt;();
+         public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
+         public bool Running = true;
+-	public string Master;
++	    public string Master = &quot;&quot;;
+ 
+-        LLQuaternion bodyRotation;
+-        System.Timers.Timer updateTimer;
++        private LLQuaternion bodyRotation = LLQuaternion.Identity;
++        private LLVector3 forward = new LLVector3(0, 0.9999f, 0);
++        private LLVector3 left = new LLVector3(0.9999f, 0, 0);
++        private LLVector3 up = new LLVector3(0, 0, 0.9999f);
++        private int DrawDistance = 64;
++        private System.Timers.Timer updateTimer;
+ 
+-        public TestClient(string first, string last, string password)
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;accounts&quot;&gt;&lt;/param&gt;
++        public TestClient(List&lt;LoginDetails&gt; accounts)
+         {
+-            Client = new SecondLife();
+-
+-            GroupID = LLUUID.Zero;
+-            Client.Objects.RequestAllObjects = true;
+-            bodyRotation = LLQuaternion.Identity;
+             updateTimer = new System.Timers.Timer(1000);
+             updateTimer.Elapsed += new System.Timers.ElapsedEventHandler(updateTimer_Elapsed);
+ 
+-            Client.Network.RegisterCallback(PacketType.AgentDataUpdate, new NetworkManager.PacketCallback(AgentDataUpdateHandler));
++            RegisterAllCommands(Assembly.GetExecutingAssembly());
+ 
+-            Client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(Objects_OnNewPrim);
+-            Client.Objects.OnPrimMoved += new ObjectManager.PrimMovedCallback(Objects_OnPrimMoved);
+-            Client.Objects.OnObjectKilled += new ObjectManager.KillObjectCallback(Objects_OnObjectKilled);
+-            Client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+-            Client.Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+-            Client.Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
++            foreach (LoginDetails account in accounts)
++            {
++                SecondLife client = InitializeClient(account);
+ 
+-			RegisterAllCommands(Assembly.GetExecutingAssembly());
++                if (client.Network.Connected)
++                {
++                    Clients[client.Network.AgentID] = client;
+ 
+-            if (Client.Network.Login(first, last, password, &quot;TestTool&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;))
++                    Console.WriteLine(&quot;Logged in &quot; + client.ToString());
++                }
++                else
++                {
++                    Console.WriteLine(&quot;Failed to login &quot; + account.FirstName + &quot; &quot; + account.LastName +
++                        &quot;: &quot; + client.Network.LoginError);
++                }
++            }
++
++            updateTimer.Start();
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;account&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public SecondLife InitializeClient(LoginDetails account)
++        {
++            SecondLife client = new SecondLife();
++
++            client.Debug = false;
++
++            client.Network.RegisterCallback(PacketType.AgentDataUpdate, new NetworkManager.PacketCallback(AgentDataUpdateHandler));
++
++            client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(Objects_OnNewPrim);
++            client.Objects.OnPrimMoved += new ObjectManager.PrimMovedCallback(Objects_OnPrimMoved);
++            client.Objects.OnObjectKilled += new ObjectManager.KillObjectCallback(Objects_OnObjectKilled);
++            client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
++            client.Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
++            client.Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
++
++            client.Objects.RequestAllObjects = true;
++
++            client.Network.Login(account.FirstName, account.LastName, account.Password, 
++                &quot;TestClient&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;);
++            
++            return client;
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public void Run()
++        {
++            Console.WriteLine(&quot;Type quit to exit.  Type help for a command list.&quot;);
++
++            while (Running)
+             {
+-                updateTimer.Start();
++                PrintPrompt();
++                string input = Console.ReadLine();
++                DoCommandAll(input, null, null);
+             }
++
++            foreach (SecondLife client in Clients.Values)
++            {
++                if (client.Network.Connected)
++                    client.Network.Logout();
++            }
+         }
+ 
+-		public void RegisterAllCommands(Assembly assembly)
+-		{
+-			foreach (Type t in assembly.GetTypes())
+-			{
+-				if (t.IsSubclassOf(typeof(Command)))
+-				{
+-					Command command = (Command)t.GetConstructor(new Type[0]).Invoke(new object[0]);
+-					RegisterCommand(command);
+-				}
+-			}
+-		}
++        private void RegisterAllCommands(Assembly assembly)
++        {
++            foreach (Type t in assembly.GetTypes())
++            {
++                if (t.IsSubclassOf(typeof(Command)))
++                {
++                    Command command = (Command)t.GetConstructor(new Type[0]).Invoke(new object[0]);
++                    RegisterCommand(command);
++                }
++            }
++        }
+ 
+-        public void RegisterCommand(Command command)
++        private void RegisterCommand(Command command)
+         {
+ 			command.TestClient = this;
++
+ 			Commands.Add(command.Name.ToLower(), command);
+         }
+ 
+-        public void DoCommand(string cmd, LLUUID fromAgentID, LLUUID imSessionID)
++        private void DoCommand(SecondLife client, string cmd, LLUUID fromAgentID, LLUUID imSessionID)
+         {
+             string[] tokens = cmd.Trim().Split(new char[] { ' ', '\t' });
++            string firstToken = tokens[0].ToLower();
++
+             if (tokens.Length == 0)
+                 return;
+ 
+-            string response = &quot;&quot;;
+-            if (Commands.ContainsKey(tokens[0].ToLower()))
++            // &quot;all balance&quot; will send the balance command to all currently logged in bots
++            if (firstToken == &quot;all&quot; &amp;&amp; tokens.Length &gt; 1)
+             {
++                cmd = &quot;&quot;;
++
++                // Reserialize all of the arguments except for &quot;all&quot;
++                for (int i = 1; i &lt; tokens.Length; i++)
++                {
++                    cmd += tokens[i] + &quot; &quot;;
++                }
++
++                DoCommandAll(cmd, fromAgentID, imSessionID);
++
++                return;
++            }
++
++            if (Commands.ContainsKey(firstToken))
++            {
+                 string[] args = new string[tokens.Length - 1];
+                 Array.Copy(tokens, 1, args, 0, args.Length);
+-                response = Commands[tokens[0].ToLower()].Execute(args, fromAgentID);
++                string response = response = Commands[firstToken].Execute(client, args, fromAgentID);
++
++                if (response.Length &gt; 0)
++                {
++                    if (fromAgentID != null &amp;&amp; client.Network.Connected)
++                        client.Self.InstantMessage(fromAgentID, response, imSessionID);
++                    Console.WriteLine(response);
++                }
+             }
+-            else
++        }
++
++        private void DoCommandAll(string cmd, LLUUID fromAgentID, LLUUID imSessionID)
++        {
++            string[] tokens = cmd.Trim().Split(new char[] { ' ', '\t' });
++            string firstToken = tokens[0].ToLower();
++
++            if (tokens.Length == 0)
++                return;
++
++Begin:
++
++            int avatars = Clients.Count;
++
++            if (Commands.ContainsKey(firstToken))
+             {
+-                response = &quot;Unknown command.&quot;;
+-            }
++                foreach (SecondLife client in Clients.Values)
++                {
++                    if (client.Network.Connected)
++                    {
++                        string[] args = new string[tokens.Length - 1];
++                        Array.Copy(tokens, 1, args, 0, args.Length);
++                        string response = Commands[firstToken].Execute(client, args, fromAgentID);
+ 
+-            if (response.Length &gt; 0)
+-            {
+-                if (fromAgentID != null)
+-                    Client.Self.InstantMessage(fromAgentID, response, imSessionID);
+-                Console.WriteLine(response);
++                        if (response.Length &gt; 0)
++                        {
++                            if (fromAgentID != null &amp;&amp; client.Network.Connected)
++                                client.Self.InstantMessage(fromAgentID, response, imSessionID);
++                            Console.WriteLine(response);
++                        }
++
++                        if (firstToken == &quot;login&quot;)
++                        {
++                            // Special login case: Only call it once
++                            break;
++                        }
++                    }
++
++                    if (avatars != Clients.Count)
++                    {
++                        // The dictionary size changed, start over since the 
++                        // foreach is shot
++                        goto Begin;
++                    }
++                }
+             }
+         }
+ 
+-		public void Run()
++		private void PrintPrompt()
+ 		{
+-            Console.WriteLine(&quot;Type quit to exit.  Type help for a command list.&quot;);
++			//Console.Write(String.Format(&quot;{0} {1} - {2}&gt; &quot;, Client.Self.FirstName, Client.Self.LastName, Client.Network.CurrentSim.Region.Name));
+ 
+-            while (Running &amp;&amp; Client.Network.Connected)
++            int online = 0;
++
++            foreach (SecondLife client in Clients.Values)
+             {
+-				PrintPrompt();
+-                string input = Console.ReadLine();
+-                DoCommand(input, null, null);
++                if (client.Network.Connected) online++;
+             }
+ 
+-            if (Client.Network.Connected)
+-                Client.Network.Logout();
++            Console.Write(online + &quot; avatars online&gt; &quot;);
+ 		}
+ 
+-		public void PrintPrompt()
+-		{
+-			Console.Write(String.Format(&quot;{0} {1} - {2}&gt; &quot;, Client.Self.FirstName, Client.Self.LastName, Client.Network.CurrentSim.Region.Name));
+-		}
+-
+-        void updateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
++        private void updateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+         {
+-            LLVector3 forward = new LLVector3(0, 0.9999f, 0);
+-            LLVector3 left = new LLVector3(0.9999f, 0, 0);
+-            LLVector3 up = new LLVector3(0, 0, 0.9999f);
++            foreach (SecondLife client in Clients.Values)
++            {
++                client.Self.UpdateCamera(0, client.Self.Position, forward, left, up, bodyRotation,
++                    LLQuaternion.Identity, DrawDistance, false);
+ 
+-            Client.Self.UpdateCamera(0, Client.Self.Position, forward, left, up, bodyRotation,
+-                LLQuaternion.Identity, 64, false);
+-
+-			foreach (Command c in Commands.Values)
+-				if (c.Active)
+-					c.Think();
++                foreach (Command c in Commands.Values)
++                    if (c.Active)
++                        c.Think(client);
++            }
+         }
+ 
+-        void AgentDataUpdateHandler(Packet packet, Simulator sim)
++        private void AgentDataUpdateHandler(Packet packet, Simulator sim)
+         {
+             AgentDataUpdatePacket p = (AgentDataUpdatePacket)packet;
+-            if (p.AgentData.AgentID == Client.Network.AgentID)
++            if (p.AgentData.AgentID == sim.Client.Network.AgentID)
+             {
+-                Console.WriteLine(&quot;Got my group ID, requesting group members...&quot;);
++                Console.WriteLine(&quot;Got the group ID for &quot; + sim.Client.ToString() + &quot;, requesting group members...&quot;);
+                 GroupID = p.AgentData.ActiveGroupID;
+ 
+-                Client.Groups.BeginGetGroupMembers(GroupID, new GroupManager.GroupMembersCallback(OnGroupMembers));
++                sim.Client.Groups.BeginGetGroupMembers(GroupID, new GroupManager.GroupMembersCallback(OnGroupMembers));
+             }
+         }
+ 
+-        void OnGroupMembers(Dictionary&lt;LLUUID,GroupMember&gt; members)
++        private void OnGroupMembers(Dictionary&lt;LLUUID, GroupMember&gt; members)
+         {
+             Console.WriteLine(&quot;Got &quot; + members.Count + &quot; group members.&quot;);
+             GroupMembers = members;
+ 			PrintPrompt();
+         }
+ 
+-        void Objects_OnObjectKilled(Simulator simulator, uint objectID)
++        private void Objects_OnObjectKilled(Simulator simulator, uint objectID)
+         {
+             lock (Prims)
+             {
+@@ -160,7 +278,7 @@
+             }
+         }
+ 
+-        void Objects_OnPrimMoved(Simulator simulator, PrimUpdate prim, ulong regionHandle, ushort timeDilation)
++        private void Objects_OnPrimMoved(Simulator simulator, PrimUpdate prim, ulong regionHandle, ushort timeDilation)
+         {
+             lock (Prims)
+             {
+@@ -172,7 +290,7 @@
+             }
+         }
+ 
+-        void Objects_OnNewPrim(Simulator simulator, PrimObject prim, ulong regionHandle, ushort timeDilation)
++        private void Objects_OnNewPrim(Simulator simulator, PrimObject prim, ulong regionHandle, ushort timeDilation)
+         {
+             lock (Prims)
+             {
+@@ -180,7 +298,7 @@
+             }
+         }
+ 
+-        void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
++        private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+         {
+             lock (Avatars)
+             {
+@@ -188,7 +306,7 @@
+             }
+         }
+ 
+-        void Objects_OnAvatarMoved(Simulator simulator, AvatarUpdate avatar, ulong regionHandle, ushort timeDilation)
++        private void Objects_OnAvatarMoved(Simulator simulator, AvatarUpdate avatar, ulong regionHandle, ushort timeDilation)
+         {
+             lock (Avatars)
+             {
+@@ -200,25 +318,38 @@
+             }
+         }
+ 
+-        void Self_OnInstantMessage(LLUUID fromAgentID, string fromAgentName, LLUUID toAgentID, uint parentEstateID, LLUUID regionID, LLVector3 position, byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, string message, byte offline, byte[] binaryBucket)
++        private void Self_OnInstantMessage(LLUUID fromAgentID, string fromAgentName, LLUUID toAgentID, uint parentEstateID, 
++            LLUUID regionID, LLVector3 position, byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, 
++            string message, byte offline, byte[] binaryBucket)
+         {
+-            Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message + &quot;\n&quot;);
+-
+             if (GroupMembers != null &amp;&amp; !GroupMembers.ContainsKey(fromAgentID) &amp;&amp; fromAgentName.ToLower().TrimEnd() != Master.ToLower().TrimEnd())
+             {
+-                //Not a member of my group, ignore the IM.
++                // Not a member of my group and not master, ignore the IM
++                Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot; (ignored): &quot; + message);
++
+                 return;
+             }
++            else
++            {
++                Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message);
++            }
+ 
+-            if (dialog == 22)
++            if (Clients.ContainsKey(toAgentID))
+             {
+-                Console.WriteLine(&quot;Accepting teleport lure.&quot;);
+-                Client.Self.TeleportLureRespond(fromAgentID, true);
+-
+-                return;
++                if (dialog == 22)
++                {
++                    Console.WriteLine(&quot;Accepting teleport lure&quot;);
++                    Clients[toAgentID].Self.TeleportLureRespond(fromAgentID, true);
++                }
++                else
++                {
++                    DoCommand(Clients[toAgentID], message, fromAgentID, imSessionID);
++                }
+             }
+-
+-            DoCommand(message, fromAgentID, imSessionID);
++            else
++            {
++                Console.WriteLine(&quot;A bot that we aren't tracking received an IM?&quot;);
++            }
+         }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-28 07:48:43 UTC (rev 645)
+@@ -34,8 +34,9 @@
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;CommandLineArguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SayCommand.cs&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/examples/examples.build
+===================================================================
+--- trunk/libsecondlife-cs/examples/examples.build	2006-11-28 01:47:24 UTC (rev 644)
++++ trunk/libsecondlife-cs/examples/examples.build	2006-11-28 07:48:43 UTC (rev 645)
+@@ -59,7 +59,7 @@
+ 
+   &lt;target name=&quot;build&quot; depends=&quot;init build-dll&quot; description=&quot;Build all examples&quot;&gt;
+ 	&lt;foreach item=&quot;Folder&quot; in=&quot;.&quot; property=&quot;example_path&quot;&gt;
+-	  &lt;call target=&quot;example&quot; unless=&quot;${string::contains(example_path,'svn') or string::contains(example_path,'IA_')}&quot;/&gt;
++	  &lt;call target=&quot;example&quot; unless=&quot;${string::contains(example_path,'svn') or string::contains(example_path,'IA_') or string::contains(example_path,'Test')}&quot;/&gt;
+     &lt;/foreach&gt;
+   &lt;/target&gt;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000001.html">[Libsecondlife-commits] r644 - in trunk/libsecondlife-cs:	AssetSystem examples/IA_ImageTool
+</A></li>
+	<LI>Next message: <A HREF="000003.html">[Libsecondlife-commits] r646 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

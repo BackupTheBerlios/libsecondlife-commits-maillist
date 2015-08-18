@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r795 - in branches/aditi/libsecondlife-cs:	. mapgenerator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r795%20-%20in%20branches/aditi/libsecondlife-cs%3A%0A%09.%20mapgenerator&In-Reply-To=%3C200701040142.l041giRL028948%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000188.html">
+   <LINK REL="Next"  HREF="000190.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r795 - in branches/aditi/libsecondlife-cs:	. mapgenerator</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r795%20-%20in%20branches/aditi/libsecondlife-cs%3A%0A%09.%20mapgenerator&In-Reply-To=%3C200701040142.l041giRL028948%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r795 - in branches/aditi/libsecondlife-cs:	. mapgenerator">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan  4 02:42:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000188.html">[Libsecondlife-commits] [Patch #1797] Patch to slproxy.sln
+</A></li>
+        <LI>Next message: <A HREF="000190.html">[Libsecondlife-commits] r796 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-04 02:42:38 +0100 (Thu, 04 Jan 2007)
+New Revision: 795
+
+Modified:
+   branches/aditi/libsecondlife-cs/Settings.cs
+   branches/aditi/libsecondlife-cs/mapgenerator/unusedpackets.txt
+Log:
+Added missing packet type to Aditi, fixed typo in login url in Settings.cs
+
+Modified: branches/aditi/libsecondlife-cs/Settings.cs
+===================================================================
+--- branches/aditi/libsecondlife-cs/Settings.cs	2007-01-03 20:10:14 UTC (rev 794)
++++ branches/aditi/libsecondlife-cs/Settings.cs	2007-01-04 01:42:38 UTC (rev 795)
+@@ -36,9 +36,9 @@
+     public class Settings
+     {
+         /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
+-        public string VERSION = &quot;libsecondlife 0.0.9&quot;;
++        public string VERSION = &quot;libsecondlife 0.0.1&quot;;
+         /// &lt;summary&gt;XML-RPC login server to connect to&lt;/summary&gt;
+-        public string LOGIN_SERVER = &quot;<A HREF="https://login.agni.lindenlab.com/cgi-bin/login.cgi">https://login.agni.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
++        public string LOGIN_SERVER = &quot;<A HREF="https://login.aditi.lindenlab.com/cgi-bin/login.cgi">https://login.aditi.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
+ 
+         /// &lt;summary&gt;Millisecond interval between ticks, where all ACKs are 
+         /// sent out and the age of unACKed packets is checked&lt;/summary&gt;
+
+Modified: branches/aditi/libsecondlife-cs/mapgenerator/unusedpackets.txt
+===================================================================
+--- branches/aditi/libsecondlife-cs/mapgenerator/unusedpackets.txt	2007-01-03 20:10:14 UTC (rev 794)
++++ branches/aditi/libsecondlife-cs/mapgenerator/unusedpackets.txt	2007-01-04 01:42:38 UTC (rev 795)
+@@ -114,5 +114,4 @@
+ RpcScriptReplyInbound
+ MailTaskSimRequest
+ MailTaskSimReply
+-ScriptMailRegistration
+-ParcelMediaCommandMessage
+\ No newline at end of file
++ScriptMailRegistration
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000188.html">[Libsecondlife-commits] [Patch #1797] Patch to slproxy.sln
+</A></li>
+	<LI>Next message: <A HREF="000190.html">[Libsecondlife-commits] r796 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#189">[ date ]</a>
+              <a href="thread.html#189">[ thread ]</a>
+              <a href="subject.html#189">[ subject ]</a>
+              <a href="author.html#189">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

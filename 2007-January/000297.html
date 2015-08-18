@@ -1,0 +1,213 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r869 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r869%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701220549.l0M5nUkX007503%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000296.html">
+   <LINK REL="Next"  HREF="000298.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r869 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r869%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701220549.l0M5nUkX007503%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r869 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 06:49:30 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000296.html">[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000298.html">[Libsecondlife-commits] r870 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#297">[ date ]</a>
+              <a href="thread.html#297">[ thread ]</a>
+              <a href="subject.html#297">[ subject ]</a>
+              <a href="author.html#297">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 06:49:28 +0100 (Mon, 22 Jan 2007)
+New Revision: 869
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+Added some sanity checks for caps code in case something goes wrong, and cleaned up the LLSDRequest method
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-22 01:18:38 UTC (rev 868)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-22 05:49:28 UTC (rev 869)
+@@ -90,17 +90,25 @@
+             req.Add(&quot;EventQueueGet&quot;);
+             Hashtable resp = (Hashtable)LLSDRequest(seedcaps, req);
+ 
+-            foreach (string cap in resp.Keys)
++            if (resp != null)
+             {
+-                Client.Log(&quot;Got cap &quot; + cap + &quot;: &quot; + (string)resp[cap], Helpers.LogLevel.Info);
+-                Capabilities[cap] = (string)resp[cap];
++                foreach (string cap in resp.Keys)
++                {
++                    Client.Log(&quot;Got cap &quot; + cap + &quot;: &quot; + (string)resp[cap], Helpers.LogLevel.Info);
++                    Capabilities[cap] = (string)resp[cap];
++                }
++
++                if (Capabilities.ContainsKey(&quot;EventQueueGet&quot;))
++                {
++                    Client.Log(&quot;Running event queue&quot;, Helpers.LogLevel.Info);
++                    EventThread = new Thread(new ThreadStart(EventQueue));
++                    EventThread.Start();
++                }
+             }
+-
+-            if (Capabilities.ContainsKey(&quot;EventQueueGet&quot;))
++            else
+             {
+-                Client.Log(&quot;Running event queue&quot;, Helpers.LogLevel.Info);
+-                EventThread = new Thread(new ThreadStart(EventQueue));
+-                EventThread.Start();
++                Client.Log(&quot;Disabling caps for &quot; + Region.ToString(), Helpers.LogLevel.Info);
++                Dead = true;
+             }
+         }
+ 
+@@ -123,26 +131,34 @@
+                     req[&quot;done&quot;] = false;
+ 
+                     Hashtable resp = (Hashtable)LLSDRequest(cap, req);
+-                    ack = (long)resp[&quot;id&quot;];
+-                    gotresp = true;
+-                    ArrayList events = (ArrayList)resp[&quot;events&quot;];
+-
+-                    foreach (Hashtable evt in events)
++                    if (resp != null)
+                     {
+-                        string msg = (string)evt[&quot;message&quot;];
+-                        object body = (object)evt[&quot;body&quot;];
++                        ack = (long)resp[&quot;id&quot;];
++                        gotresp = true;
++                        ArrayList events = (ArrayList)resp[&quot;events&quot;];
+ 
+-                        Client.DebugLog(&quot;Event &quot; + msg + &quot;:&quot; + Environment.NewLine + LLSD.LLSDDump(body, 0));
++                        foreach (Hashtable evt in events)
++                        {
++                            string msg = (string)evt[&quot;message&quot;];
++                            object body = (object)evt[&quot;body&quot;];
+ 
+-                        if (!Dead)
+-                        {
+-                            foreach (EventQueueCallback callback in Callbacks)
++                            Client.DebugLog(&quot;Event &quot; + msg + &quot;:&quot; + Environment.NewLine + LLSD.LLSDDump(body, 0));
++
++                            if (!Dead)
+                             {
+-                                try { callback(msg, body); }
+-                                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                                foreach (EventQueueCallback callback in Callbacks)
++                                {
++                                    try { callback(msg, body); }
++                                    catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++                                }
+                             }
+                         }
+                     }
++                    else
++                    {
++                        Client.Log(&quot;Disabling caps for &quot; + Region.ToString(), Helpers.LogLevel.Info);
++                        Dead = true;
++                    }
+                 }
+                 catch (WebException e)
+                 {
+@@ -152,33 +168,34 @@
+             }
+         }
+ 
+-        private static object LLSDRequest(string uri, object req)
++        private object LLSDRequest(string uri, object req)
+         {
++            byte[] respBuf = null;
+             byte[] data = LLSD.LLSDSerialize(req);
+-            WebRequest wreq = WebRequest.Create(uri);
+-            wreq.Method = &quot;POST&quot;;
+-            wreq.ContentLength = data.Length;
+-            Stream reqStream = wreq.GetRequestStream();
+-            reqStream.Write(data, 0, data.Length);
+-            reqStream.Close();
+-            HttpWebResponse wresp = (HttpWebResponse)wreq.GetResponse();
+-            Stream respStream = wresp.GetResponseStream();
+-            int read; int length = 0;
+-            byte[] respBuf = new byte[256];
+ 
+-            do
++            try
+             {
+-                read = respStream.Read(respBuf, length, 256);
++                WebRequest wreq = WebRequest.Create(uri);
++                wreq.Method = &quot;POST&quot;;
++                wreq.ContentLength = data.Length;
+ 
+-                if (read &gt; 0)
+-                {
+-                    length += read;
+-                    Array.Resize(ref respBuf, length + 256);
+-                }
+-            } while (read &gt; 0);
++                Stream reqStream = wreq.GetRequestStream();
++                reqStream.Write(data, 0, data.Length);
++                reqStream.Close();
+ 
+-            Array.Resize(ref respBuf, length);
+-            return LLSD.LLSDDeserialize(respBuf);
++                HttpWebResponse wresp = (HttpWebResponse)wreq.GetResponse();
++                BinaryReader reader = new BinaryReader(wresp.GetResponseStream());
++                respBuf = reader.ReadBytes((int)wresp.ContentLength);
++                wresp.Close();
++            }
++            catch (Exception e)
++            {
++                Client.Log(e.Message, Helpers.LogLevel.Warning);
++                return null;
++            }
++
++            if (respBuf != null) return LLSD.LLSDDeserialize(respBuf);
++            else return null;
+         }
+ 
+         public void Disconnect()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000296.html">[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000298.html">[Libsecondlife-commits] r870 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#297">[ date ]</a>
+              <a href="thread.html#297">[ thread ]</a>
+              <a href="subject.html#297">[ subject ]</a>
+              <a href="author.html#297">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

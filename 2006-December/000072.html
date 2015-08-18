@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r714 - trunk/libsecondlife-cs/AssetSystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r714%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200612112233.kBBMXEEZ009920%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000071.html">
+   <LINK REL="Next"  HREF="000073.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r714 - trunk/libsecondlife-cs/AssetSystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r714%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200612112233.kBBMXEEZ009920%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r714 - trunk/libsecondlife-cs/AssetSystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 23:33:14 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000071.html">[Libsecondlife-commits] r713 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000073.html">[Libsecondlife-commits] r715 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#72">[ date ]</a>
+              <a href="thread.html#72">[ thread ]</a>
+              <a href="subject.html#72">[ subject ]</a>
+              <a href="author.html#72">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-11 23:33:11 +0100 (Mon, 11 Dec 2006)
+New Revision: 714
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+Log:
++ Added in the order for 3 more layers of the avatar textures as submitted by (Myrddin Ambrose)
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-11 21:49:15 UTC (rev 713)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-11 22:33:11 UTC (rev 714)
+@@ -176,8 +176,9 @@
+             p.AgentData.AgentID = Client.Network.AgentID;
+             p.AgentData.SessionID = Client.Network.SessionID;
+             p.AgentData.SerialNum = ++SerialNum;
+-            p.AgentData.Size = new LLVector3(0.45f, 0.6f, 1.35187f);
+-//            p.ObjectData.TextureEntry = textures.ToBytes();
++            p.AgentData.Size = new LLVector3(15.0f,15.0f,15.0f);
++//            p.AgentData.Size = new LLVector3(0.45f, 0.6f, 1.35187f);
++            //            p.ObjectData.TextureEntry = textures.ToBytes();
+ 
+             foreach( uint faceid in textures.FaceTextures.Keys )
+             {
+@@ -193,6 +194,9 @@
+                     case 7:
+                     case 12:
+                     case 15:
++                    case 16:
++                    case 17:
++                    case 18:
+                         break;
+                     default:
+                         Console.WriteLine(&quot;Your wearables define a face that we don't know the order of.  Please capture a AgentSetAppearance packet for your current outfit and submit to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;);
+@@ -200,8 +204,11 @@
+                 }
+             }
+ 
+-
++            //Re-order texture faces to match Linden Labs internal data structure.
+             TextureEntry te2 = new TextureEntry(textures.DefaultTexture.TextureID);
++            te2.CreateFace(18).TextureID = textures.GetFace(18).TextureID;
++            te2.CreateFace(17).TextureID = textures.GetFace(17).TextureID;
++            te2.CreateFace(16).TextureID = textures.GetFace(16).TextureID;
+             te2.CreateFace(15).TextureID = textures.GetFace(15).TextureID;
+             te2.CreateFace(2).TextureID  = textures.GetFace(2).TextureID;
+             te2.CreateFace(12).TextureID = textures.GetFace(12).TextureID;
+@@ -253,6 +260,7 @@
+             }
+ 
+ 
++            
+             Console.WriteLine(p);
+         }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000071.html">[Libsecondlife-commits] r713 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000073.html">[Libsecondlife-commits] r715 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#72">[ date ]</a>
+              <a href="thread.html#72">[ thread ]</a>
+              <a href="subject.html#72">[ subject ]</a>
+              <a href="author.html#72">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,500 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r827 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r827%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090835.l098ZanO006036%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000230.html">
+   <LINK REL="Next"  HREF="000232.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r827 - trunk/libsecondlife-cs</H1>
+    <B>bushing at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r827%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090835.l098ZanO006036%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r827 - trunk/libsecondlife-cs">bushing at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 09:35:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000230.html">[Libsecondlife-commits] r826 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000232.html">[Libsecondlife-commits] r828 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#231">[ date ]</a>
+              <a href="thread.html#231">[ thread ]</a>
+              <a href="subject.html#231">[ subject ]</a>
+              <a href="author.html#231">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bushing
+Date: 2007-01-09 09:35:36 +0100 (Tue, 09 Jan 2007)
+New Revision: 827
+
+Modified:
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/DirectoryManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/libsecondlife.sln
+Log:
+reverted r826 per SMS
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2007-01-09 08:08:19 UTC (rev 826)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2007-01-09 08:35:36 UTC (rev 827)
+@@ -98,9 +98,9 @@
+         private SecondLife Client;
+ 
+         /// &lt;summary&gt;
+-        /// Default constructor
++        /// Represents other avatars
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;Reference to the client&lt;/param&gt;
++        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         public AvatarManager(SecondLife client)
+         {
+             Client = client;
+
+Modified: trunk/libsecondlife-cs/DirectoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-09 08:08:19 UTC (rev 826)
++++ trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-09 08:35:36 UTC (rev 827)
+@@ -64,19 +64,6 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// The type of land to be searched for in a DirLandQuery
+-        /// &lt;/summary&gt;
+-        public enum LandFlags
+-        {
+-            /// &lt;summary&gt;Include everything&lt;/summary&gt;
+-            All = 0,
+-            /// &lt;summary&gt;PG land only&lt;/summary&gt;
+-            PGOnly = 2048,
+-            /// &lt;summary&gt;Mature land only&lt;/summary&gt;
+-            MatureOnly = 16384
+-        }
+-
+-        /// &lt;summary&gt;
+         /// A classified ad in Second Life
+         /// &lt;/summary&gt;
+         public struct Classified
+@@ -99,106 +86,26 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        public struct ClassifiedFull
+-        {
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public Classified Classified;
+-        }
++        /// &lt;param name=&quot;classifieds&quot;&gt;&lt;/param&gt;
++        public delegate void ClassifiedReplyCallback(List&lt;Classified&gt; classifieds);
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        public struct ParcelSale
+-        {
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public LLUUID ParcelID;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public string Name;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public int SalePrice;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public int ActualArea;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public bool ReservedNewbie;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public bool ForSale;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public bool Auction;
+-        }
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        public struct ParcelSaleFull
+-        {
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public ParcelSale ParcelSale;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public string SimName;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public int BillableArea;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public float GlobalX;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public float GlobalY;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public float GlobalZ;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public string Description;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public LLUUID OwnerID;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public LLUUID SnapshotID;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public LLUUID AuctionID;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public int Flags;
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            public int Dwell;
+-        }
+-
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;queryID&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;classifieds&quot;&gt;&lt;/param&gt;
+-        public delegate void ClassifiedReplyCallback(LLUUID queryID, List&lt;Classified&gt; classifieds);
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;queryID&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;sales&quot;&gt;&lt;/param&gt;
+-        public delegate void LandReplyCallback(LLUUID queryID, List&lt;ParcelSale&gt; sales);
+-
+-
+-        /// &lt;summary&gt;&lt;/summary&gt;
+         public event ClassifiedReplyCallback OnClassifiedReply;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public event LandReplyCallback OnLandReply;
+ 
+ 
+         private SecondLife Client;
+ 
+-        /// &lt;summary&gt;
+-        /// Default constructor
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;Reference to the client&lt;/param&gt;
++
+         public DirectoryManager(SecondLife client)
+         {
+             Client = client;
+ 
+             Client.Network.RegisterCallback(PacketType.DirClassifiedReply, new NetworkManager.PacketCallback(DirClassifiedReplyHandler));
+-            Client.Network.RegisterCallback(PacketType.DirLandReply, new NetworkManager.PacketCallback(DirLandReplyHandler));
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;searchText&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;categories&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;mature&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+         public LLUUID StartClassifiedSearch(string searchText, ClassifiedCategories categories, bool mature)
+         {
+             DirClassifiedQueryPacket query = new DirClassifiedQueryPacket();
+@@ -216,30 +123,6 @@
+             return queryID;
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;type&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;flags&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public LLUUID StartLandSearch(bool auction, bool forSale, bool reservedNewbie, LandFlags flags)
+-        {
+-            DirLandQueryPacket query = new DirLandQueryPacket();
+-            LLUUID queryID = LLUUID.Random();
+-
+-            query.AgentData.AgentID = Client.Network.AgentID;
+-            query.AgentData.SessionID = Client.Network.SessionID;
+-            query.QueryData.Auction = auction;
+-            query.QueryData.ForSale = forSale;
+-            query.QueryData.ReservedNewbie = reservedNewbie;
+-            query.QueryData.QueryFlags = (uint)flags;
+-            query.QueryData.QueryID = queryID;
+-
+-            Client.Network.SendPacket(query);
+-
+-            return queryID;
+-        }
+-
+         private void DirClassifiedReplyHandler(Packet packet, Simulator simulator)
+         {
+             if (OnClassifiedReply != null)
+@@ -261,34 +144,8 @@
+                     classifieds.Add(classified);
+                 }
+ 
+-                OnClassifiedReply(reply.QueryData.QueryID, classifieds);
++                OnClassifiedReply(classifieds);
+             }
+         }
+-
+-        private void DirLandReplyHandler(Packet packet, Simulator simulator)
+-        {
+-            if (OnLandReply != null)
+-            {
+-                DirLandReplyPacket reply = (DirLandReplyPacket)packet;
+-                List&lt;ParcelSale&gt; sales = new List&lt;ParcelSale&gt;();
+-
+-                foreach (DirLandReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
+-                {
+-                    ParcelSale sale = new ParcelSale();
+-
+-                    sale.ActualArea = block.ActualArea;
+-                    sale.Auction = block.Auction;
+-                    sale.ForSale = block.ForSale;
+-                    sale.Name = Helpers.FieldToString(block.Name);
+-                    sale.ParcelID = block.ParcelID;
+-                    sale.ReservedNewbie = block.ReservedNewbie;
+-                    sale.SalePrice = block.SalePrice;
+-
+-                    sales.Add(sale);
+-                }
+-
+-                OnLandReply(reply.QueryData.QueryID, sales);
+-            }
+-        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 08:08:19 UTC (rev 826)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 08:35:36 UTC (rev 827)
+@@ -65,84 +65,121 @@
+ 			MessageBox = 1,
+ 			/// &lt;summary&gt;You've been invited to join a group.&lt;/summary&gt;
+ 			GroupInvitation = 3,
++
+             /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
+-            /// &lt;remarks&gt;Soon to be deprecated&lt;/remarks&gt;
++            /// &lt;remarks&gt;Soon to be depreceated&lt;/remarks&gt;
+             GiveInventory = 4,
+-			/// &lt;summary&gt;Inventory offer&lt;/summary&gt;
++			/// &lt;summary&gt;Agent inventory offer.&lt;/summary&gt;
+ 			InventoryOffered = 4,
+-            /// &lt;summary&gt;An avatar has accepted your inventory offer&lt;/summary&gt;
+ 			InventoryAccepted = 5,
+-            /// &lt;summary&gt;An avatar has declined your inventory offer&lt;/summary&gt;
+ 			InventoryDeclined = 6,
++
+ 			/// &lt;summary&gt;Group vote&lt;/summary&gt;
+ 			GroupVote = 7,
+-            /// &lt;summary&gt;Indicates that someone has given us a notecard&lt;/summary&gt;
++            //TODO - figure out the TaskInventory* bit
++            /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
+             GiveNotecard = 9,
+-			/// &lt;summary&gt;Unknown&lt;/summary&gt;
++			/// &lt;summary&gt;Task inventory offer.&lt;/summary&gt;
+ 			TaskInventoryOffered = 9,
+-            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			TaskInventoryAccepted = 10,
+-            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			TaskInventoryDeclined = 11,
+-			/// &lt;summary&gt;Unknown&lt;/summary&gt;
++
++			/// &lt;summary&gt;Copied as pending, type LLNOTHINGSPECIAL, for new users
++			/// used by offline tools&lt;/summary&gt;
+ 			NewUserDefault = 12,
+-			/// &lt;summary&gt;Start a session, or add users to a session&lt;/summary&gt;
++
++			//
++			// session based messaging - the way that people usually actually
++			// communicate with each other.
++			//
++
++			/// &lt;summary&gt;Start a session, or add users to a session.&lt;/summary&gt;
+ 			SessionAdd = 13,
++
+ 			/// &lt;summary&gt;Start a session, but don't prune offline users&lt;/summary&gt;
+ 			SessionOfflineAdd = 14,
+-			/// &lt;summary&gt;Start a session with your group&lt;/summary&gt;
++
++			/// &lt;summary&gt;start a session with your gruop&lt;/summary&gt;
+ 			SessionGroupStart = 15,
+-			/// &lt;summary&gt;Start a session without a calling card (finder or objects)&lt;/summary&gt;
++
++			/// &lt;summary&gt;start a session without a calling card (finder or objects)&lt;/summary&gt;
+ 			SessionCardlessStart = 16,
+-			/// &lt;summary&gt;Send a message to a session&lt;/summary&gt;
++
++			/// &lt;summary&gt;send a message to a session.&lt;/summary&gt;
+ 			SessionSend = 17,
+-			/// &lt;summary&gt;Leave a session&lt;/summary&gt;
++
++			/// &lt;summary&gt;leave a session&lt;/summary&gt;
+ 			SessionDrop = 18,
++
+             /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
+             MessageFromObject = 19,
++
+ 			/// &lt;summary&gt;sent an IM to a busy user, this is the auto response&lt;/summary&gt;
+ 			BusyAutoResponse = 20,
++
+ 			/// &lt;summary&gt;Shows the message in the console and chat history&lt;/summary&gt;
+ 			ConsoleAndChatHistory = 21,
+-			/// &lt;summary&gt;IM Types used for luring your friends&lt;/summary&gt;
++
++			/// &lt;summary&gt;IM Types used for luring your friends.&lt;/summary&gt;
+             RequestTeleport = 22,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
+             AcceptTeleport = 23,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
+             DenyTeleport = 24,
+-            /// &lt;summary&gt;Only useful if you have Linden permissions&lt;/summary&gt;
++            /// &lt;summary&gt;
++            /// It will be fun once we can actually use this one.
++            /// &lt;/summary&gt;
+             GodLikeRequestTeleport = 25,
+-			/// &lt;summary&gt;IM to tell the user to go to an URL&lt;/summary&gt;
++
++			/// &lt;summary&gt;IM to tell the user to go to an URL.&lt;/summary&gt;
+ 			GotoUrl = 28,
+-			/// &lt;summary&gt;IM for help&lt;/summary&gt;
++
++			/// &lt;summary&gt;IM for help from the GAURDIANANGELS.&lt;/summary&gt;
+ 			Session911Start = 29,
+-			/// &lt;summary&gt;IM sent automatically on call for help, sends a lure 
+-            /// to each Helper reached&lt;/summary&gt;
++
++			/// &lt;summary&gt;IM sent automatically on call for help, 
++			/// sends a lure to each Helper reached&lt;/summary&gt;
+ 			Lure911 = 30,
+-			/// &lt;summary&gt;Like an IM but won't go to email&lt;/summary&gt;
++
++			/// &lt;summary&gt;Like an IM but won't go to email.&lt;/summary&gt;
+ 			FromTaskAsAlert = 31,
+-			/// &lt;summary&gt;IM from a group officer to all group members&lt;/summary&gt;
++
++			/// &lt;summary&gt;IM from group officer to all group members.&lt;/summary&gt;
+ 			GroupNotice = 32,
+-			/// &lt;summary&gt;Unknown&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			GroupNoticeInventoryAccepted = 33,
+-            /// &lt;summary&gt;Unknown&lt;/summary&gt;
++			
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			GroupNoticeInventoryDeclined = 34,
+-			/// &lt;summary&gt;Accept a group invitation&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			GroupInvitationAccept = 35,
+-			/// &lt;summary&gt;Decline a group invitation&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			GroupInvitationDecline = 36,
+-            /// &lt;summary&gt;Unknown&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			GroupNoticeRequested = 37,
+-			/// &lt;summary&gt;An avatar is offering you friendship&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			FriendshipOffered = 38,
+-			/// &lt;summary&gt;An avatar has accepted your friendship offer&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			FriendshipAccepted = 39,
+-			/// &lt;summary&gt;An avatar has declined your friendship offer&lt;/summary&gt;
++
++			/// &lt;summary&gt; &lt;/summary&gt;
+ 			FriendshipDeclined = 40,
++
+             /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+             StartTyping = 41,
+             /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+             StopTyping = 42
++
++
++
++
++
+         }
+ 
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2007-01-09 08:08:19 UTC (rev 826)
++++ trunk/libsecondlife-cs/SecondLife.cs	2007-01-09 08:35:36 UTC (rev 827)
+@@ -102,7 +102,6 @@
+             Assets = new AssetManager(this);
+             Images = new ImageManager(this);
+             Inventory = new InventoryManager(this);
+-            Directory = new DirectoryManager(this);
+             Throttle = new AgentThrottle(this);
+         }
+ 
+
+Modified: trunk/libsecondlife-cs/libsecondlife.sln
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.sln	2007-01-09 08:08:19 UTC (rev 826)
++++ trunk/libsecondlife-cs/libsecondlife.sln	2007-01-09 08:35:36 UTC (rev 827)
+@@ -48,10 +48,6 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;Proxy&quot;, &quot;..\applications\SLProxy\Proxy.csproj&quot;, &quot;{0516E1A7-D062-4830-859C-6FD0E4F84E75}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;camper&quot;, &quot;..\camper\camper.csproj&quot;, &quot;{D4179343-FD6E-47BC-B925-1038E67EE791}&quot;
+-EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;forsalegrabber&quot;, &quot;..\forsalegrabber\forsalegrabber.csproj&quot;, &quot;{62CF06A3-EE4F-499D-B492-581CAB92CACE}&quot;
+-EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+ 		Debug|.NET 1.1 = Debug|.NET 1.1
+@@ -206,18 +202,6 @@
+ 		{0516E1A7-D062-4830-859C-6FD0E4F84E75}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{0516E1A7-D062-4830-859C-6FD0E4F84E75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{0516E1A7-D062-4830-859C-6FD0E4F84E75}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{D4179343-FD6E-47BC-B925-1038E67EE791}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{62CF06A3-EE4F-499D-B492-581CAB92CACE}.Release|Any CPU.Build.0 = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000230.html">[Libsecondlife-commits] r826 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000232.html">[Libsecondlife-commits] r828 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#231">[ date ]</a>
+              <a href="thread.html#231">[ thread ]</a>
+              <a href="subject.html#231">[ subject ]</a>
+              <a href="author.html#231">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

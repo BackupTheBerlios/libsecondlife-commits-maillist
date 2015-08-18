@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r828 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r828%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090855.l098tOEu007639%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000231.html">
+   <LINK REL="Next"  HREF="000233.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r828 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r828%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090855.l098tOEu007639%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r828 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 09:55:24 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000231.html">[Libsecondlife-commits] r827 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000233.html">[Libsecondlife-commits] r829 - in trunk/libsecondlife-cs: .	AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#232">[ date ]</a>
+              <a href="thread.html#232">[ thread ]</a>
+              <a href="subject.html#232">[ subject ]</a>
+              <a href="author.html#232">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-09 09:55:14 +0100 (Tue, 09 Jan 2007)
+New Revision: 828
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+Log:
+Properly reapplying the previous patch. A cleanup of the InstantMessageDialog enum
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 08:35:36 UTC (rev 827)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 08:55:14 UTC (rev 828)
+@@ -65,121 +65,84 @@
+ 			MessageBox = 1,
+ 			/// &lt;summary&gt;You've been invited to join a group.&lt;/summary&gt;
+ 			GroupInvitation = 3,
+-
+             /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
+-            /// &lt;remarks&gt;Soon to be depreceated&lt;/remarks&gt;
++            /// &lt;remarks&gt;Soon to be deprecated&lt;/remarks&gt;
+             GiveInventory = 4,
+-			/// &lt;summary&gt;Agent inventory offer.&lt;/summary&gt;
++			/// &lt;summary&gt;Inventory offer&lt;/summary&gt;
+ 			InventoryOffered = 4,
++            /// &lt;summary&gt;An avatar has accepted your inventory offer&lt;/summary&gt;
+ 			InventoryAccepted = 5,
++            /// &lt;summary&gt;An avatar has declined your inventory offer&lt;/summary&gt;
+ 			InventoryDeclined = 6,
+-
+ 			/// &lt;summary&gt;Group vote&lt;/summary&gt;
+ 			GroupVote = 7,
+-            //TODO - figure out the TaskInventory* bit
+-            /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
++            /// &lt;summary&gt;Indicates that someone has given us a notecard&lt;/summary&gt;
+             GiveNotecard = 9,
+-			/// &lt;summary&gt;Task inventory offer.&lt;/summary&gt;
++			/// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			TaskInventoryOffered = 9,
++            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			TaskInventoryAccepted = 10,
++            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			TaskInventoryDeclined = 11,
+-
+-			/// &lt;summary&gt;Copied as pending, type LLNOTHINGSPECIAL, for new users
+-			/// used by offline tools&lt;/summary&gt;
++			/// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			NewUserDefault = 12,
+-
+-			//
+-			// session based messaging - the way that people usually actually
+-			// communicate with each other.
+-			//
+-
+-			/// &lt;summary&gt;Start a session, or add users to a session.&lt;/summary&gt;
++			/// &lt;summary&gt;Start a session, or add users to a session&lt;/summary&gt;
+ 			SessionAdd = 13,
+-
+ 			/// &lt;summary&gt;Start a session, but don't prune offline users&lt;/summary&gt;
+ 			SessionOfflineAdd = 14,
+-
+-			/// &lt;summary&gt;start a session with your gruop&lt;/summary&gt;
++			/// &lt;summary&gt;Start a session with your group&lt;/summary&gt;
+ 			SessionGroupStart = 15,
+-
+-			/// &lt;summary&gt;start a session without a calling card (finder or objects)&lt;/summary&gt;
++			/// &lt;summary&gt;Start a session without a calling card (finder or objects)&lt;/summary&gt;
+ 			SessionCardlessStart = 16,
+-
+-			/// &lt;summary&gt;send a message to a session.&lt;/summary&gt;
++			/// &lt;summary&gt;Send a message to a session&lt;/summary&gt;
+ 			SessionSend = 17,
+-
+-			/// &lt;summary&gt;leave a session&lt;/summary&gt;
++			/// &lt;summary&gt;Leave a session&lt;/summary&gt;
+ 			SessionDrop = 18,
+-
+             /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
+             MessageFromObject = 19,
+-
+ 			/// &lt;summary&gt;sent an IM to a busy user, this is the auto response&lt;/summary&gt;
+ 			BusyAutoResponse = 20,
+-
+ 			/// &lt;summary&gt;Shows the message in the console and chat history&lt;/summary&gt;
+ 			ConsoleAndChatHistory = 21,
+-
+-			/// &lt;summary&gt;IM Types used for luring your friends.&lt;/summary&gt;
++			/// &lt;summary&gt;IM Types used for luring your friends&lt;/summary&gt;
+             RequestTeleport = 22,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+             AcceptTeleport = 23,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+             DenyTeleport = 24,
+-            /// &lt;summary&gt;
+-            /// It will be fun once we can actually use this one.
+-            /// &lt;/summary&gt;
++            /// &lt;summary&gt;Only useful if you have Linden permissions&lt;/summary&gt;
+             GodLikeRequestTeleport = 25,
+-
+-			/// &lt;summary&gt;IM to tell the user to go to an URL.&lt;/summary&gt;
++			/// &lt;summary&gt;IM to tell the user to go to an URL&lt;/summary&gt;
+ 			GotoUrl = 28,
+-
+-			/// &lt;summary&gt;IM for help from the GAURDIANANGELS.&lt;/summary&gt;
++			/// &lt;summary&gt;IM for help&lt;/summary&gt;
+ 			Session911Start = 29,
+-
+-			/// &lt;summary&gt;IM sent automatically on call for help, 
+-			/// sends a lure to each Helper reached&lt;/summary&gt;
++			/// &lt;summary&gt;IM sent automatically on call for help, sends a lure 
++            /// to each Helper reached&lt;/summary&gt;
+ 			Lure911 = 30,
+-
+-			/// &lt;summary&gt;Like an IM but won't go to email.&lt;/summary&gt;
++			/// &lt;summary&gt;Like an IM but won't go to email&lt;/summary&gt;
+ 			FromTaskAsAlert = 31,
+-
+-			/// &lt;summary&gt;IM from group officer to all group members.&lt;/summary&gt;
++			/// &lt;summary&gt;IM from a group officer to all group members&lt;/summary&gt;
+ 			GroupNotice = 32,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			GroupNoticeInventoryAccepted = 33,
+-			
+-			/// &lt;summary&gt; &lt;/summary&gt;
++            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			GroupNoticeInventoryDeclined = 34,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;Accept a group invitation&lt;/summary&gt;
+ 			GroupInvitationAccept = 35,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;Decline a group invitation&lt;/summary&gt;
+ 			GroupInvitationDecline = 36,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++            /// &lt;summary&gt;Unknown&lt;/summary&gt;
+ 			GroupNoticeRequested = 37,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;An avatar is offering you friendship&lt;/summary&gt;
+ 			FriendshipOffered = 38,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;An avatar has accepted your friendship offer&lt;/summary&gt;
+ 			FriendshipAccepted = 39,
+-
+-			/// &lt;summary&gt; &lt;/summary&gt;
++			/// &lt;summary&gt;An avatar has declined your friendship offer&lt;/summary&gt;
+ 			FriendshipDeclined = 40,
+-
+             /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+             StartTyping = 41,
+             /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+             StopTyping = 42
+-
+-
+-
+-
+-
+         }
+ 
+         /// &lt;summary&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000231.html">[Libsecondlife-commits] r827 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000233.html">[Libsecondlife-commits] r829 - in trunk/libsecondlife-cs: .	AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#232">[ date ]</a>
+              <a href="thread.html#232">[ thread ]</a>
+              <a href="subject.html#232">[ subject ]</a>
+              <a href="author.html#232">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

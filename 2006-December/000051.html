@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r693 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r693%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612072204.kB7M4SfX009050%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000050.html">
+   <LINK REL="Next"  HREF="000052.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r693 - trunk/libsecondlife-cs</H1>
+    <B>bushing at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r693%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612072204.kB7M4SfX009050%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r693 - trunk/libsecondlife-cs">bushing at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  7 23:04:28 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000050.html">[Libsecondlife-commits] r692 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000052.html">[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bushing
+Date: 2006-12-07 23:04:27 +0100 (Thu, 07 Dec 2006)
+New Revision: 693
+
+Modified:
+   trunk/libsecondlife-cs/libsecondlife.build
+Log:
+integrated nant buildfile change to prevent unnecessary rebuilds of _Packets_.cs from Ben Anhalt
+
+Modified: trunk/libsecondlife-cs/libsecondlife.build
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.build	2006-12-07 21:02:05 UTC (rev 692)
++++ trunk/libsecondlife-cs/libsecondlife.build	2006-12-07 22:04:27 UTC (rev 693)
+@@ -55,7 +55,18 @@
+                 &lt;include name=&quot;mapgenerator/ProtocolManager.cs&quot; /&gt;
+             &lt;/sources&gt;
+         &lt;/csc&gt;
+-        &lt;exec program=&quot;../bin/mapgenerator.exe&quot; output=&quot;_Packets_.cs&quot; useruntimeengine=&quot;true&quot;&gt;
++	&lt;!-- Does _Packets_.cs really need to be reproduced? --&gt;
++	&lt;!-- Don't do it unless we have must, otherwise lots of stuff recompiles. --&gt;
++	&lt;uptodate property=&quot;_Packets_.cs.uptodate&quot;&gt;
++	    &lt;sourcefiles&gt;
++	        &lt;include name=&quot;../bin/mapgenerator.exe&quot; /&gt;
++		&lt;include name=&quot;../data/message_template.msg mapgenerator/template.cs&quot; /&gt;
++	    &lt;/sourcefiles&gt;
++	    &lt;targetfiles&gt;
++	        &lt;include name=&quot;_Packets_.cs&quot; /&gt;
++	    &lt;/targetfiles&gt;
++	&lt;/uptodate&gt;
++        &lt;exec program=&quot;../bin/mapgenerator.exe&quot; output=&quot;_Packets_.cs&quot; useruntimeengine=&quot;true&quot; unless=&quot;${_Packets_.cs.uptodate}&quot;&gt;
+             &lt;arg line=&quot;../data/message_template.msg mapgenerator/template.cs _Packets_.cs&quot; /&gt;
+         &lt;/exec&gt;
+     &lt;/target&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000050.html">[Libsecondlife-commits] r692 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000052.html">[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

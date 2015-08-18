@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r655 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r655%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611291341.kATDfNoY028089%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000036.html">
+   <LINK REL="Next"  HREF="000011.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r655 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r655%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611291341.kATDfNoY028089%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r655 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 29 14:41:23 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000036.html">[Libsecondlife-commits] r654 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+        <LI>Next message: <A HREF="000011.html">[Libsecondlife-commits] r656 - in trunk: data libsecondlife-cs	libsecondlife-cs/mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-29 14:41:22 +0100 (Wed, 29 Nov 2006)
+New Revision: 655
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Arguments.cs
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+Added a simple command-line parser to TestClient, it can be expanded later
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Arguments.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Arguments.cs	2006-11-29 09:18:34 UTC (rev 654)
++++ trunk/libsecondlife-cs/examples/TestClient/Arguments.cs	2006-11-29 13:41:22 UTC (rev 655)
+@@ -0,0 +1,111 @@
++using System;
++using System.Collections.Specialized;
++using System.Text.RegularExpressions;
++
++namespace CommandLine.Utility
++{
++    /// &lt;summary&gt;
++    /// Arguments class
++    /// &lt;/summary&gt;
++    public class Arguments
++    {
++        // Variables
++        private StringDictionary Parameters;
++
++        // Constructor
++        public Arguments(string[] Args)
++        {
++            Parameters = new StringDictionary();
++            Regex Splitter = new Regex(@&quot;^-{1,2}|^/|=|:&quot;,
++                RegexOptions.IgnoreCase | RegexOptions.Compiled);
++
++            Regex Remover = new Regex(@&quot;^['&quot;&quot;]?(.*?)['&quot;&quot;]?$&quot;,
++                RegexOptions.IgnoreCase | RegexOptions.Compiled);
++
++            string Parameter = null;
++            string[] Parts;
++
++            // Valid parameters forms:
++            // {-,/,--}param{ ,=,:}((&quot;,')value(&quot;,'))
++            // Examples: 
++            // -param1 value1 --param2 /param3:&quot;Test-:-work&quot; 
++            //   /param4=happy -param5 '--=nice=--'
++            foreach (string Txt in Args)
++            {
++                // Look for new parameters (-,/ or --) and a
++                // possible enclosed value (=,:)
++                Parts = Splitter.Split(Txt, 3);
++
++                switch (Parts.Length)
++                {
++                    // Found a value (for the last parameter 
++                    // found (space separator))
++                    case 1:
++                        if (Parameter != null)
++                        {
++                            if (!Parameters.ContainsKey(Parameter))
++                            {
++                                Parts[0] =
++                                    Remover.Replace(Parts[0], &quot;$1&quot;);
++
++                                Parameters.Add(Parameter, Parts[0]);
++                            }
++                            Parameter = null;
++                        }
++                        // else Error: no parameter waiting for a value (skipped)
++                        break;
++
++                    // Found just a parameter
++                    case 2:
++                        // The last parameter is still waiting. 
++                        // With no value, set it to true.
++                        if (Parameter != null)
++                        {
++                            if (!Parameters.ContainsKey(Parameter))
++                                Parameters.Add(Parameter, &quot;true&quot;);
++                        }
++                        Parameter = Parts[1];
++                        break;
++
++                    // Parameter with enclosed value
++                    case 3:
++                        // The last parameter is still waiting. 
++                        // With no value, set it to true.
++                        if (Parameter != null)
++                        {
++                            if (!Parameters.ContainsKey(Parameter))
++                                Parameters.Add(Parameter, &quot;true&quot;);
++                        }
++
++                        Parameter = Parts[1];
++
++                        // Remove possible enclosing characters (&quot;,')
++                        if (!Parameters.ContainsKey(Parameter))
++                        {
++                            Parts[2] = Remover.Replace(Parts[2], &quot;$1&quot;);
++                            Parameters.Add(Parameter, Parts[2]);
++                        }
++
++                        Parameter = null;
++                        break;
++                }
++            }
++            // In case a parameter is still waiting
++            if (Parameter != null)
++            {
++                if (!Parameters.ContainsKey(Parameter))
++                    Parameters.Add(Parameter, &quot;true&quot;);
++            }
++        }
++
++        // Retrieve a parameter value if it exists 
++        // (overriding C# indexer property)
++        public string this[string Param]
++        {
++            get
++            {
++                return (Parameters[Param]);
++            }
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 09:18:34 UTC (rev 654)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 13:41:22 UTC (rev 655)
+@@ -71,22 +71,6 @@
+ 			base.Think(Client);
+ 		}
+ 
+-		//void SendAgentUpdate(uint ControlID)
+-		//{
+-		//    AgentUpdatePacket p = new AgentUpdatePacket();
+-		//    p.AgentData.Far = 30.0f;
+-		//    p.AgentData.CameraAtAxis = new LLVector3(0, 0, 0);
+-		//    p.AgentData.CameraCenter = new LLVector3(0, 0, 0);
+-		//    p.AgentData.CameraLeftAxis = new LLVector3(0, 0, 0);
+-		//    p.AgentData.CameraUpAxis = new LLVector3(0, 0, 0);
+-		//    p.AgentData.HeadRotation = new LLQuaternion(0, 0, 0, 1); ;
+-		//    p.AgentData.BodyRotation = new LLQuaternion(0, 0, 0, 1); ;
+-		//    p.AgentData.AgentID = client.Network.AgentID;
+-		//    p.AgentData.SessionID = client.Network.SessionID;
+-		//    p.AgentData.ControlFlags = ControlID;
+-		//    client.Network.SendPacket(p);
+-		//}
+-
+         float vecDist(LLVector3 pointA, LLVector3 pointB)
+         {
+             float xd = pointB.X - pointA.X;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-29 09:18:34 UTC (rev 654)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-29 13:41:22 UTC (rev 655)
+@@ -1,6 +1,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.IO;
++using CommandLine.Utility;
+ 
+ namespace libsecondlife.TestClient
+ {
+@@ -9,29 +10,33 @@
+         private static void Usage()
+         {
+             Console.WriteLine(&quot;Usage: &quot; + Environment.NewLine +
+-                    &quot;TestClient.exe firstname lastname password [master name]&quot; + Environment.NewLine +
+-                    &quot;TestClient.exe --file filename [master name]&quot;);
++                    &quot;TestClient.exe --first firstname --last lastname --pass password [--master \&quot;master name\&quot;]&quot; + 
++                    Environment.NewLine + &quot;TestClient.exe --file filename [--master \&quot;master name\&quot;]&quot;);
+         }
+ 
+         static void Main(string[] args)
+         {
+-            if (args.Length &lt; 2 || args.Length &gt; 5)
+-            {
+-                Usage();
+-                return;
+-            }
++            Arguments arguments = new Arguments(args);
+ 
+             TestClient tester;
+             List&lt;LoginDetails&gt; accounts = new List&lt;LoginDetails&gt;();
+             LoginDetails account;
+             string master = &quot;&quot;;
++            string file = &quot;&quot;;
+ 
+-            if (args[0] == &quot;--file&quot;)
++            if (arguments[&quot;master&quot;] != null)
+             {
++                master = arguments[&quot;master&quot;];
++            }
++
++            if (arguments[&quot;file&quot;] != null)
++            {
++                file = arguments[&quot;file&quot;];
++
+                 // Loading names from a file
+                 try
+                 {
+-                    using (StreamReader reader = new StreamReader(args[1]))
++                    using (StreamReader reader = new StreamReader(file))
+                     {
+                         string line;
+                         int lineNumber = 0;
+@@ -50,10 +55,14 @@
+ 
+                                 accounts.Add(account);
+ 
+-								if (tokens.Length == 5)
+-								{
+-									master = tokens[3] + &quot; &quot; + tokens[4];
+-								}
++                                // Leaving this out until we have per-account masters (if that
++                                // is desirable). For now the command-line option can 
++                                // specify the single master that TestClient supports
++                                
++                                //if (tokens.Length == 5)
++                                //{
++                                //    master = tokens[3] + &quot; &quot; + tokens[4];
++                                //}
+                             }
+                             else
+                             {
+@@ -69,32 +78,25 @@
+ 					Console.WriteLine(e.ToString());
+ 				    return;
+ 				}
+-
+-                if (args.Length == 4)
+-                {
+-                    master = args[2] + &quot; &quot; + args[3];
+-                }
+             }
+-            else if (args.Length == 3 || args.Length == 5)
++            else
+             {
+-                // Taking a single login off the command-line
+-                account = new LoginDetails();
+-                account.FirstName = args[0];
+-                account.LastName = args[1];
+-                account.Password = args[2];
++                if (arguments[&quot;first&quot;] != null &amp;&amp; arguments[&quot;last&quot;] != null &amp;&amp; arguments[&quot;pass&quot;] != null)
++                {
++                    // Taking a single login off the command-line
++                    account = new LoginDetails();
++                    account.FirstName = arguments[&quot;first&quot;];
++                    account.LastName = arguments[&quot;last&quot;];
++                    account.Password = arguments[&quot;pass&quot;];
+ 
+-                if (args.Length == 5)
++                    accounts.Add(account);
++                }
++                else
+                 {
+-                    master = args[3] + &quot; &quot; + args[4];
++                    Usage();
++                    return;
+                 }
+-
+-                accounts.Add(account);
+             }
+-            else
+-            {
+-                Usage();
+-                return;
+-            }
+ 
+             // Login the accounts and run the input loop
+             tester = new TestClient(accounts);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-29 09:18:34 UTC (rev 654)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-29 13:41:22 UTC (rev 655)
+@@ -33,6 +33,7 @@
+     &lt;Reference Include=&quot;System.Xml&quot; /&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
++    &lt;Compile Include=&quot;Arguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoadCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000036.html">[Libsecondlife-commits] r654 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+	<LI>Next message: <A HREF="000011.html">[Libsecondlife-commits] r656 - in trunk: data libsecondlife-cs	libsecondlife-cs/mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

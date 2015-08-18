@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r877 - trunk/libsecondlife-cs/AssetSystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r877%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200701230205.l0N25hHI010339%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000310.html">
+   <LINK REL="Next"  HREF="000312.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r877 - trunk/libsecondlife-cs/AssetSystem</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r877%20-%20trunk/libsecondlife-cs/AssetSystem&In-Reply-To=%3C200701230205.l0N25hHI010339%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r877 - trunk/libsecondlife-cs/AssetSystem">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 23 03:05:43 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000310.html">[Libsecondlife-commits] r876 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+        <LI>Next message: <A HREF="000312.html">[Libsecondlife-commits] r878 - in trunk/libsecondlife-cs: .	VisualParamGenerator libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#311">[ date ]</a>
+              <a href="thread.html#311">[ thread ]</a>
+              <a href="subject.html#311">[ subject ]</a>
+              <a href="author.html#311">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-23 03:05:41 +0100 (Tue, 23 Jan 2007)
+New Revision: 877
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+Log:
+Fixed the documentation for AssetSystem.AssetPacketHelpers.TransferRequest()
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2007-01-23 01:42:00 UTC (rev 876)
++++ trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2007-01-23 02:05:41 UTC (rev 877)
+@@ -98,14 +98,13 @@
+         /// &lt;summary&gt;
+ 		/// Request the download of an asset
+         /// The params field consists of a number of individual data components:
+-        /// Params: 1: OwnerID / *AgentID
++        /// Params: 1: AgentID
+         /// Params: 2: SessionID
+-        /// Params: 3: *OwnerID / AgentID
+-        /// Params: 4: Unknown (Maybe Group ID)
++        /// Params: 3: OwnerID
++        /// Params: 4: TaskID (LLUUID.Zero for assets not contained in an object)
+         /// Params: 5: ItemID
+-        /// Params: 6: AssetID
+-        /// Params: 7: Type
+-        /// Params: 8: Last Three Bytes Unknown
++        /// Params: 6: AssetID (LLUUIZ.Zero if it is unknown)
++        /// Params: 7: Type (32-bit field)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;SessionID&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;AgentID&quot;&gt;&lt;/param&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000310.html">[Libsecondlife-commits] r876 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+	<LI>Next message: <A HREF="000312.html">[Libsecondlife-commits] r878 - in trunk/libsecondlife-cs: .	VisualParamGenerator libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#311">[ date ]</a>
+              <a href="thread.html#311">[ thread ]</a>
+              <a href="subject.html#311">[ subject ]</a>
+              <a href="author.html#311">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

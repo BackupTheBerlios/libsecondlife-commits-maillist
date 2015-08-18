@@ -1,0 +1,610 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r808 - branches/aditi/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r808%20-%20branches/aditi/libsecondlife-cs&In-Reply-To=%3C200701070032.l070WguZ013453%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000209.html">
+   <LINK REL="Next"  HREF="000211.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r808 - branches/aditi/libsecondlife-cs</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r808%20-%20branches/aditi/libsecondlife-cs&In-Reply-To=%3C200701070032.l070WguZ013453%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r808 - branches/aditi/libsecondlife-cs">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 01:32:42 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000209.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+        <LI>Next message: <A HREF="000211.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#210">[ date ]</a>
+              <a href="thread.html#210">[ thread ]</a>
+              <a href="subject.html#210">[ subject ]</a>
+              <a href="author.html#210">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-07 01:32:34 +0100 (Sun, 07 Jan 2007)
+New Revision: 808
+
+Modified:
+   branches/aditi/libsecondlife-cs/LLSD.cs
+   branches/aditi/libsecondlife-cs/MainAvatar.cs
+   branches/aditi/libsecondlife-cs/NetworkManager.cs
+   branches/aditi/libsecondlife-cs/_Packets_.cs
+Log:
+Patch #1798 and #1805. Teleport appears to work with CAPS.
+
+Modified: branches/aditi/libsecondlife-cs/LLSD.cs
+===================================================================
+--- branches/aditi/libsecondlife-cs/LLSD.cs	2007-01-06 10:35:36 UTC (rev 807)
++++ branches/aditi/libsecondlife-cs/LLSD.cs	2007-01-07 00:32:34 UTC (rev 808)
+@@ -20,7 +20,7 @@
+ 
+ 
+ 		private static void SkipWS(XmlTextReader reader) {
+-			while(reader.NodeType == XmlNodeType.Comment || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.SignificantWhitespace) reader.Read();
++			while(reader.NodeType == XmlNodeType.Comment || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.SignificantWhitespace || reader.NodeType == XmlNodeType.XmlDeclaration) reader.Read();
+ 		}
+ 
+ 		public static object LLSDDeserialize(byte[] b) {
+@@ -124,12 +124,19 @@
+ 			if(reader.NodeType != XmlNodeType.Element) 
+ 				throw new LLSDParseException(&quot;Expected an element&quot;);
+ 			string dtype = reader.LocalName; object ret = null;
++			bool st = false;
+ 			
+ 			switch(dtype) {
+ 				case &quot;undef&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return null;
++					}
+ 					reader.Read(); SkipWS(reader); ret = null; break;
+ 				}
+ 				case &quot;boolean&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return false;
++					}
+ 					reader.Read();
+ 					string s = reader.ReadString().Trim();
+ 					if(s == &quot;&quot; || s == &quot;false&quot; || s == &quot;0&quot;) {
+@@ -142,26 +149,41 @@
+ 					break;
+ 				}
+ 				case &quot;integer&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return 0L;
++					}
+ 					reader.Read();
+ 					ret = Convert.ToInt64(reader.ReadString().Trim());
+ 					break;
+ 				}
+ 				case &quot;real&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return 0.0f;
++					}
+ 					reader.Read();
+ 					ret = Convert.ToDouble(reader.ReadString().Trim());
+ 					break;
+ 				}
+ 				case &quot;uuid&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return new LLUUID();
++					}
+ 					reader.Read();
+ 					ret = new LLUUID(reader.ReadString().Trim());
+ 					break;
+ 				}
+ 				case &quot;string&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return String.Empty;
++					}
+ 					reader.Read();
+ 					ret = reader.ReadString();
+ 					break;
+ 				}
+ 				case &quot;binary&quot;: {
++					if(reader.IsEmptyElement) {
++						reader.Read(); return new byte[0];
++					}
+ 					if(reader.GetAttribute(&quot;encoding&quot;) != null &amp;&amp;
+ 					   reader.GetAttribute(&quot;encoding&quot;)!=&quot;base64&quot;)
+ 						throw new LLSDParseException(&quot;Unknown encoding: &quot;+
+@@ -196,6 +218,9 @@
+ 		public static Hashtable LLSDParseMap(XmlTextReader reader) {
+ 			if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;map&quot;)
+ 				throw new LLSDParseException(&quot;Expected &lt;map&gt;&quot;);
++			if(reader.IsEmptyElement) {
++				reader.Read(); return new Hashtable();
++			}
+ 			reader.Read();
+ 
+ 			Hashtable ret = new Hashtable();
+@@ -220,6 +245,9 @@
+ 		public static ArrayList LLSDParseArray(XmlTextReader reader) {
+ 			if(reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;array&quot;)
+ 				throw new LLSDParseException(&quot;Expected &lt;array&gt;&quot;);
++			if(reader.IsEmptyElement) {
++				reader.Read(); return new ArrayList();
++			}
+ 			reader.Read();
+ 
+ 			ArrayList ret = new ArrayList();
+@@ -275,4 +303,4 @@
+ 			}
+ 		}
+ 	}
+-}
+\ No newline at end of file
++}
+
+Modified: branches/aditi/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- branches/aditi/libsecondlife-cs/MainAvatar.cs	2007-01-06 10:35:36 UTC (rev 807)
++++ branches/aditi/libsecondlife-cs/MainAvatar.cs	2007-01-07 00:32:34 UTC (rev 808)
+@@ -27,7 +27,9 @@
+ using System;
+ using System.Timers;
+ using System.Net;
++using System.Collections;
+ using System.Collections.Generic;
++using System.Text;
+ using libsecondlife.Packets;
+ 
+ namespace libsecondlife
+@@ -321,6 +323,10 @@
+             Client.Network.RegisterCallback(PacketType.JoinGroupReply, new NetworkManager.PacketCallback(JoinGroupHandler));
+             Client.Network.RegisterCallback(PacketType.LeaveGroupReply, new NetworkManager.PacketCallback(LeaveGroupHandler));
+             Client.Network.RegisterCallback(PacketType.AgentDropGroup, new NetworkManager.PacketCallback(DropGroupHandler));
++
++
++	    // Event queue callback
++	    Client.Network.RegisterEventCallback(new NetworkManager.EventQueueCallback(EventQueueHandler));
+         }
+ 
+         /// &lt;summary&gt;
+@@ -1152,6 +1158,34 @@
+             }
+         }
+ 
++	private uint CapToUInt32(byte[] bytes) {
++	    return (uint)(bytes[3] + (bytes[2] &lt;&lt; 8) + (bytes[1] &lt;&lt; 16) + (bytes[0] &lt;&lt; 24));
++	}
++
++	private ulong CapToUInt64(byte[] bytes) {
++	    return (ulong)((ulong)bytes[7] + ((ulong)bytes[6] &lt;&lt; 8) + ((ulong)bytes[5] &lt;&lt; 16) + ((ulong)bytes[4] &lt;&lt; 24) + ((ulong)bytes[3] &lt;&lt; 32) + ((ulong)bytes[2] &lt;&lt; 40) + ((ulong)
++bytes[1] &lt;&lt; 48) + ((ulong)bytes[0] &lt;&lt; 56));
++	}
++
++
++	private void EventQueueHandler(string message, object body) {
++	    if(message == &quot;TeleportFinish&quot;) {
++		Hashtable tpt = (Hashtable)body;
++		Hashtable info = (Hashtable)tpt[&quot;Info&quot;];
++		// FIXME: quick and dirty hack
++		TeleportFinishPacket packet = new TeleportFinishPacket();
++		packet.Info.SimIP = CapToUInt32((byte[])info[&quot;SimIP&quot;]);
++		packet.Info.LocationID = CapToUInt32((byte[])info[&quot;LocationID&quot;]);
++		packet.Info.TeleportFlags = CapToUInt32((byte[])info[&quot;TeleportFlags&quot;]);
++		packet.Info.AgentID = (LLUUID)info[&quot;AgentID&quot;];
++		packet.Info.RegionHandle = CapToUInt64((byte[])info[&quot;RegionHandle&quot;]);
++		packet.Info.SeedCapability = Helpers.StringToField((string)info[&quot;SeedCapability&quot;]);
++		packet.Info.SimPort = (ushort)(long)info[&quot;SimPort&quot;];
++		packet.Info.SimAccess = (byte)(long)info[&quot;SimAccess&quot;];
++		TeleportHandler(packet,Client.Network.CurrentSim);
++	    }
++	}
++
+         /// &lt;summary&gt;
+         /// Handler for teleport Requests
+         /// &lt;/summary&gt;
+@@ -1205,8 +1239,9 @@
+                 Simulator previousSim = Client.Network.CurrentSim;
+ 
+                 // Connect to the new sim
++		String seedcaps = Encoding.UTF8.GetString(finish.Info.SeedCapability).Replace(&quot;\x00&quot;,&quot;&quot;);
+                 Simulator sim = Client.Network.Connect(new IPAddress((long)finish.Info.SimIP), finish.Info.SimPort,
+-                    simulator.CircuitCode, true);
++                    simulator.CircuitCode, true, seedcaps);
+ 
+                 if (sim != null)
+                 {
+@@ -1265,4 +1300,4 @@
+             TeleportTimeout = true;
+         }
+     }
+-}
+\ No newline at end of file
++}
+
+Modified: branches/aditi/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- branches/aditi/libsecondlife-cs/NetworkManager.cs	2007-01-06 10:35:36 UTC (rev 807)
++++ branches/aditi/libsecondlife-cs/NetworkManager.cs	2007-01-07 00:32:34 UTC (rev 808)
+@@ -26,11 +26,14 @@
+ 
+ using System;
+ using System.Timers;
++using System.Threading;
+ using System.Collections;
+ using System.Collections.Generic;
++using System.Collections.Specialized;
+ using System.Net;
+ using System.Net.Sockets;
+ using System.Globalization;
++using System.IO;
+ using Nwc.XmlRpc;
+ using Nii.JSON;
+ using libsecondlife.Packets;
+@@ -600,6 +603,90 @@
+         }
+     }
+ 
++    public class Caps {
++        public SecondLife Client;
++        public Region Region;
++	private string seedcaps;
++	private StringDictionary caps = new StringDictionary();
++	private bool dead = false;
++	private Thread eventThread;
++	private List&lt;NetworkManager.EventQueueCallback&gt; Callbacks;
++
++	public Caps(SecondLife client, Region region, string seedcaps, List&lt;NetworkManager.EventQueueCallback&gt; callbacks) {
++	    Client = client; Region = region;
++	    this.seedcaps = seedcaps; Callbacks = callbacks;
++	    ArrayList req = new ArrayList();
++	    req.Add(&quot;MapLayer&quot;);
++	    req.Add(&quot;MapLayerGod&quot;);
++	    req.Add(&quot;NewAgentInventory&quot;);
++	    req.Add(&quot;EventQueueGet&quot;);
++	    Hashtable resp = (Hashtable)LLSDRequest(seedcaps,req);
++	    foreach(string cap in resp.Keys) {
++		Console.WriteLine(&quot;Got cap &quot;+cap+&quot;: &quot;+(string)resp[cap]);
++		caps[cap] = (string)resp[cap];
++	    }
++	    if(caps.ContainsKey(&quot;EventQueueGet&quot;)) {
++		Console.WriteLine(&quot;Running event queue&quot;);
++		eventThread = new Thread(new ThreadStart(EventQueue));
++		eventThread.Start();
++	    }
++	}
++
++	private void EventQueue() {
++		bool gotresp = false; long ack = 0;
++		string cap = caps[&quot;EventQueueGet&quot;];
++		while(!dead) 
++		    try {
++			Hashtable req = new Hashtable();
++			if(gotresp)
++			    req[&quot;ack&quot;] = ack;
++			else req[&quot;ack&quot;] = null;
++			req[&quot;done&quot;] = false;
++			Hashtable resp = (Hashtable)LLSDRequest(cap,req);
++			ack = (long)resp[&quot;id&quot;]; gotresp = true;
++			ArrayList events = (ArrayList)resp[&quot;events&quot;];
++			foreach (Hashtable evt in events) {
++			    string msg = (string)evt[&quot;message&quot;];
++			    object body = (object)evt[&quot;body&quot;];
++			    Console.WriteLine(&quot;Event &quot;+msg+&quot;:\n&quot;+LLSD.LLSDDump(body,0));
++			    if(!dead) {
++				foreach (NetworkManager.EventQueueCallback callback in Callbacks)
++				    callback(msg,body);
++			    }
++			}
++		    } catch(WebException e) {
++			// perfectly normal
++			Console.WriteLine(&quot;In EventQueueGet: &quot;+e.ToString());
++		    }
++	} 
++
++	private static object LLSDRequest(string uri, object req) {
++	    byte[] data = LLSD.LLSDSerialize(req);
++	    WebRequest wreq = WebRequest.Create(uri);
++	    wreq.Method = &quot;POST&quot;; wreq.ContentLength = data.Length;
++	    Stream reqStream = wreq.GetRequestStream();
++	    reqStream.Write(data,0,data.Length);
++	    reqStream.Close();
++	    HttpWebResponse wresp = (HttpWebResponse)wreq.GetResponse();
++	    Stream respStream = wresp.GetResponseStream();
++	    int read; int length = 0;
++	    byte[] respBuf = new byte[256];
++	    do {
++		read = respStream.Read(respBuf,length,256);
++		if(read &gt; 0) {
++		    length += read;
++		    Array.Resize(ref respBuf,length+256);
++		}
++	    } while(read &gt; 0);
++	    Array.Resize(ref respBuf,length);
++	    return LLSD.LLSDDeserialize(respBuf);
++	}
++
++	public void Disconnect() {
++		dead = true;
++	}
++    }
++
+     /// &lt;summary&gt;
+     /// NetworkManager is responsible for managing the network layer of 
+     /// libsecondlife. It tracks all the server connections, serializes 
+@@ -616,6 +703,12 @@
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public delegate void PacketCallback(Packet packet, Simulator simulator);
+         /// &lt;summary&gt;
++        /// Triggered when an event is received via the EventQueueGet capability;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;body&quot;&gt;&lt;/param&gt;
++        public delegate void EventQueueCallback(string message, object body);
++        /// &lt;summary&gt;
+         /// Triggered when a simulator other than the simulator that is currently
+         /// being occupied disconnects for whatever reason
+         /// &lt;/summary&gt;
+@@ -664,6 +757,10 @@
+         /// &lt;/summary&gt;
+         public Simulator CurrentSim;
+         /// &lt;summary&gt;
++        /// The capabilities for the current simulator
++        /// &lt;/summary&gt;
++        public Caps CurrentCaps;
++        /// &lt;summary&gt;
+         /// The complete dictionary of all the login values returned by the 
+         /// RPC login server, converted to native data types wherever possible
+         /// &lt;/summary&gt;
+@@ -692,6 +789,7 @@
+         private List&lt;Simulator&gt; Simulators = new List&lt;Simulator&gt;();
+         private System.Timers.Timer DisconnectTimer;
+         private bool connected;
++	private List&lt;EventQueueCallback&gt; EventQueueCallbacks = new List&lt;EventQueueCallback&gt;();
+ 
+         private const int NetworkTrafficTimeout = 15000;
+         private const int LoginTimeout = 60000;
+@@ -763,6 +861,15 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;callback&quot;&gt;&lt;/param&gt;
++        public void RegisterEventCallback(EventQueueCallback callback)
++        {
++		EventQueueCallbacks.Add(callback);
++	}
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         public void SendPacket(Packet packet)
+         {
+@@ -1175,6 +1282,10 @@
+                 // Simulator is successfully connected, add it to the list and set it as default
+                 Simulators.Add(simulator);
+ 
++		if(LoginValues.ContainsKey(&quot;seed_capability&quot;) &amp;&amp; (string)LoginValues[&quot;seed_capability&quot;] != &quot;&quot;) {
++			CurrentCaps = new Caps(Client,simulator.Region,(string)LoginValues[&quot;seed_capability&quot;], EventQueueCallbacks);
++		}
++
+                 // Move our agent in to the sim to complete the connection
+                 Client.Self.CompleteAgentMovement(simulator);
+ 
+@@ -1200,7 +1311,7 @@
+         /// &lt;param name=&quot;circuitCode&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;setDefault&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Simulator Connect(IPAddress ip, ushort port, uint circuitCode, bool setDefault)
++        public Simulator Connect(IPAddress ip, ushort port, uint circuitCode, bool setDefault, string seedcaps)
+         {
+             Simulator simulator = new Simulator(Client, this.Callbacks, circuitCode, ip, (int)port);
+ 
+@@ -1218,6 +1329,10 @@
+             if (setDefault)
+             {
+                 CurrentSim = simulator;
++		if(CurrentCaps != null) CurrentCaps.Disconnect();
++		CurrentCaps = null;
++		if(seedcaps != null &amp;&amp; seedcaps != &quot;&quot;)
++			CurrentCaps = new Caps(Client,simulator.Region,seedcaps,EventQueueCallbacks);
+             }
+ 
+             DisconnectTimer.Start();
+@@ -1320,6 +1435,9 @@
+                 DisconnectSim(CurrentSim);
+                 CurrentSim = null;
+             }
++	    if (CurrentCaps != null) {
++		CurrentCaps.Disconnect(); CurrentCaps = null;
++	    }
+         }
+ 
+         private void SendInitialPackets()
+
+Modified: branches/aditi/libsecondlife-cs/_Packets_.cs
+===================================================================
+--- branches/aditi/libsecondlife-cs/_Packets_.cs	2007-01-06 10:35:36 UTC (rev 807)
++++ branches/aditi/libsecondlife-cs/_Packets_.cs	2007-01-07 00:32:34 UTC (rev 808)
+@@ -752,6 +752,7 @@
+         MapItemRequest,
+         MapItemReply,
+         SendPostcard,
++        ParcelMediaCommandMessage,
+         ParcelMediaUpdate,
+         LandStatRequest,
+         LandStatReply,
+@@ -1187,6 +1188,7 @@
+     [XmlInclude(typeof(MapItemRequestPacket))]
+     [XmlInclude(typeof(MapItemReplyPacket))]
+     [XmlInclude(typeof(SendPostcardPacket))]
++    [XmlInclude(typeof(ParcelMediaCommandMessagePacket))]
+     [XmlInclude(typeof(ParcelMediaUpdatePacket))]
+     [XmlInclude(typeof(LandStatRequestPacket))]
+     [XmlInclude(typeof(LandStatReplyPacket))]
+@@ -1640,6 +1642,7 @@
+                         case 476: return PacketType.MapItemRequest;
+                         case 477: return PacketType.MapItemReply;
+                         case 478: return PacketType.SendPostcard;
++                        case 487: return PacketType.ParcelMediaCommandMessage;
+                         case 488: return PacketType.ParcelMediaUpdate;
+                         case 489: return PacketType.LandStatRequest;
+                         case 490: return PacketType.LandStatReply;
+@@ -2108,6 +2111,7 @@
+                         case 476: return new MapItemRequestPacket(header, bytes, ref i);
+                         case 477: return new MapItemReplyPacket(header, bytes, ref i);
+                         case 478: return new SendPostcardPacket(header, bytes, ref i);
++                        case 487: return new ParcelMediaCommandMessagePacket(header, bytes, ref i);
+                         case 488: return new ParcelMediaUpdatePacket(header, bytes, ref i);
+                         case 489: return new LandStatRequestPacket(header, bytes, ref i);
+                         case 490: return new LandStatReplyPacket(header, bytes, ref i);
+@@ -67573,6 +67577,117 @@
+     }
+ 
+     /// &lt;exclude/&gt;
++    public class ParcelMediaCommandMessagePacket : Packet
++    {
++        /// &lt;exclude/&gt;
++        [XmlType(&quot;parcelmediacommandmessage_commandblock&quot;)]
++        public class CommandBlockBlock
++        {
++            public uint Command;
++            public float Time;
++            public uint Flags;
++
++            [XmlIgnore]
++            public int Length
++            {
++                get
++                {
++                    return 12;
++                }
++            }
++
++            public CommandBlockBlock() { }
++            public CommandBlockBlock(byte[] bytes, ref int i)
++            {
++                try
++                {
++                    Command = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    if (!BitConverter.IsLittleEndian) Array.Reverse(bytes, i, 4);
++                    Time = BitConverter.ToSingle(bytes, i); i += 4;
++                    Flags = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                }
++                catch (Exception)
++                {
++                    throw new MalformedDataException();
++                }
++            }
++
++            public void ToBytes(byte[] bytes, ref int i)
++            {
++                byte[] ba;
++                bytes[i++] = (byte)(Command % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 24) % 256);
++                ba = BitConverter.GetBytes(Time);
++                if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
++                Array.Copy(ba, 0, bytes, i, 4); i += 4;
++                bytes[i++] = (byte)(Flags % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 24) % 256);
++            }
++
++            public override string ToString()
++            {
++                string output = &quot;-- CommandBlock --&quot; + Environment.NewLine;
++                output += &quot;Command: &quot; + Command.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Time: &quot; + Time.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Flags: &quot; + Flags.ToString() + &quot;&quot; + Environment.NewLine;
++                output = output.Trim();
++                return output;
++            }
++        }
++
++        private Header header;
++        public override Header Header { get { return header; } set { header = value; } }
++        public override PacketType Type { get { return PacketType.ParcelMediaCommandMessage; } }
++        public CommandBlockBlock CommandBlock;
++
++        public ParcelMediaCommandMessagePacket()
++        {
++            Header = new LowHeader();
++            Header.ID = 487;
++            Header.Reliable = true;
++            CommandBlock = new CommandBlockBlock();
++        }
++
++        public ParcelMediaCommandMessagePacket(byte[] bytes, ref int i)
++        {
++            int packetEnd = bytes.Length - 1;
++            Header = new LowHeader(bytes, ref i, ref packetEnd);
++            CommandBlock = new CommandBlockBlock(bytes, ref i);
++        }
++
++        public ParcelMediaCommandMessagePacket(Header head, byte[] bytes, ref int i)
++        {
++            Header = head;
++            CommandBlock = new CommandBlockBlock(bytes, ref i);
++        }
++
++        public override byte[] ToBytes()
++        {
++            int length = 8;
++            length += CommandBlock.Length;;
++            if (header.AckList.Length &gt; 0) { length += header.AckList.Length * 4 + 1; }
++            byte[] bytes = new byte[length];
++            int i = 0;
++            header.ToBytes(bytes, ref i);
++            CommandBlock.ToBytes(bytes, ref i);
++            if (header.AckList.Length &gt; 0) { header.AcksToBytes(bytes, ref i); }
++            return bytes;
++        }
++
++        public override string ToString()
++        {
++            string output = &quot;--- ParcelMediaCommandMessage ---&quot; + Environment.NewLine;
++                output += CommandBlock.ToString() + &quot;&quot; + Environment.NewLine;
++            return output;
++        }
++
++    }
++
++    /// &lt;exclude/&gt;
+     public class ParcelMediaUpdatePacket : Packet
+     {
+         /// &lt;exclude/&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000209.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+	<LI>Next message: <A HREF="000211.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#210">[ date ]</a>
+              <a href="thread.html#210">[ thread ]</a>
+              <a href="subject.html#210">[ subject ]</a>
+              <a href="author.html#210">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r665 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r665%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS&In-Reply-To=%3C200611302119.kAULJt9q022639%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000015.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r665 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r665%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS&In-Reply-To=%3C200611302119.kAULJt9q022639%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r665 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 30 22:19:55 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000015.html">[Libsecondlife-commits] r664 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#16">[ date ]</a>
+              <a href="thread.html#16">[ thread ]</a>
+              <a href="subject.html#16">[ subject ]</a>
+              <a href="author.html#16">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-11-30 22:19:45 +0100 (Thu, 30 Nov 2006)
+New Revision: 665
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs
+Log:
+* Fixed an infinite loop problem when requesting bodyshape Assets
+* Added a variable to define XML/Login timeout -- boosted original default of 15 seconds to 60
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-11-30 21:13:06 UTC (rev 664)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-11-30 21:19:45 UTC (rev 665)
+@@ -130,13 +130,24 @@
+ 
+             htDownloadRequests[TransferID] = request;
+ 
+-			Packet packet = AssetPacketHelpers.TransferRequest(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, item );
+-			slClient.Network.SendPacket(packet);
++            // prep packet based on asset type
++            Packet packet;
++            switch (item.Type)
++            {
++                case 13:
++                    packet = AssetPacketHelpers.TransferRequestType13(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, item.AssetID);
++                    break;
++                default:
++			        packet = AssetPacketHelpers.TransferRequest(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, item );
++                    break;
++            }
+ 
++            // Send packet
++            slClient.Network.SendPacket(packet);
++
+             #if DEBUG_PACKETS
+                 Console.WriteLine(packet);
+             #endif
+-
+             request.Completed.WaitOne();
+ 
+             item.SetAssetData(request.AssetData);
+@@ -157,7 +168,7 @@
+ 
+             htDownloadRequests[TransferID] = request;
+ 
+-			Packet packet = AssetPacketHelpers.TransferRequest4BodyShape(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, asset );
++            Packet packet = AssetPacketHelpers.TransferRequestType13(slClient.Network.SessionID, slClient.Network.AgentID, TransferID, asset.AssetID);
+ 			slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2006-11-30 21:13:06 UTC (rev 664)
++++ trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2006-11-30 21:19:45 UTC (rev 665)
+@@ -113,7 +113,7 @@
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+         public static Packet TransferRequest(LLUUID SessionID, LLUUID AgentID, LLUUID TransferID, InventoryItem item)
+ 		{
+-            if (item.Asset.Type != 7)
++            if (item.Type != 7)
+             {
+                 Console.WriteLine(&quot;Warning: TransferRequest may not work for items other then notecards of type 7&quot;);
+             }
+@@ -152,20 +152,15 @@
+             return p;
+         }
+ 
+-        public static Packet TransferRequest4BodyShape(LLUUID SessionID, LLUUID AgentID, LLUUID TransferID, Asset asset)
++        public static Packet TransferRequestType13(LLUUID SessionID, LLUUID AgentID, LLUUID TransferID, LLUUID AssetID)
+         {
+-            if (asset.Type != 13)
+-            {
+-                Console.WriteLine(&quot;Warning: TransferRequest4BodyShape may not work for items of types other then 13&quot;);
+-            }
+-
+             byte[] param = new byte[20];
+             int pos = 0;
+ 
+-            Array.Copy(asset.AssetID.Data, 0, param, pos, 16);
++            Array.Copy(AssetID.Data, 0, param, pos, 16);
+             pos += 16;
+ 
+-            param[pos] = (byte)asset.Type;
++            param[pos] = (byte)13;
+             pos += 1;
+ 
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-11-30 21:13:06 UTC (rev 664)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-11-30 21:19:45 UTC (rev 665)
+@@ -130,6 +130,7 @@
+                 {
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+                     {
++                        Console.WriteLine(&quot;Asset not downloaded yet, requesting...&quot;);
+                         base.iManager.AssetManager.GetInventoryAsset(this);
+                         return Asset;
+                     }
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-11-30 21:13:06 UTC (rev 664)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-11-30 21:19:45 UTC (rev 665)
+@@ -658,6 +658,7 @@
+         private bool connected;
+ 
+         private const int NetworkTrafficTimeout = 15000;
++        private const int LoginTimeout = 60000;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -958,7 +959,7 @@
+ 
+             try
+             {
+-                result = (XmlRpcResponse)xmlrpc.Send(url);
++                result = (XmlRpcResponse)xmlrpc.Send(url, LoginTimeout);
+             }
+             catch (Exception e)
+             {
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs	2006-11-30 21:13:06 UTC (rev 664)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcRequest.cs	2006-11-30 21:19:45 UTC (rev 665)
+@@ -60,7 +60,7 @@
+         /// &lt;summary&gt;Send the request to the server.&lt;/summary&gt;
+         /// &lt;param name=&quot;url&quot;&gt;&lt;c&gt;String&lt;/c&gt; The url of the XML-RPC server.&lt;/param&gt;
+         /// &lt;returns&gt;&lt;c&gt;XmlRpcResponse&lt;/c&gt; The response generated.&lt;/returns&gt;
+-        public XmlRpcResponse Send(String url)
++        public XmlRpcResponse Send(String url, int timeout)
+         {
+             // Override SSL authentication mechanisms
+             ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
+@@ -76,7 +76,7 @@
+             request.ContentType = &quot;text/xml&quot;;
+             request.AllowWriteStreamBuffering = true;
+             request.KeepAlive = false;
+-            request.Timeout = 15000; // miliseconds adjust as you see fit
++            request.Timeout = timeout; // miliseconds adjust as you see fit
+ 
+             Stream stream = request.GetRequestStream();
+             XmlTextWriter xml = new XmlTextWriter(stream, _encoding);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000015.html">[Libsecondlife-commits] r664 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#16">[ date ]</a>
+              <a href="thread.html#16">[ thread ]</a>
+              <a href="subject.html#16">[ subject ]</a>
+              <a href="author.html#16">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

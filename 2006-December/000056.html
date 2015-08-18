@@ -1,0 +1,452 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r698 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r698%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612090755.kB97tlw4032010%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000055.html">
+   <LINK REL="Next"  HREF="000057.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r698 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>lancej at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r698%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612090755.kB97tlw4032010%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r698 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">lancej at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  9 08:55:47 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000055.html">[Libsecondlife-commits] r697 -	trunk/libsecondlife-cs/examples/IA_SimpleInventory
+</A></li>
+        <LI>Next message: <A HREF="000057.html">[Libsecondlife-commits] r699 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lancej
+Date: 2006-12-09 08:55:46 +0100 (Sat, 09 Dec 2006)
+New Revision: 698
+
+Modified:
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/ParticleSystem.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+Log:
+* ImportCommand now creates prims.
+* Added SetTextures, SetLight, SetFlexible functions to ObjectManager.
+* Added XML defaults to ParticleSystem and TextureAnimation.
+* Fixed an XML default for LLQuaternion.
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -587,6 +587,89 @@
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;localID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;textures&quot;&gt;&lt;/param&gt;
++        public void SetTextures(Simulator simulator, uint localID, TextureEntry textures)
++        {
++            ObjectImagePacket image = new ObjectImagePacket();
++            
++            image.AgentData.AgentID = Client.Network.AgentID;
++            image.AgentData.SessionID = Client.Network.SessionID;
++            image.ObjectData = new ObjectImagePacket.ObjectDataBlock[1];
++            image.ObjectData[0] = new ObjectImagePacket.ObjectDataBlock();
++            image.ObjectData[0].ObjectLocalID = localID;
++            image.ObjectData[0].TextureEntry = textures.ToBytes();
++            image.ObjectData[0].MediaURL = new byte[0];
++
++            Client.Network.SendPacket(image, simulator);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;localID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;light&quot;&gt;&lt;/param&gt;
++        public void SetLight(Simulator simulator, uint localID, PrimLightData light)
++        {
++            ObjectExtraParamsPacket extra = new ObjectExtraParamsPacket();
++
++            extra.AgentData.AgentID = Client.Network.AgentID;
++            extra.AgentData.SessionID = Client.Network.SessionID;
++            extra.ObjectData = new ObjectExtraParamsPacket.ObjectDataBlock[1];
++            extra.ObjectData[0] = new ObjectExtraParamsPacket.ObjectDataBlock();
++            extra.ObjectData[0].ObjectLocalID = localID;
++            extra.ObjectData[0].ParamType = (byte)ExtraParamType.Light;
++            if (light == null)
++            {
++                extra.ObjectData[0].ParamInUse = false;
++                extra.ObjectData[0].ParamData = new byte[0];
++            }
++            else
++            {
++                extra.ObjectData[0].ParamInUse = true;
++                extra.ObjectData[0].ParamData = light.GetBytes();
++            }
++            extra.ObjectData[0].ParamSize = (uint)extra.ObjectData[0].ParamData.Length;
++
++            Client.Network.SendPacket(extra, simulator);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;localID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;flexible&quot;&gt;&lt;/param&gt;
++        public void SetFlexible(Simulator simulator, uint localID, PrimFlexibleData flexible)
++        {
++            ObjectExtraParamsPacket extra = new ObjectExtraParamsPacket();
++
++            extra.AgentData.AgentID = Client.Network.AgentID;
++            extra.AgentData.SessionID = Client.Network.SessionID;
++            extra.ObjectData = new ObjectExtraParamsPacket.ObjectDataBlock[1];
++            extra.ObjectData[0] = new ObjectExtraParamsPacket.ObjectDataBlock();
++            extra.ObjectData[0].ObjectLocalID = localID;
++            extra.ObjectData[0].ParamType = (byte)ExtraParamType.Flexible;
++            if (flexible == null)
++            {
++                extra.ObjectData[0].ParamInUse = false;
++                extra.ObjectData[0].ParamData = new byte[0];
++            }
++            else
++            {
++                extra.ObjectData[0].ParamInUse = true;
++                extra.ObjectData[0].ParamData = flexible.GetBytes();
++            }
++            extra.ObjectData[0].ParamSize = (uint)extra.ObjectData[0].ParamData.Length;
++
++            Client.Network.SendPacket(extra, simulator);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;localIDs&quot;&gt;&lt;/param&gt;
+         public void LinkPrims(Simulator simulator, List&lt;uint&gt; localIDs)
+         {
+
+Modified: trunk/libsecondlife-cs/ParticleSystem.cs
+===================================================================
+--- trunk/libsecondlife-cs/ParticleSystem.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/ParticleSystem.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -1,5 +1,6 @@
+ using System;
+ using System.Collections.Generic;
++using System.ComponentModel;
+ using System.Xml.Serialization;
+ 
+ namespace libsecondlife
+@@ -58,35 +59,35 @@
+         }
+ 
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;startrgba&quot;)] public uint PartStartRGBA;
++        [XmlAttribute(&quot;startrgba&quot;), DefaultValue(0)] public uint PartStartRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;endrgba&quot;)] public uint PartEndRGBA;
++        [XmlAttribute(&quot;endrgba&quot;), DefaultValue(0)] public uint PartEndRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;maxage&quot;)] public float PartMaxAge;
++        [XmlAttribute(&quot;maxage&quot;), DefaultValue(0)] public float PartMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcmaxage&quot;)] public float SrcMaxAge;
++        [XmlAttribute(&quot;srcmaxage&quot;), DefaultValue(0)] public float SrcMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcanglebegin&quot;)] public float SrcAngleBegin;
++        [XmlAttribute(&quot;srcanglebegin&quot;), DefaultValue(0)] public float SrcAngleBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcangleend&quot;)] public float SrcAngleEnd;
++        [XmlAttribute(&quot;srcangleend&quot;), DefaultValue(0)] public float SrcAngleEnd;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcburstpartcount&quot;)] public int SrcBurstPartCount;
++        [XmlAttribute(&quot;srcburstpartcount&quot;), DefaultValue(0)] public int SrcBurstPartCount;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcburstradius&quot;)] public float SrcBurstRadius;
++        [XmlAttribute(&quot;srcburstradius&quot;), DefaultValue(0)] public float SrcBurstRadius;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcburstrate&quot;)] public float SrcBurstRate;
++        [XmlAttribute(&quot;srcburstrate&quot;), DefaultValue(0)] public float SrcBurstRate;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcburstspeedmin&quot;)] public float SrcBurstSpeedMin;
++        [XmlAttribute(&quot;srcburstspeedmin&quot;), DefaultValue(0)] public float SrcBurstSpeedMin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcburstspeedmax&quot;)] public float SrcBurstSpeedMax;
++        [XmlAttribute(&quot;srcburstspeedmax&quot;), DefaultValue(0)] public float SrcBurstSpeedMax;
+         /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        [XmlAttribute(&quot;version&quot;)] public uint Version;
++        [XmlAttribute(&quot;serial&quot;), DefaultValue(0)] public uint Serial;
+         /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        [XmlAttribute(&quot;starttick&quot;)] public uint StartTick;
++        [XmlAttribute(&quot;starttick&quot;), DefaultValue(0)] public uint StartTick;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;srcpattern&quot;)] public SourcePattern SrcPattern;
++        [XmlAttribute(&quot;srcpattern&quot;), DefaultValue(SourcePattern.None)] public SourcePattern SrcPattern = SourcePattern.None;
+         /// &lt;summary&gt;Various options that describe the behavior of this system&lt;/summary&gt;
+-        [XmlAttribute(&quot;particleflags&quot;)] public ParticleFlags PartFlags;
++        [XmlAttribute(&quot;particleflags&quot;), DefaultValue(ParticleFlags.None)] public ParticleFlags PartFlags = ParticleFlags.None;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         [XmlElement(&quot;srctarget&quot;)] public LLUUID SrcTargetKey = LLUUID.Zero;
+         /// &lt;summary&gt;Texture that will be applied to the particles&lt;/summary&gt;
+@@ -140,7 +141,7 @@
+             if (data.Length == 0)
+                 return;
+ 
+-            Version = (uint)(data[i++] + (data[i++] &lt;&lt; 8) +
++            Serial = (uint)(data[i++] + (data[i++] &lt;&lt; 8) +
+                     (data[i++] &lt;&lt; 16) + (data[i++] &lt;&lt; 24));
+ 
+             StartTick = (uint)(data[i++] + (data[i++] &lt;&lt; 8) +
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/Textures.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -28,6 +28,7 @@
+ using System.Collections.Generic;
+ using System.Xml;
+ using System.Xml.Serialization;
++using System.ComponentModel;
+ using System.IO;
+ 
+ namespace libsecondlife
+@@ -394,8 +395,8 @@
+                 binWriter.Write(GetFaceBitfieldBytes(kv.Value));
+                 binWriter.Write(kv.Key);
+             }
+-
+-            return memStream.GetBuffer();
++            
++            return memStream.ToArray();
+         }
+ 
+         private byte[] GetFaceBitfieldBytes(uint bitfield)
+@@ -844,19 +845,19 @@
+     public class TextureAnimation
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;flags&quot;)] public uint Flags;
++        [XmlAttribute(&quot;flags&quot;), DefaultValue(0)] public uint Flags;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;face&quot;)] public uint Face;
++        [XmlAttribute(&quot;face&quot;), DefaultValue(0)] public uint Face;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;sizex&quot;)] public uint SizeX;
++        [XmlAttribute(&quot;sizex&quot;), DefaultValue(0)] public uint SizeX;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;sizey&quot;)] public uint SizeY;
++        [XmlAttribute(&quot;sizey&quot;), DefaultValue(0)] public uint SizeY;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;start&quot;)] public float Start;
++        [XmlAttribute(&quot;start&quot;), DefaultValue(0)] public float Start;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;length&quot;)] public float Length;
++        [XmlAttribute(&quot;length&quot;), DefaultValue(0)] public float Length;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;rate&quot;)] public float Rate;
++        [XmlAttribute(&quot;rate&quot;), DefaultValue(0)] public float Rate;
+ 
+         /// &lt;summary&gt;
+         /// Default constructor
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/Types.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -682,7 +682,7 @@
+         /// &lt;summary&gt;Z value&lt;/summary&gt;
+         [XmlAttribute(&quot;z&quot;), DefaultValue(0)] public float Z;
+         /// &lt;summary&gt;W value&lt;/summary&gt;
+-        [XmlAttribute(&quot;w&quot;), DefaultValue(1)] public float W;
++        [XmlAttribute(&quot;w&quot;), DefaultValue(0)] public float W;
+ 
+ 		///// &lt;summary&gt;
+ 		///// Default constructor, initializes to no rotation (0,0,0,1)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -3,16 +3,27 @@
+ using libsecondlife;
+ using libsecondlife.Packets;
+ using System.Xml;
++using System.Threading;
+ using System.Xml.Serialization;
+ using System.IO;
++
+ namespace libsecondlife.TestClient
+ {
+     public class ImportCommand : Command
+     {
++        PrimObject currentPrim;
++        LLVector3 currentPosition;
++        SecondLife currentClient;
++        ManualResetEvent primDone;
++        List&lt;PrimObject&gt; primsCreated;
++        bool registeredCreateEvent;
++
+         public ImportCommand()
+         {
+             Name = &quot;import&quot;;
+             Description = &quot;Import prims from an exported xml file. Usage: import [filename.xml]&quot;;
++            primDone = new ManualResetEvent(false);
++            registeredCreateEvent = false;
+         }
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+@@ -21,8 +32,9 @@
+                 return &quot;Usage: import inputfile.xml&quot;;
+ 
+             string name = args[0];
+-            List&lt;PrimObject&gt; prims;
+ 
++            Dictionary&lt;uint, PrimObject&gt; prims;
++
+             try
+             {
+                 //XmlReader reader = XmlReader.Create(name);
+@@ -35,7 +47,13 @@
+                 events.OnUnknownElement += new XmlElementEventHandler(OnUnknownElement);
+                 events.OnUnknownNode += new XmlNodeEventHandler(OnUnknownNode);
+                 events.OnUnreferencedObject += new UnreferencedObjectEventHandler(OnUnreferenced);
+-                prims = (List&lt;PrimObject&gt;)serializer.Deserialize(XmlReader.Create(name), events);
++                List&lt;PrimObject&gt; listprims = (List&lt;PrimObject&gt;)serializer.Deserialize(XmlReader.Create(name), events);
++
++                prims = new Dictionary&lt;uint, PrimObject&gt;();
++                foreach (PrimObject prim in listprims)
++                {
++                    prims.Add(prim.LocalID, prim);
++                }
+                 //return list;
+             }
+             catch (Exception ex)
+@@ -43,10 +61,53 @@
+                 return &quot;Deserialize failed: &quot; + ex.ToString();
+             }
+ 
+-            // deserialization done, just need to code to rez and link.
+-            return &quot;Deserialized &quot; + prims.Count + &quot; prims, rez code missing.&quot;;
++            if (!registeredCreateEvent)
++            {
++                TestClient.OnPrimCreated += new TestClient.PrimCreatedCallback(TestClient_OnPrimCreated);
++                registeredCreateEvent = true;
++            }
++            
++            primsCreated = new List&lt;PrimObject&gt;();
++            Console.WriteLine(&quot;Importing &quot; + prims.Count + &quot; prims.&quot;);
++
++            foreach (PrimObject prim in prims.Values)
++            {
++                currentPrim = prim;
++                currentClient = Client;
++                if (prim.ParentID != 0)
++                {
++                    if (prims.ContainsKey(prim.ParentID))
++                    {
++                        currentPosition = prims[prim.ParentID].Position + prim.Position;
++                    }
++                    else
++                    {
++                        return &quot;Rez failed, a child prim did not have a matching parent prim. &quot;;
++                    }
++                }
++                else
++                {
++                    currentPosition = prim.Position;
++                }
++                Client.Objects.AddPrim(Client.Network.CurrentSim, prim, currentPosition);
++                if (!primDone.WaitOne(10000, false))
++                    return &quot;Rez failed, timed out while creating a prim.&quot;;
++                primDone.Reset();
++            }
++
++            return &quot;Import complete.&quot;;
+         }
+ 
++        void TestClient_OnPrimCreated(Simulator simulator, PrimObject prim)
++        {
++            primsCreated.Add(prim);
++            currentClient.Objects.SetPosition(simulator, prim.LocalID, currentPosition);
++            currentClient.Objects.SetTextures(simulator, prim.LocalID, currentPrim.Textures);
++            //currentClient.Objects.SetLight(simulator, prim.LocalID, currentPrim.Light);
++            //currentClient.Objects.SetFlexible(simulator, prim.LocalID, currentPrim.Flexible);
++            primDone.Set();
++        }
++
+         void OnUnknownAttribute(object obj, XmlAttributeEventArgs args)
+         {
+             // This hasn't happened for me
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-09 01:23:25 UTC (rev 697)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-09 07:55:46 UTC (rev 698)
+@@ -27,6 +27,9 @@
+         public bool Running = true;
+ 	    public string Master = &quot;&quot;;
+ 
++        public delegate void PrimCreatedCallback(Simulator simulator, PrimObject prim);
++        public event PrimCreatedCallback OnPrimCreated;
++
+         private LLQuaternion bodyRotation = LLQuaternion.Identity;
+         private LLVector3 forward = new LLVector3(0, 0.9999f, 0);
+         private LLVector3 left = new LLVector3(0.9999f, 0, 0);
+@@ -322,6 +325,11 @@
+             {
+                 Prims[prim.LocalID] = prim;
+             }
++
++            if ((prim.Flags &amp; ObjectFlags.CreateSelected) != 0 &amp;&amp; OnPrimCreated != null)
++            {
++                OnPrimCreated(simulator, prim);
++            }
+         }
+ 
+         private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000055.html">[Libsecondlife-commits] r697 -	trunk/libsecondlife-cs/examples/IA_SimpleInventory
+</A></li>
+	<LI>Next message: <A HREF="000057.html">[Libsecondlife-commits] r699 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

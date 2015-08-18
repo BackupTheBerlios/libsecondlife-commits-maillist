@@ -1,0 +1,1174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r854 - in trunk/libsecondlife-cs: .	examples/TestClient
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r854%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient&In-Reply-To=%3C200701190033.l0J0XQSt017005%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000268.html">
+   <LINK REL="Next"  HREF="000270.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r854 - in trunk/libsecondlife-cs: .	examples/TestClient</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r854%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient&In-Reply-To=%3C200701190033.l0J0XQSt017005%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r854 - in trunk/libsecondlife-cs: .	examples/TestClient">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 19 01:33:26 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000268.html">[Libsecondlife-commits] r853 - in branches/aditi: applications	libsecondlife-cs/examples
+</A></li>
+        <LI>Next message: <A HREF="000270.html">[Libsecondlife-commits] r855 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#269">[ date ]</a>
+              <a href="thread.html#269">[ thread ]</a>
+              <a href="subject.html#269">[ subject ]</a>
+              <a href="author.html#269">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-19 01:33:24 +0100 (Fri, 19 Jan 2007)
+New Revision: 854
+
+Added:
+   trunk/libsecondlife-cs/LLSD.cs
+Modified:
+   trunk/libsecondlife-cs/GridManager.cs
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Merging aditi r853 to the trunk
+
+Modified: trunk/libsecondlife-cs/GridManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GridManager.cs	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/GridManager.cs	2007-01-19 00:33:24 UTC (rev 854)
+@@ -131,13 +131,17 @@
+ 
+ 			if(!Regions.ContainsKey(name))
+ 			{
+-                MapNameRequestPacket map = new MapNameRequestPacket();
++                // FIXME: This needs to be converted to Caps
++                Client.Log(&quot;Caps for map layer requests needs to be implemented, this function is currently broken!&quot;,
++                    Helpers.LogLevel.Error);
+ 
+-                map.AgentData.AgentID = Client.Network.AgentID;
+-                map.AgentData.SessionID = Client.Network.SessionID;
+-                map.NameData.Name = Helpers.StringToField(name);
++                //MapNameRequestPacket map = new MapNameRequestPacket();
+ 
+-                Client.Network.SendPacket(map);
++                //map.AgentData.AgentID = Client.Network.AgentID;
++                //map.AgentData.SessionID = Client.Network.SessionID;
++                //map.NameData.Name = Helpers.StringToField(name);
++
++                //Client.Network.SendPacket(map);
+ 			}
+ 		}
+ 
+@@ -235,6 +239,7 @@
+             {
+                 AddSim(name);
+ 
++                // FIXME: We shouldn't be sleeping in a library call, hopefully this goes away soon
+                 System.Threading.Thread.Sleep(1000);
+ 
+                 if (Regions.ContainsKey(name))
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-19 00:33:24 UTC (rev 854)
+@@ -141,6 +141,40 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Convert the first four bytes of the given array in little endian
++        /// ordering to an unsigned integer
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;An array four bytes or longer&lt;/param&gt;
++        /// &lt;returns&gt;An unsigned integer, will be zero if the array contains
++        /// less than four bytes&lt;/returns&gt;
++        public static uint BytesToUInt(byte[] bytes)
++        {
++            if (bytes.Length &lt; 4) return 0;
++            return (uint)(bytes[3] + (bytes[2] &lt;&lt; 8) + (bytes[1] &lt;&lt; 16) + (bytes[0] &lt;&lt; 24));
++        }
++
++        /// &lt;summary&gt;
++        /// Convert the first eight bytes of the given array in little endian
++        /// ordering to an unsigned 64-bit integer
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;An array eight bytes or longer&lt;/param&gt;
++        /// &lt;returns&gt;An unsigned 64-bit integer, will be zero if the array
++        /// contains less than eight bytes&lt;/returns&gt;
++        public static ulong BytesToUInt64(byte[] bytes)
++        {
++            if (bytes.Length &lt; 8) return 0;
++            return (ulong)
++                ((ulong)bytes[7] +
++                ((ulong)bytes[6] &lt;&lt; 8) +
++                ((ulong)bytes[5] &lt;&lt; 16) +
++                ((ulong)bytes[4] &lt;&lt; 24) +
++                ((ulong)bytes[3] &lt;&lt; 32) +
++                ((ulong)bytes[2] &lt;&lt; 40) +
++                ((ulong)bytes[1] &lt;&lt; 48) +
++                ((ulong)bytes[0] &lt;&lt; 56));
++        }
++
++        /// &lt;summary&gt;
+         /// Convert a variable length field (byte array) to a string.
+         /// &lt;/summary&gt;
+         /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+@@ -253,25 +287,69 @@
+             return output;
+         }
+ 
+-
+         /// &lt;summary&gt;
+-        /// Convert a UTF8 string to a byte array
++        /// Converts a byte array to a string containing hexadecimal characters
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;str&quot;&gt;The string to convert to a byte array&lt;/param&gt;
+-        /// &lt;returns&gt;A null-terminated byte array&lt;/returns&gt;
+-        public static byte[] StringToField(string str)
++        /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
++        /// &lt;param name=&quot;fieldName&quot;&gt;The name of the field to prepend to each
++        /// line of the string&lt;/param&gt;
++        /// &lt;returns&gt;A string containing hexadecimal characters on multiple
++        /// lines. Each line is prepended with the field name&lt;/returns&gt;
++        public static string FieldToHexString(byte[] bytes, string fieldName)
+         {
+-            if (str.Length == 0) { return new byte[0]; }
+-            if (!str.EndsWith(&quot;\0&quot;)) { str += &quot;\0&quot;; }
+-            return System.Text.UTF8Encoding.UTF8.GetBytes(str);
++            string output = &quot;&quot;;
++            for (int i = 0; i &lt; bytes.Length; i += 16)
++            {
++                if (i != 0) { output += &quot;\n&quot;; }
++                if (fieldName != &quot;&quot;) { output += fieldName + &quot;: &quot;; }
++
++                for (int j = 0; j &lt; 16; j++)
++                {
++                    if ((i + j) &lt; bytes.Length)
++                    {
++                        string s = String.Format(&quot;{0:X} &quot;, bytes[i + j]);
++                        if (s.Length == 2)
++                        {
++                            s = &quot;0&quot; + s;
++                        }
++
++                        output += s;
++                    }
++                    else
++                    {
++                        output += &quot;   &quot;;
++                    }
++                }
++
++                for (int j = 0; j &lt; 16 &amp;&amp; (i + j) &lt; bytes.Length; j++)
++                {
++                    if (bytes[i + j] &gt;= 0x20 &amp;&amp; bytes[i + j] &lt; 0x7E)
++                    {
++                        output += (char)bytes[i + j];
++                    }
++                    else
++                    {
++                        output += &quot;.&quot;;
++                    }
++                }
++            }
++            return output;
+         }
+ 
+-        //public static byte[] HexStringToBytes(string hexString)
++        /// &lt;summary&gt;
++        /// Converts a string containing hexadecimal characters to a byte array
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;hexString&quot;&gt;String containing hexadecimal characters&lt;/param&gt;
++        /// &lt;returns&gt;The converted byte array&lt;/returns&gt;
++        //public static byte[] HexStringToField(string hexString)
+         //{
+         //    string newString = &quot;&quot;;
+         //    char c;
+ 
+-        //    // remove all none A-F, 0-9, characters
++        //    // FIXME: For each line of the string, if a colon is found
++        //    // remove everything before it
++
++        //    // remove all non A-F, 0-9, characters
+         //    for (int i = 0; i &lt; hexString.Length; i++)
+         //    {
+         //        c = hexString[i];
+@@ -299,6 +377,18 @@
+         //}
+ 
+         /// &lt;summary&gt;
++        /// Convert a UTF8 string to a byte array
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;str&quot;&gt;The string to convert to a byte array&lt;/param&gt;
++        /// &lt;returns&gt;A null-terminated byte array&lt;/returns&gt;
++        public static byte[] StringToField(string str)
++        {
++            if (str.Length == 0) { return new byte[0]; }
++            if (!str.EndsWith(&quot;\0&quot;)) { str += &quot;\0&quot;; }
++            return System.Text.UTF8Encoding.UTF8.GetBytes(str);
++        }
++
++        /// &lt;summary&gt;
+         /// Gets a unix timestamp for the current time
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;An unsigned integer representing a unix timestamp for now&lt;/returns&gt;
+
+Copied: trunk/libsecondlife-cs/LLSD.cs (from rev 853, branches/aditi/libsecondlife-cs/LLSD.cs)
+===================================================================
+--- branches/aditi/libsecondlife-cs/LLSD.cs	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/LLSD.cs	2007-01-19 00:33:24 UTC (rev 854)
+@@ -0,0 +1,449 @@
++using System;
++using System.Collections;
++using System.Collections.Generic;
++using System.Xml;
++using System.IO;
++using libsecondlife;
++using System.Security.Cryptography;
++using System.Text;
++
++namespace libsecondlife
++{
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class LLSD
++    {
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public class LLSDParseException : Exception
++        {
++            public LLSDParseException(string message) : base(message) { }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public class LLSDSerializeException : Exception
++        {
++            public LLSDSerializeException(string message) : base(message) { }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;b&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static object LLSDDeserialize(byte[] b)
++        {
++            return LLSDDeserialize(new MemoryStream(b, false));
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;st&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static object LLSDDeserialize(Stream st)
++        {
++            XmlTextReader reader = new XmlTextReader(st);
++            reader.Read(); SkipWS(reader);
++            if (reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;llsd&quot;)
++            {
++                throw new LLSDParseException(&quot;Expected &lt;llsd&gt;&quot;);
++            }
++            reader.Read();
++            object ret = LLSDParseOne(reader);
++            SkipWS(reader);
++            if (reader.NodeType != XmlNodeType.EndElement || reader.LocalName != &quot;llsd&quot;)
++                throw new LLSDParseException(&quot;Expected &lt;/llsd&gt;&quot;);
++            return ret;
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static byte[] LLSDSerialize(object obj)
++        {
++            StringWriter sw = new StringWriter();
++            XmlTextWriter writer = new XmlTextWriter(sw);
++            writer.Formatting = Formatting.None;
++            writer.WriteStartElement(&quot;&quot;, &quot;llsd&quot;, &quot;&quot;);
++            LLSDWriteOne(writer, obj);
++            writer.WriteEndElement();
++            writer.Close();
++            return Encoding.UTF8.GetBytes(sw.ToString());
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;writer&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;&lt;/param&gt;
++        public static void LLSDWriteOne(XmlTextWriter writer, object obj)
++        {
++            if (obj == null)
++            {
++                writer.WriteStartElement(&quot;&quot;, &quot;undef&quot;, &quot;&quot;);
++                writer.WriteEndElement();
++                return;
++            }
++
++            Type t = obj.GetType();
++            if (t == typeof(string))
++            {
++                writer.WriteStartElement(&quot;&quot;, &quot;string&quot;, &quot;&quot;);
++                writer.WriteString((string)obj);
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(long))
++            {
++                writer.WriteStartElement(&quot;&quot;, &quot;integer&quot;, &quot;&quot;);
++                writer.WriteString(obj.ToString());
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(double))
++            {
++                writer.WriteStartElement(&quot;&quot;, &quot;real&quot;, &quot;&quot;);
++                writer.WriteString(obj.ToString());
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(bool))
++            {
++                bool b = (bool)obj;
++                writer.WriteStartElement(&quot;&quot;, &quot;boolean&quot;, &quot;&quot;);
++                if (b)
++                    writer.WriteString(&quot;1&quot;);
++                else writer.WriteString(&quot;0&quot;);
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(LLUUID))
++            {
++                LLUUID u = (LLUUID)obj;
++                writer.WriteStartElement(&quot;&quot;, &quot;uuid&quot;, &quot;&quot;);
++                writer.WriteString(u.ToStringHyphenated());
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(Hashtable))
++            {
++                Hashtable h = (Hashtable)obj;
++                writer.WriteStartElement(&quot;&quot;, &quot;map&quot;, &quot;&quot;);
++                foreach (string key in h.Keys)
++                {
++                    writer.WriteStartElement(&quot;&quot;, &quot;key&quot;, &quot;&quot;);
++                    writer.WriteString(key);
++                    writer.WriteEndElement();
++                    LLSDWriteOne(writer, h[key]);
++                }
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(ArrayList))
++            {
++                ArrayList a = (ArrayList)obj;
++                writer.WriteStartElement(&quot;&quot;, &quot;array&quot;, &quot;&quot;);
++                foreach (object item in a)
++                {
++                    LLSDWriteOne(writer, item);
++                }
++                writer.WriteEndElement();
++            }
++            else if (t == typeof(byte[]))
++            {
++                byte[] b = (byte[])obj;
++                writer.WriteStartElement(&quot;&quot;, &quot;binary&quot;, &quot;&quot;);
++                writer.WriteStartAttribute(&quot;&quot;, &quot;encoding&quot;, &quot;&quot;);
++                writer.WriteString(&quot;base64&quot;);
++                writer.WriteEndAttribute();
++                char[] tmp = new char[b.Length * 2]; // too much
++                int i = Convert.ToBase64CharArray(b, 0, b.Length, tmp, 0);
++                Array.Resize(ref tmp, i);
++                writer.WriteString(new String(tmp));
++                writer.WriteEndElement();
++
++            }
++            else
++            {
++                throw new LLSDSerializeException(&quot;Unknown type &quot; + t.Name);
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reader&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static object LLSDParseOne(XmlTextReader reader)
++        {
++            SkipWS(reader);
++            if (reader.NodeType != XmlNodeType.Element)
++                throw new LLSDParseException(&quot;Expected an element&quot;);
++            string dtype = reader.LocalName; object ret = null;
++            //bool st = false;
++
++            switch (dtype)
++            {
++                case &quot;undef&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return null;
++                        }
++                        reader.Read(); SkipWS(reader); ret = null; break;
++                    }
++                case &quot;boolean&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return false;
++                        }
++                        reader.Read();
++                        string s = reader.ReadString().Trim();
++                        if (s == &quot;&quot; || s == &quot;false&quot; || s == &quot;0&quot;)
++                        {
++                            ret = false;
++                        }
++                        else if (s == &quot;true&quot; || s == &quot;1&quot;)
++                        {
++                            ret = true;
++                        }
++                        else
++                        {
++                            throw new LLSDParseException(&quot;Bad boolean value &quot; + s);
++                        }
++                        break;
++                    }
++                case &quot;integer&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return 0L;
++                        }
++                        reader.Read();
++                        ret = Convert.ToInt64(reader.ReadString().Trim());
++                        break;
++                    }
++                case &quot;real&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return 0.0f;
++                        }
++                        reader.Read();
++                        ret = Convert.ToDouble(reader.ReadString().Trim());
++                        break;
++                    }
++                case &quot;uuid&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return new LLUUID();
++                        }
++                        reader.Read();
++                        ret = new LLUUID(reader.ReadString().Trim());
++                        break;
++                    }
++                case &quot;string&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return String.Empty;
++                        }
++                        reader.Read();
++                        ret = reader.ReadString();
++                        break;
++                    }
++                case &quot;binary&quot;:
++                    {
++                        if (reader.IsEmptyElement)
++                        {
++                            reader.Read(); return new byte[0];
++                        }
++                        if (reader.GetAttribute(&quot;encoding&quot;) != null &amp;&amp;
++                           reader.GetAttribute(&quot;encoding&quot;) != &quot;base64&quot;)
++                            throw new LLSDParseException(&quot;Unknown encoding: &quot; +
++                                reader.GetAttribute(&quot;encoding&quot;));
++                        reader.Read();
++                        FromBase64Transform b64 = new FromBase64Transform(FromBase64TransformMode.IgnoreWhiteSpaces);
++                        byte[] inp = Encoding.ASCII.GetBytes(reader.ReadString());
++                        ret = b64.TransformFinalBlock(inp, 0, inp.Length);
++                        break;
++                    }
++                case &quot;date&quot;:
++                    {
++                        reader.Read();
++                        throw new Exception(&quot;LLSD TODO: date&quot;);
++                    }
++                case &quot;map&quot;:
++                    {
++                        return LLSDParseMap(reader);
++                    }
++                case &quot;array&quot;:
++                    {
++                        return LLSDParseArray(reader);
++                    }
++                default:
++                    throw new LLSDParseException(&quot;Unknown element &lt;&quot; + dtype + &quot;&gt;&quot;);
++            }
++            if (reader.NodeType != XmlNodeType.EndElement || reader.LocalName != dtype)
++            {
++                throw new LLSDParseException(&quot;Expected &lt;/&quot; + dtype + &quot;&gt;&quot;);
++            }
++            reader.Read();
++            return ret;
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reader&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static Hashtable LLSDParseMap(XmlTextReader reader)
++        {
++            if (reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;map&quot;)
++                throw new LLSDParseException(&quot;Expected &lt;map&gt;&quot;);
++            if (reader.IsEmptyElement)
++            {
++                reader.Read(); return new Hashtable();
++            }
++            reader.Read();
++
++            Hashtable ret = new Hashtable();
++
++            while (true)
++            {
++                SkipWS(reader);
++                if (reader.NodeType == XmlNodeType.EndElement &amp;&amp; reader.LocalName == &quot;map&quot;)
++                {
++                    reader.Read(); break;
++                }
++                if (reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;key&quot;)
++                    throw new LLSDParseException(&quot;Expected &lt;key&gt;&quot;);
++                string key = reader.ReadString();
++                if (reader.NodeType != XmlNodeType.EndElement || reader.LocalName != &quot;key&quot;)
++                    throw new LLSDParseException(&quot;Expected &lt;/key&gt;&quot;);
++                reader.Read();
++                object val = LLSDParseOne(reader);
++                ret[key] = val;
++            }
++            return ret; // TODO
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reader&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static ArrayList LLSDParseArray(XmlTextReader reader)
++        {
++            if (reader.NodeType != XmlNodeType.Element || reader.LocalName != &quot;array&quot;)
++                throw new LLSDParseException(&quot;Expected &lt;array&gt;&quot;);
++            if (reader.IsEmptyElement)
++            {
++                reader.Read(); return new ArrayList();
++            }
++            reader.Read();
++
++            ArrayList ret = new ArrayList();
++
++            while (true)
++            {
++                SkipWS(reader);
++                if (reader.NodeType == XmlNodeType.EndElement &amp;&amp; reader.LocalName == &quot;array&quot;)
++                {
++                    reader.Read(); break;
++                }
++                ret.Insert(ret.Count, LLSDParseOne(reader));
++            }
++            return ret; // TODO
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;count&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        private static string GetSpaces(int count)
++        {
++            StringBuilder b = new StringBuilder();
++            for (int i = 0; i &lt; count; i++) b.Append(&quot; &quot;);
++            return b.ToString();
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;obj&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;indent&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static String LLSDDump(object obj, int indent)
++        {
++            if (obj == null)
++            {
++                return GetSpaces(indent) + &quot;- undef\n&quot;;
++            }
++            else if (obj.GetType() == typeof(string))
++            {
++                return GetSpaces(indent) + &quot;- string \&quot;&quot; + (string)obj + &quot;\&quot;\n&quot;;
++            }
++            else if (obj.GetType() == typeof(long))
++            {
++                return GetSpaces(indent) + &quot;- integer &quot; + obj.ToString() + &quot;\n&quot;;
++            }
++            else if (obj.GetType() == typeof(double))
++            {
++                return GetSpaces(indent) + &quot;- float &quot; + obj.ToString() + &quot;\n&quot;;
++            }
++            else if (obj.GetType() == typeof(LLUUID))
++            {
++                return GetSpaces(indent) + &quot;- uuid &quot; + ((LLUUID)obj).ToStringHyphenated() + Environment.NewLine;
++            }
++            else if (obj.GetType() == typeof(Hashtable))
++            {
++                StringBuilder ret = new StringBuilder();
++                ret.Append(GetSpaces(indent) + &quot;- map&quot; + Environment.NewLine);
++                Hashtable map = (Hashtable)obj;
++
++                foreach (string key in map.Keys)
++                {
++                    ret.Append(GetSpaces(indent + 2) + &quot;- key \&quot;&quot; + key + &quot;\&quot;&quot; + Environment.NewLine);
++                    ret.Append(LLSDDump(map[key], indent + 3));
++                }
++
++                return ret.ToString();
++            }
++            else if (obj.GetType() == typeof(ArrayList))
++            {
++                StringBuilder ret = new StringBuilder();
++                ret.Append(GetSpaces(indent) + &quot;- array\n&quot;);
++                ArrayList list = (ArrayList)obj;
++
++                foreach (object item in list)
++                {
++                    ret.Append(LLSDDump(item, indent + 2));
++                }
++
++                return ret.ToString();
++            }
++            else if (obj.GetType() == typeof(byte[]))
++            {
++                return GetSpaces(indent) + &quot;- binary\n&quot; + Helpers.FieldToHexString((byte[])obj, &quot;&quot;) + Environment.NewLine;
++            }
++            else
++            {
++                return GetSpaces(indent) + &quot;- unknown type &quot; + obj.GetType().Name + Environment.NewLine;
++            }
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reader&quot;&gt;&lt;/param&gt;
++        private static void SkipWS(XmlTextReader reader)
++        {
++            while (reader.NodeType == XmlNodeType.Comment || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.SignificantWhitespace || reader.NodeType == XmlNodeType.XmlDeclaration) reader.Read();
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-19 00:33:24 UTC (rev 854)
+@@ -27,7 +27,9 @@
+ using System;
+ using System.Timers;
+ using System.Net;
++using System.Collections;
+ using System.Collections.Generic;
++using System.Text;
+ using libsecondlife.Packets;
+ 
+ namespace libsecondlife
+@@ -476,6 +478,9 @@
+ 
+             // Viewer effect callback
+             Client.Network.RegisterCallback(PacketType.ViewerEffect, new NetworkManager.PacketCallback(ViewerEffectHandler));
++
++	        // Event queue callback (used for Caps teleports currently)
++	        Client.Network.RegisterEventCallback(new NetworkManager.EventQueueCallback(EventQueueHandler));
+         }
+ 
+         /// &lt;summary&gt;
+@@ -1427,6 +1432,29 @@
+             }
+         }
+ 
++	    private void EventQueueHandler(string message, object body)
++        {
++	        if(message == &quot;TeleportFinish&quot;)
++            {
++		        Hashtable tpt = (Hashtable)body;
++		        Hashtable info = (Hashtable)tpt[&quot;Info&quot;];
++
++		        // FIXME: quick and dirty hack
++		        TeleportFinishPacket packet = new TeleportFinishPacket();
++
++		        packet.Info.SimIP = Helpers.BytesToUInt((byte[])info[&quot;SimIP&quot;]);
++                packet.Info.LocationID = Helpers.BytesToUInt((byte[])info[&quot;LocationID&quot;]);
++                packet.Info.TeleportFlags = Helpers.BytesToUInt((byte[])info[&quot;TeleportFlags&quot;]);
++		        packet.Info.AgentID = (LLUUID)info[&quot;AgentID&quot;];
++                packet.Info.RegionHandle = Helpers.BytesToUInt64((byte[])info[&quot;RegionHandle&quot;]);
++		        packet.Info.SeedCapability = Helpers.StringToField((string)info[&quot;SeedCapability&quot;]);
++		        packet.Info.SimPort = (ushort)(long)info[&quot;SimPort&quot;];
++		        packet.Info.SimAccess = (byte)(long)info[&quot;SimAccess&quot;];
++
++		        TeleportHandler(packet,Client.Network.CurrentSim);
++	        }
++	    }
++
+         /// &lt;summary&gt;
+         /// Process an incoming effect
+         /// &lt;/summary&gt;
+@@ -1592,8 +1620,9 @@
+                 Simulator previousSim = Client.Network.CurrentSim;
+ 
+                 // Connect to the new sim
++		String seedcaps = Encoding.UTF8.GetString(finish.Info.SeedCapability).Replace(&quot;\x00&quot;,&quot;&quot;);
+                 Simulator sim = Client.Network.Connect(new IPAddress((long)finish.Info.SimIP), finish.Info.SimPort,
+-                    simulator.CircuitCode, true);
++                    simulator.CircuitCode, true, seedcaps);
+ 
+                 if (sim != null)
+                 {
+@@ -1652,4 +1681,4 @@
+             TeleportTimeout = true;
+         }
+     }
+-}
+\ No newline at end of file
++}
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-19 00:33:24 UTC (rev 854)
+@@ -26,12 +26,14 @@
+ 
+ using System;
+ using System.Timers;
++using System.Threading;
+ using System.Collections;
+ using System.Collections.Generic;
++using System.Collections.Specialized;
+ using System.Net;
+ using System.Net.Sockets;
+ using System.Globalization;
+-using System.Threading;
++using System.IO;
+ using Nwc.XmlRpc;
+ using Nii.JSON;
+ using libsecondlife.Packets;
+@@ -45,6 +47,122 @@
+     public class NotConnectedException : ApplicationException { }
+ 
+     /// &lt;summary&gt;
++    /// Capabilities is the name of the bi-directional HTTP REST protocol that
++    /// Second Life uses to communicate transactions such as teleporting or
++    /// asset transfers
++    /// &lt;/summary&gt;
++    public class Caps
++    {
++        public SecondLife Client;
++        public Region Region;
++        private string Seedcaps;
++        private StringDictionary Capabilities = new StringDictionary();
++        private bool Dead = false;
++        private Thread EventThread;
++        private List&lt;NetworkManager.EventQueueCallback&gt; Callbacks;
++
++        public Caps(SecondLife client, Region region, string seedcaps, List&lt;NetworkManager.EventQueueCallback&gt; callbacks)
++        {
++            Client = client; Region = region;
++            this.Seedcaps = seedcaps; Callbacks = callbacks;
++            ArrayList req = new ArrayList();
++            req.Add(&quot;MapLayer&quot;);
++            req.Add(&quot;MapLayerGod&quot;);
++            req.Add(&quot;NewAgentInventory&quot;);
++            req.Add(&quot;EventQueueGet&quot;);
++            Hashtable resp = (Hashtable)LLSDRequest(seedcaps, req);
++
++            foreach (string cap in resp.Keys)
++            {
++                Client.Log(&quot;Got cap &quot; + cap + &quot;: &quot; + (string)resp[cap], Helpers.LogLevel.Info);
++                Capabilities[cap] = (string)resp[cap];
++            }
++
++            if (Capabilities.ContainsKey(&quot;EventQueueGet&quot;))
++            {
++                Client.Log(&quot;Running event queue&quot;, Helpers.LogLevel.Info);
++                EventThread = new Thread(new ThreadStart(EventQueue));
++                EventThread.Start();
++            }
++        }
++
++        private void EventQueue()
++        {
++            bool gotresp = false; long ack = 0;
++            string cap = Capabilities[&quot;EventQueueGet&quot;];
++            while (!Dead)
++                try
++                {
++                    Hashtable req = new Hashtable();
++
++                    if (gotresp)
++                        req[&quot;ack&quot;] = ack;
++                    else
++                        req[&quot;ack&quot;] = null;
++
++                    req[&quot;done&quot;] = false;
++
++                    Hashtable resp = (Hashtable)LLSDRequest(cap, req);
++                    ack = (long)resp[&quot;id&quot;];
++                    gotresp = true;
++                    ArrayList events = (ArrayList)resp[&quot;events&quot;];
++
++                    foreach (Hashtable evt in events)
++                    {
++                        string msg = (string)evt[&quot;message&quot;];
++                        object body = (object)evt[&quot;body&quot;];
++
++                        Client.DebugLog(&quot;Event &quot; + msg + &quot;:&quot; + Environment.NewLine + LLSD.LLSDDump(body, 0));
++
++                        if (!Dead)
++                        {
++                            foreach (NetworkManager.EventQueueCallback callback in Callbacks)
++                                callback(msg, body);
++                        }
++                    }
++                }
++                catch (WebException e)
++                {
++                    // perfectly normal
++                    Client.Log(&quot;In EventQueueGet: &quot; + e.Message, Helpers.LogLevel.Info);
++                }
++        }
++
++        private static object LLSDRequest(string uri, object req)
++        {
++            byte[] data = LLSD.LLSDSerialize(req);
++            WebRequest wreq = WebRequest.Create(uri);
++            wreq.Method = &quot;POST&quot;; wreq.ContentLength = data.Length;
++            Stream reqStream = wreq.GetRequestStream();
++            reqStream.Write(data, 0, data.Length);
++            reqStream.Close();
++            HttpWebResponse wresp = (HttpWebResponse)wreq.GetResponse();
++            Stream respStream = wresp.GetResponseStream();
++            int read; int length = 0;
++            byte[] respBuf = new byte[256];
++
++            do
++            {
++                read = respStream.Read(respBuf, length, 256);
++
++                if (read &gt; 0)
++                {
++                    length += read;
++                    Array.Resize(ref respBuf, length + 256);
++                }
++            } while (read &gt; 0);
++
++            Array.Resize(ref respBuf, length);
++            return LLSD.LLSDDeserialize(respBuf);
++        }
++
++        public void Disconnect()
++        {
++            Dead = true;
++        }
++    }
++
++    /// &lt;summary&gt;
+     /// Simulator is a wrapper for a network connection to a simulator and the
+     /// Region class representing the block of land in the metaverse.
+     /// &lt;/summary&gt;
+@@ -322,7 +440,7 @@
+             }
+             catch (SocketException)
+             {
+-                Client.Log(&quot;Tried to send a &quot; + packet.Type.ToString() + &quot; on a closed socket&quot;, 
++                Client.Log(&quot;Tried to send a &quot; + packet.Type.ToString() + &quot; on a closed socket&quot;,
+                     Helpers.LogLevel.Warning);
+ 
+                 Disconnect();
+@@ -571,7 +689,7 @@
+                         }
+                         catch (Exception e)
+                         {
+-                            Client.Log(&quot;Caught an exception in a packet callback: &quot; + e.ToString(), 
++                            Client.Log(&quot;Caught an exception in a packet callback: &quot; + e.ToString(),
+                                 Helpers.LogLevel.Error);
+                         }
+                     }
+@@ -628,6 +746,12 @@
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public delegate void PacketCallback(Packet packet, Simulator simulator);
+         /// &lt;summary&gt;
++        /// Triggered when an event is received via the EventQueueGet capability;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;body&quot;&gt;&lt;/param&gt;
++        public delegate void EventQueueCallback(string message, object body);
++        /// &lt;summary&gt;
+         /// Triggered when a simulator other than the simulator that is currently
+         /// being occupied disconnects for whatever reason
+         /// &lt;/summary&gt;
+@@ -681,10 +805,14 @@
+         /// &lt;/summary&gt;
+         public Simulator CurrentSim;
+         /// &lt;summary&gt;
++        /// The capabilities for the current simulator
++        /// &lt;/summary&gt;
++        public Caps CurrentCaps;
++        /// &lt;summary&gt;
+         /// The complete dictionary of all the login values returned by the 
+         /// RPC login server, converted to native data types wherever possible
+         /// &lt;/summary&gt;
+-        public Dictionary&lt;string, object&gt; LoginValues = new Dictionary&lt;string,object&gt;();
++        public Dictionary&lt;string, object&gt; LoginValues = new Dictionary&lt;string, object&gt;();
+         /// &lt;summary&gt;
+         /// Shows whether the network layer is logged in to the grid or not
+         /// &lt;/summary&gt;
+@@ -709,16 +837,17 @@
+         public event CurrentSimChangedCallback OnCurrentSimChanged;
+ 
+         private SecondLife Client;
+-        private Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt; Callbacks = new Dictionary&lt;PacketType,List&lt;PacketCallback&gt;&gt;();
++        private Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt; Callbacks = new Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt;();
+         private List&lt;Simulator&gt; Simulators = new List&lt;Simulator&gt;();
+         private System.Timers.Timer DisconnectTimer;
+         private System.Timers.Timer LogoutTimer;
+         private bool connected;
++        private List&lt;EventQueueCallback&gt; EventQueueCallbacks = new List&lt;EventQueueCallback&gt;();
+ 
+         private const int NetworkTrafficTimeout = 15000;
+-		
+-		ManualResetEvent LogoutReplyEvent = new ManualResetEvent(false);
+ 
++        ManualResetEvent LogoutReplyEvent = new ManualResetEvent(false);
++
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+@@ -787,6 +916,15 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;callback&quot;&gt;&lt;/param&gt;
++        public void RegisterEventCallback(EventQueueCallback callback)
++        {
++            EventQueueCallbacks.Add(callback);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         public void SendPacket(Packet packet)
+         {
+@@ -851,7 +989,7 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName,
+             string password, string userAgent, string author)
+         {
+             return DefaultLoginValues(firstName, lastName, password, &quot;00:00:00:00:00:00&quot;, &quot;last&quot;,
+@@ -867,7 +1005,7 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName,
+             string password, string startLocation, string userAgent, string author, bool md5pass)
+         {
+             return DefaultLoginValues(firstName, lastName, password, &quot;00:00:00:00:00:00&quot;, startLocation,
+@@ -887,8 +1025,8 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
+-            string password, string mac, string startLocation, string platform, 
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName,
++            string password, string mac, string startLocation, string platform,
+             string viewerDigest, string userAgent, string author)
+         {
+             return DefaultLoginValues(firstName, lastName, password, mac, startLocation,
+@@ -912,9 +1050,9 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
+-            string password, string mac, string startLocation, int major, int minor, int patch, 
+-            int build, string platform, string viewerDigest, string userAgent, string author, 
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName,
++            string password, string mac, string startLocation, int major, int minor, int patch,
++            int build, string platform, string viewerDigest, string userAgent, string author,
+             bool md5pass)
+         {
+             Dictionary&lt;string, object&gt; values = new Dictionary&lt;string, object&gt;();
+@@ -972,7 +1110,7 @@
+         /// Assigned by the OnLogoutReply callback. Raised upone receipt of a LogoutReply packet during logout process.
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;InventoryData&quot;&gt;A dictionary representing received data Key is ItemID and Value is NewAssetID&lt;/param&gt;
+-        public delegate void LogoutCallback(Dictionary&lt;LLUUID, LLUUID&gt; InventoryData );
++        public delegate void LogoutCallback(Dictionary&lt;LLUUID, LLUUID&gt; InventoryData);
+         /// &lt;summary&gt;
+         /// Event raised when a logout is confirmed by the simulator
+         /// &lt;/summary&gt;
+@@ -1217,12 +1355,17 @@
+                 // Start a timer that checks if we've been disconnected
+                 DisconnectTimer.Start();
+ 
++                if (LoginValues.ContainsKey(&quot;seed_capability&quot;) &amp;&amp; (string)LoginValues[&quot;seed_capability&quot;] != &quot;&quot;)
++                {
++                    CurrentCaps = new Caps(Client, simulator.Region, (string)LoginValues[&quot;seed_capability&quot;], EventQueueCallbacks);
++                }
++
+                 // Move our agent in to the sim to complete the connection
+                 Client.Self.CompleteAgentMovement(simulator);
+ 
+                 // Send a couple packets that are useful right after login
+                 SendInitialPackets();
+-                
++
+                 // Fire an event for connecting to the grid
+                 if (OnConnected != null)
+                 {
+@@ -1268,7 +1411,7 @@
+         /// &lt;param name=&quot;circuitCode&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;setDefault&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public Simulator Connect(IPAddress ip, ushort port, uint circuitCode, bool setDefault)
++        public Simulator Connect(IPAddress ip, ushort port, uint circuitCode, bool setDefault, string seedcaps)
+         {
+             Simulator simulator = new Simulator(Client, this.Callbacks, circuitCode, ip, (int)port);
+ 
+@@ -1293,23 +1436,27 @@
+             {
+                 Simulator oldSim = CurrentSim;
+                 CurrentSim = simulator;
++                if (CurrentCaps != null) CurrentCaps.Disconnect();
++                CurrentCaps = null;
++                if (seedcaps != null &amp;&amp; seedcaps != &quot;&quot;)
++                    CurrentCaps = new Caps(Client, simulator.Region, seedcaps, EventQueueCallbacks);
+                 if (OnCurrentSimChanged != null &amp;&amp; simulator != oldSim) OnCurrentSimChanged(oldSim);
+             }
+ 
+             return simulator;
+         }
+-		
++
+         /// &lt;summary&gt;
+         /// Initiate a blocking logout request. This will return when the logout
+         /// handshake has completed or when Settings.LOGOUT_TIMEOUT has expired
+         /// and a LogoutDemand packet has been sent
+         /// &lt;/summary&gt;
+-		public void Logout()
+-		{
++        public void Logout()
++        {
+             LogoutReplyEvent.Reset();
+-			RequestLogout();
++            RequestLogout();
+             LogoutReplyEvent.WaitOne(Client.Settings.LOGOUT_TIMEOUT, false);
+-		}
++        }
+ 
+         /// &lt;summary&gt;
+         /// Initiate the logout process (three step process!)
+@@ -1484,6 +1631,10 @@
+                     }
+                 }
+             }
++            if (CurrentCaps != null)
++            {
++                CurrentCaps.Disconnect(); CurrentCaps = null;
++            }
+ 
+             connected = false;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-19 00:33:24 UTC (rev 854)
+@@ -66,7 +66,6 @@
+     &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+-    &lt;Compile Include=&quot;Commands\ResearchCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+@@ -90,6 +89,10 @@
+       &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
+       &lt;Name&gt;libsecondlife&lt;/Name&gt;
+     &lt;/ProjectReference&gt;
++    &lt;ProjectReference Include=&quot;..\..\libsecondlife.Utilities\libsecondlife.Utilities.csproj&quot;&gt;
++      &lt;Project&gt;{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife.Utilities&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
+   &lt;/ItemGroup&gt;
+   &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
+   &lt;!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-18 21:11:56 UTC (rev 853)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-19 00:33:24 UTC (rev 854)
+@@ -114,6 +114,7 @@
+     &lt;Compile Include=&quot;InventorySystem\DownloadRequest_Folder.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\InventoryScript.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\InventoryWearable.cs&quot; /&gt;
++    &lt;Compile Include=&quot;LLSD.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatarStatus.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatar.cs&quot; /&gt;
+     &lt;Compile Include=&quot;EstateTools.cs&quot;&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000268.html">[Libsecondlife-commits] r853 - in branches/aditi: applications	libsecondlife-cs/examples
+</A></li>
+	<LI>Next message: <A HREF="000270.html">[Libsecondlife-commits] r855 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#269">[ date ]</a>
+              <a href="thread.html#269">[ thread ]</a>
+              <a href="subject.html#269">[ subject ]</a>
+              <a href="author.html#269">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

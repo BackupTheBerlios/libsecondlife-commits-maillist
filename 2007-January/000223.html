@@ -1,0 +1,491 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r819 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r819%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200701090456.l094uI1W011331%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000222.html">
+   <LINK REL="Next"  HREF="000224.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r819 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>lonecoder at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r819%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200701090456.l094uI1W011331%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r819 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">lonecoder at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 05:56:19 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000222.html">[Libsecondlife-commits] r818 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000224.html">[Libsecondlife-commits] r820 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands	examples/TestClient/Commands/Communication	examples/TestClient/Commands/Inventory	examples/TestClient/Commands/Movement
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#223">[ date ]</a>
+              <a href="thread.html#223">[ thread ]</a>
+              <a href="subject.html#223">[ subject ]</a>
+              <a href="author.html#223">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lonecoder
+Date: 2007-01-09 05:56:12 +0100 (Tue, 09 Jan 2007)
+New Revision: 819
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/InventoryCommand.cs
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+Added full InstantMessageDialog enum info.
+Added new InstantMessage override for sending dialog responses.
+Added InventoryCommand to TestClient
+Added response to InventoryOffer messages for TestClient, but it appears to be cosmetic and has nothing to do with the actual inventory transfer.
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-08 03:41:37 UTC (rev 818)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 04:56:12 UTC (rev 819)
+@@ -59,24 +59,168 @@
+         /// &lt;/summary&gt;
+         public enum InstantMessageDialog
+         {
+-            /// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
+-            MessageFromAgent = 0,
+-            /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
+-            GiveInventory = 4,
+-            /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
+-            GiveNotecard = 9,
+-            /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
+-            MessageFromObject = 19,
+-            /// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
+-            RequestTeleport = 22,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-            AcceptTeleport = 23,
+-            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-            DenyTeleport = 24,
+-            /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+-            StartTyping = 41,
+-            /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+-            StopTyping = 42
++			/// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
++			MessageFromAgent = 0,
++
++			/// &lt;summary&gt;pops a messagebox with a single OK button&lt;/summary&gt;
++			MessageBox = 1,
++
++			// pops a countdown messagebox with a single OK button
++			// MESSAGEBOXCOUNTDOWN = 2,
++
++			/// &lt;summary&gt;You've been invited to join a group.
++			/// ID is the group id.
++
++			/// The binary bucket contains a null terminated string
++			/// representation of the officer/member status and join cost for
++			/// the invitee. (bug # 7672) The format is 1 byte for
++			/// officer/member (O for officer, M for member), and as many bytes
++			/// as necessary for cost. &lt;/summary&gt;
++			GroupInvitation = 3,
++
++			/// &lt;summary&gt;Inventory offer.
++			/// ID is the transaction id
++			/// Binary bucket is a list of inventory uuid and type. &lt;/summary&gt;
++			InventoryOffered = 4,
++			InventoryAccepted = 5,
++			InventoryDeclined = 6,
++
++			/// &lt;summary&gt;Group vote
++			/// Name is name of person who called vote.
++			/// ID is vote ID used for internal tracking&lt;/summary&gt;
++			GroupVote = 7,
++
++			/// &lt;summary&gt;Group message
++			/// This means that the message is meant for everyone in the
++			/// agent's group. This will result in a database query to find all
++			/// participants and start an im session.&lt;/summary&gt;
++//			GroupMessageDeprecated = 8,
++
++			/// &lt;summary&gt;Task inventory offer.
++			/// ID is the transaction id
++			/// Binary bucket is a (mostly) complete packed inventory item&lt;/summary&gt;
++			TaskInventoryOffered = 9,
++			TaskInventoryAccepted = 10,
++			TaskInventoryDeclined = 11,
++
++			/// &lt;summary&gt;Copied as pending, type LLNOTHINGSPECIAL, for new users
++			/// used by offline tools&lt;/summary&gt;
++			NewUserDefault = 12,
++
++			//
++			// session based messaging - the way that people usually actually
++			// communicate with each other.
++			//
++
++			/// &lt;summary&gt;Start a session, or add users to a session.&lt;/summary&gt;
++			SessionAdd = 13,
++
++			/// &lt;summary&gt;Start a session, but don't prune offline users&lt;/summary&gt;
++			SessionOfflineAdd = 14,
++
++			/// &lt;summary&gt;start a session with your gruop&lt;/summary&gt;
++			SessionGroupStart = 15,
++
++			/// &lt;summary&gt;start a session without a calling card (finder or objects)&lt;/summary&gt;
++			SessionCardlessStart = 16,
++
++			/// &lt;summary&gt;send a message to a session.&lt;/summary&gt;
++			SessionSend = 17,
++
++			/// &lt;summary&gt;leave a session&lt;/summary&gt;
++			SessionDrop = 18,
++
++			/// &lt;summary&gt;an instant message from an object - for differentiation on the
++			/// viewer, since you can't IM an object yet.&lt;/summary&gt;
++			FromTask = 19,
++
++			/// &lt;summary&gt;sent an IM to a busy user, this is the auto response&lt;/summary&gt;
++			BusyAutoResponse = 20,
++
++			/// &lt;summary&gt;Shows the message in the console and chat history&lt;/summary&gt;
++			ConsoleAndChatHistory = 21,
++
++			/// &lt;summary&gt;IM Types used for luring your friends&lt;/summary&gt;
++			LureUser = 22,
++			LureAccepted = 23,
++			LureDeclined = 24,
++			GodLikeLureUser = 25,
++//			YetToBeUsed = 26,
++
++			/// &lt;summary&gt;IM that notifie of a new group election.
++			/// Name is name of person who called vote.
++			/// ID is election ID used for internal tracking&lt;/summary&gt;
++//			GroupElectionDeprecated = 27,
++
++			/// &lt;summary&gt;IM to tell the user to go to an URL. Put a text message in the
++			/// message field, and put the url with a trailing \0 in the binary
++			/// bucket.&lt;/summary&gt;
++			GotoUrl = 28,
++
++			/// &lt;summary&gt;IM for help from the GAURDIANANGELS
++			/// Binary bucket contains the name of the session.&lt;/summary&gt;
++			Session911Start = 29,
++
++			/// &lt;summary&gt;IM sent automatically on call for help, 
++			/// sends a lure to each Helper reached&lt;/summary&gt;
++			Lure911 = 30,
++
++			/// &lt;summary&gt;a message generated by a script which we don't want to
++			/// be sent through e-mail.  Similar to FROMTASK, but
++			/// it is shown as an alert on the viewer.&lt;/summary&gt;
++			FromTaskAsAlert = 31,
++
++			/// &lt;summary&gt;IM from group officer to all group members.&lt;/summary&gt;
++			GroupNotice = 32,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			GroupNoticeInventoryAccepted = 33,
++			
++			/// &lt;summary&gt; &lt;/summary&gt;
++			GroupNoticeInventoryDeclined = 34,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			GroupInvitationAccept = 35,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			GroupInvitationDecline = 36,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			GroupNoticeRequested = 37,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			FriendshipOffered = 38,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			FriendshipAccepted = 39,
++
++			/// &lt;summary&gt; &lt;/summary&gt;
++			FriendshipDeclined = 40,
++
++			/// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
++			TypingStart = 41,
++
++			/// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
++			TypingStop = 42,
++
++			///// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
++			//MessageFromAgent = 0,
++			///// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
++			//GiveInventory = 4,
++			///// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
++			//GiveNotecard = 9,
++			///// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
++			//MessageFromObject = 19,
++			///// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
++			//RequestTeleport = 22,
++			///// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++			//AcceptTeleport = 23,
++			///// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++			//DenyTeleport = 24,
++			///// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
++			//StartTyping = 41,
++			///// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
++			//StopTyping = 42
+         }
+ 
+         /// &lt;summary&gt;
+@@ -333,6 +477,16 @@
+             InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, LLUUID.Random());
+         }
+ 
++		/// &lt;summary&gt;
++		/// Send an Instant Message, used for dialog responses.
++		/// &lt;/summary&gt;
++		/// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
++		/// &lt;param name=&quot;dialog&quot;&gt;Dialog code to be sent.&lt;/param&gt;
++		public void InstantMessage(LLUUID target, InstantMessageDialog dialog)
++		{
++			InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, String.Empty, null, LLUUID.Random(), dialog);
++		}
++
+         /// &lt;summary&gt;
+         /// Send an Instant Message
+         /// &lt;/summary&gt;
+@@ -366,13 +520,28 @@
+         /// &lt;param name=&quot;message&quot;&gt;Text message being sent&lt;/param&gt;
+         /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;IMSessionID&quot;&gt;IM session ID (to differentiate between IM windows)&lt;/param&gt;
++		public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message,
++			LLUUID[] conferenceIDs, LLUUID IMSessionID)
++		{
++			InstantMessage(fromName, sessionID, target, message, conferenceIDs, IMSessionID, InstantMessageDialog.MessageFromAgent);
++		}
++
++        /// &lt;summary&gt;
++        /// Send an Instant Message
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;fromName&quot;&gt;The name this IM will show up as being from&lt;/param&gt;
++        /// &lt;param name=&quot;sessionID&quot;&gt;Session ID of current connection to grid&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text message being sent&lt;/param&gt;
++        /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;IM session ID (to differentiate between IM windows)&lt;/param&gt;
+         public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message,
+-            LLUUID[] conferenceIDs, LLUUID IMSessionID)
++            LLUUID[] conferenceIDs, LLUUID IMSessionID, InstantMessageDialog dialog)
+         {
+             ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
+             im.AgentData.AgentID = this.ID;
+             im.AgentData.SessionID = Client.Network.SessionID;
+-            im.MessageBlock.Dialog = 0;
++            im.MessageBlock.Dialog = (byte)dialog;
+             im.MessageBlock.FromAgentName = Helpers.StringToField(fromName);
+             im.MessageBlock.FromGroup = false;
+             im.MessageBlock.ID = IMSessionID;
+@@ -838,28 +1007,10 @@
+         /// &lt;param name=&quot;accept&quot;&gt;Accept the teleport request or deny it&lt;/param&gt;
+         public void TeleportLureRespond(LLUUID requesterID, bool accept)
+         {
+-            ImprovedInstantMessagePacket im = new ImprovedInstantMessagePacket();
++			InstantMessage(requesterID, accept ? InstantMessageDialog.LureAccepted : InstantMessageDialog.LureDeclined);
+ 
+-            im.AgentData.AgentID = Client.Network.AgentID;
+-            im.AgentData.SessionID = Client.Network.SessionID;
+-            im.MessageBlock.BinaryBucket = new byte[0];
+-            im.MessageBlock.FromAgentName = Helpers.StringToField(this.FirstName + &quot; &quot; + this.LastName);
+-            im.MessageBlock.FromGroup = false;
+-            im.MessageBlock.ID = Client.Network.AgentID;
+-            im.MessageBlock.Message = new byte[0];
+-            im.MessageBlock.Offline = 0;
+-            im.MessageBlock.ParentEstateID = 0;
+-            im.MessageBlock.Position = this.Position;
+-            im.MessageBlock.RegionID = LLUUID.Zero;
+-            im.MessageBlock.Timestamp = 0;
+-            im.MessageBlock.ToAgentID = requesterID;
+-
+             if (accept)
+             {
+-                im.MessageBlock.Dialog = (byte)InstantMessageDialog.AcceptTeleport;
+-
+-                Client.Network.SendPacket(im);
+-
+                 TeleportLureRequestPacket lure = new TeleportLureRequestPacket();
+ 
+                 lure.Info.AgentID = Client.Network.AgentID;
+@@ -869,12 +1020,6 @@
+ 
+                 Client.Network.SendPacket(lure);
+             }
+-            else
+-            {
+-                im.MessageBlock.Dialog = (byte)InstantMessageDialog.DenyTeleport;
+-
+-                Client.Network.SendPacket(im);
+-            }
+         }
+ 
+         /// &lt;summary&gt;
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/InventoryCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/InventoryCommand.cs	2007-01-08 03:41:37 UTC (rev 818)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/InventoryCommand.cs	2007-01-09 04:56:12 UTC (rev 819)
+@@ -0,0 +1,60 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Text;
++using System.Threading;
++using System.Xml;
++using System.Xml.Serialization;
++
++using libsecondlife;
++using libsecondlife.Packets;
++using libsecondlife.InventorySystem;
++
++namespace libsecondlife.TestClient
++{
++    public class InventoryCommand : Command
++    {
++		public InventoryCommand(TestClient testClient)
++        {
++            Name = &quot;i&quot;;
++            Description = &quot;Prints out inventory.&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++			Client.Inventory.DownloadInventory();
++			StringBuilder result = new StringBuilder();
++			PrintFolder(Client.Inventory.GetRootFolder(), result, 0);
++            return result.ToString();
++        }
++
++		void PrintFolder(InventoryFolder folder, StringBuilder output, int indenting)
++		{
++			Indent(output, indenting);
++			output.Append(folder.Name);
++			output.Append(&quot;\n&quot;);
++			foreach (InventoryBase b in folder.GetContents())
++			{
++				InventoryItem item = b as InventoryItem;
++				if (item != null)
++				{
++					Indent(output, indenting + 1);
++					output.Append(item.Name);
++					output.Append(&quot;\n&quot;);
++					continue;
++				}
++				InventoryFolder subFolder = b as InventoryFolder;
++				if (subFolder != null)
++					PrintFolder(subFolder, output, indenting + 1);
++			}
++		}
++
++		void Indent(StringBuilder output, int indenting)
++		{
++			for (int count = 0; count &lt; indenting; count++)
++			{
++				output.Append(&quot;  &quot;);
++			}
++		}
++	}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-08 03:41:37 UTC (rev 818)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-09 04:56:12 UTC (rev 819)
+@@ -46,7 +46,6 @@
+ 
+             RegisterAllCommands(Assembly.GetExecutingAssembly());
+ 
+-
+             Debug = false;
+ 
+             Network.RegisterCallback(PacketType.AgentDataUpdate, new NetworkManager.PacketCallback(AgentDataUpdateHandler));
+@@ -281,14 +280,19 @@
+             Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message);
+ 
+             if (Self.ID == toAgentID)
+-            {
+-                if (dialog == 22)
++            {				
++                if (dialog == (byte)MainAvatar.InstantMessageDialog.LureUser)
+                 {
+-                    Console.WriteLine(&quot;Accepting teleport lure&quot;);
++                    Console.WriteLine(&quot;Accepting teleport lure.&quot;);
+                     Self.TeleportLureRespond(fromAgentID, true);
+                 }
+                 else
+                 {
++					if (dialog == (byte)MainAvatar.InstantMessageDialog.InventoryOffered)
++					{
++						Console.WriteLine(&quot;Accepting inventory offer.&quot;);
++						Self.InstantMessage(fromAgentID, MainAvatar.InstantMessageDialog.InventoryAccepted);
++					}
+                     DoCommand(message, fromAgentID, imSessionID);
+                 }
+             }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-08 03:41:37 UTC (rev 818)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-09 04:56:12 UTC (rev 819)
+@@ -39,7 +39,8 @@
+     &lt;Compile Include=&quot;Commands\AppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\CloneProfileCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\DownloadCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\InventoryCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\TtsCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FindSimCommand.cs&quot; /&gt;
+@@ -60,12 +61,10 @@
+     &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+-    &lt;Compile Include=&quot;Commands\ResearchCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\TtsCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhisperCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ImportCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000222.html">[Libsecondlife-commits] r818 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000224.html">[Libsecondlife-commits] r820 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands	examples/TestClient/Commands/Communication	examples/TestClient/Commands/Inventory	examples/TestClient/Commands/Movement
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#223">[ date ]</a>
+              <a href="thread.html#223">[ thread ]</a>
+              <a href="subject.html#223">[ subject ]</a>
+              <a href="author.html#223">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

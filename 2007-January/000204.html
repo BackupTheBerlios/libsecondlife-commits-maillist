@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r806 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r806%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701061033.l06AXoJo024448%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000203.html">
+   <LINK REL="Next"  HREF="000205.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r806 - trunk/libsecondlife-cs</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r806%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701061033.l06AXoJo024448%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r806 - trunk/libsecondlife-cs">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  6 11:33:50 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000203.html">[Libsecondlife-commits] r805 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+        <LI>Next message: <A HREF="000205.html">[Libsecondlife-commits] r807 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#204">[ date ]</a>
+              <a href="thread.html#204">[ thread ]</a>
+              <a href="subject.html#204">[ subject ]</a>
+              <a href="author.html#204">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-06 11:33:43 +0100 (Sat, 06 Jan 2007)
+New Revision: 806
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+Adding a change notifier event for CurrentSim
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-06 00:13:39 UTC (rev 805)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-06 10:33:43 UTC (rev 806)
+@@ -633,6 +633,11 @@
+         /// &lt;param name=&quot;message&quot;&gt;If we were logged out by the simulator, this 
+         /// is a message explaining why&lt;/param&gt;
+         public delegate void DisconnectCallback(DisconnectType reason, string message);
++        /// &lt;summary&gt;
++        /// Triggered when CurrentSim changes
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;PreviousSimulator&quot;&gt;A reference to the old value of CurrentSim&lt;/param&gt;
++        public delegate void CurrentSimChangedCallback(Simulator PreviousSimulator);
+ 
+         /// &lt;summary&gt;
+         /// Explains why a simulator or the grid disconnected from us
+@@ -688,6 +693,10 @@
+         /// forced, or network error
+         /// &lt;/summary&gt;
+         public event DisconnectCallback OnDisconnected;
++        /// &lt;summary&gt;
++        /// An event for when CurrentSim changes
++        /// &lt;/summary&gt;
++        public event CurrentSimChangedCallback OnCurrentSimChanged;
+ 
+         private SecondLife Client;
+         private Dictionary&lt;PacketType, List&lt;PacketCallback&gt;&gt; Callbacks = new Dictionary&lt;PacketType,List&lt;PacketCallback&gt;&gt;();
+@@ -1187,7 +1196,9 @@
+                 }
+ 
+                 simulator.Region.Handle = regionHandle;
++                Simulator OldSim = CurrentSim;
+                 CurrentSim = simulator;
++                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
+ 
+                 // Simulator is successfully connected, add it to the list and set it as default
+                 Simulators.Add(simulator);
+@@ -1234,7 +1245,10 @@
+ 
+             if (setDefault)
+             {
++                Simulator OldSim = CurrentSim;
+                 CurrentSim = simulator;
++                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
++
+             }
+ 
+             DisconnectTimer.Start();
+@@ -1386,7 +1400,9 @@
+             if (CurrentSim != null)
+             {
+                 DisconnectSim(CurrentSim);
++                Simulator OldSim = CurrentSim;
+                 CurrentSim = null;
++                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
+             }
+         }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000203.html">[Libsecondlife-commits] r805 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+	<LI>Next message: <A HREF="000205.html">[Libsecondlife-commits] r807 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#204">[ date ]</a>
+              <a href="thread.html#204">[ thread ]</a>
+              <a href="subject.html#204">[ subject ]</a>
+              <a href="author.html#204">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

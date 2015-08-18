@@ -1,0 +1,1094 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r886 - in trunk/libsecondlife-cs: .	VisualParamGenerator mapgenerator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r886%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09VisualParamGenerator%20mapgenerator&In-Reply-To=%3C200701230430.l0N4UjxU018012%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000319.html">
+   <LINK REL="Next"  HREF="000321.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r886 - in trunk/libsecondlife-cs: .	VisualParamGenerator mapgenerator</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r886%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09VisualParamGenerator%20mapgenerator&In-Reply-To=%3C200701230430.l0N4UjxU018012%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r886 - in trunk/libsecondlife-cs: .	VisualParamGenerator mapgenerator">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 23 05:30:45 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000319.html">[Libsecondlife-commits] r885 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+        <LI>Next message: <A HREF="000321.html">[Libsecondlife-commits] r887 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#320">[ date ]</a>
+              <a href="thread.html#320">[ thread ]</a>
+              <a href="subject.html#320">[ subject ]</a>
+              <a href="author.html#320">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-23 05:30:43 +0100 (Tue, 23 Jan 2007)
+New Revision: 886
+
+Added:
+   trunk/libsecondlife-cs/VisualParamGenerator/template.cs
+Modified:
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs
+   trunk/libsecondlife-cs/_VisualParam_.cs
+   trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs
+Log:
+* Fixed the double initialization of LLUUID data
+* VisualParamGenerator outputs a dictionary instead of an array now
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2007-01-23 04:18:24 UTC (rev 885)
++++ trunk/libsecondlife-cs/Types.cs	2007-01-23 04:30:43 UTC (rev 886)
+@@ -38,20 +38,23 @@
+     [Serializable]
+     public class LLUUID : IXmlSerializable
+ 	{
+-        /// &lt;summary&gt;The 16 bytes that make up the UUID&lt;/summary&gt;
+-        protected byte[] data = new byte[16];
+-
+         /// &lt;summary&gt;Get a byte array of the 16 raw bytes making up the UUID&lt;/summary&gt;
+ 		public byte[] Data
+ 		{
+ 			get { return data; }
+ 		}
+ 
++
++        /// &lt;summary&gt;The 16 bytes that make up the UUID&lt;/summary&gt;
++        protected byte[] data;
++
++
+         /// &lt;summary&gt;
+         /// Default constructor
+         /// &lt;/summary&gt;
+ 		public LLUUID()
+ 		{
++            data = new byte[16];
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -72,10 +75,36 @@
+         /// &lt;param name=&quot;pos&quot;&gt;Beginning offset in the array&lt;/param&gt;
+         public LLUUID(byte[] byteArray, int pos)
+         {
++            data = new byte[16];
+             Array.Copy(byteArray, pos, data, 0, 16);
+         }
+ 
+         /// &lt;summary&gt;
++        /// Returns the raw bytes for this UUID
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;A 16 byte array containing this UUID&lt;/returns&gt;
++        public byte[] GetBytes()
++        {
++            return data;
++        }
++
++		/// &lt;summary&gt;
++		/// Calculate an LLCRC (cyclic redundancy check) for this LLUUID
++		/// &lt;/summary&gt;
++		/// &lt;returns&gt;The CRC checksum for this LLUUID&lt;/returns&gt;
++		public uint CRC() 
++		{
++			uint retval = 0;
++
++			retval += (uint)((Data[3] &lt;&lt; 24) + (Data[2] &lt;&lt; 16) + (Data[1] &lt;&lt; 8) + Data[0]);
++			retval += (uint)((Data[7] &lt;&lt; 24) + (Data[6] &lt;&lt; 16) + (Data[5] &lt;&lt; 8) + Data[4]);
++			retval += (uint)((Data[11] &lt;&lt; 24) + (Data[10] &lt;&lt; 16) + (Data[9] &lt;&lt; 8) + Data[8]);
++			retval += (uint)((Data[15] &lt;&lt; 24) + (Data[14] &lt;&lt; 16) + (Data[13] &lt;&lt; 8) + Data[12]);
++
++			return retval;
++		}
++
++        /// &lt;summary&gt;
+         /// Parse the bytes for a LLUUID from a string
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;val&quot;&gt;String containing 32 (or 36 with hyphens) character UUID&lt;/param&gt;
+@@ -130,31 +159,6 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Returns the raw bytes for this UUID
+-        /// &lt;/summary&gt;
+-        /// &lt;returns&gt;A 16 byte array containing this UUID&lt;/returns&gt;
+-        public byte[] GetBytes()
+-        {
+-            return data;
+-        }
+-
+-		/// &lt;summary&gt;
+-		/// Calculate an LLCRC (cyclic redundancy check) for this LLUUID
+-		/// &lt;/summary&gt;
+-		/// &lt;returns&gt;The CRC checksum for this LLUUID&lt;/returns&gt;
+-		public uint CRC() 
+-		{
+-			uint retval = 0;
+-
+-			retval += (uint)((Data[3] &lt;&lt; 24) + (Data[2] &lt;&lt; 16) + (Data[1] &lt;&lt; 8) + Data[0]);
+-			retval += (uint)((Data[7] &lt;&lt; 24) + (Data[6] &lt;&lt; 16) + (Data[5] &lt;&lt; 8) + Data[4]);
+-			retval += (uint)((Data[11] &lt;&lt; 24) + (Data[10] &lt;&lt; 16) + (Data[9] &lt;&lt; 8) + Data[8]);
+-			retval += (uint)((Data[15] &lt;&lt; 24) + (Data[14] &lt;&lt; 16) + (Data[13] &lt;&lt; 8) + Data[12]);
+-
+-			return retval;
+-		}
+-
+-        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+
+Modified: trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs
+===================================================================
+--- trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs	2007-01-23 04:18:24 UTC (rev 885)
++++ trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs	2007-01-23 04:30:43 UTC (rev 886)
+@@ -10,9 +10,9 @@
+     {
+         static void Main(string[] args)
+         {
+-            if (args.Length &lt; 2)
++            if (args.Length &lt; 3)
+             {
+-                Console.WriteLine(&quot;Usage: VisualParamGenerator.exe [avatar_lad.xml] [_VisualParams_.cs]&quot;);
++                Console.WriteLine(&quot;Usage: VisualParamGenerator.exe [avatar_lad.xml] [template.cs] [_VisualParams_.cs]&quot;);
+                 return;
+             }
+             else if (!File.Exists(args[0]))
+@@ -22,8 +22,33 @@
+             }
+ 
+             XmlNodeList list;
++            TextWriter writer;
++
+             try
+             {
++                writer = new StreamWriter(args[2]);
++            }
++            catch (Exception)
++            {
++                Console.WriteLine(&quot;Couldn't open &quot; + args[2] + &quot; for writing&quot;);
++                return;
++            }
++
++            try
++            {
++                // Read in the template.cs file and write it to our output
++                TextReader reader = new StreamReader(args[1]);
++                writer.WriteLine(reader.ReadToEnd());
++                reader.Close();
++            }
++            catch (Exception)
++            {
++                Console.WriteLine(&quot;Couldn't read from file &quot; + args[1]);
++                return;
++            }
++
++            try
++            {
+                 XmlDocument doc = new XmlDocument();
+                 doc.LoadXml(File.ReadAllText(args[0]));
+                 list = doc.GetElementsByTagName(&quot;param&quot;);
+@@ -37,14 +62,6 @@
+             StringWriter output = new StringWriter();
+             bool first = true;
+ 
+-            output.Write(&quot;using System;&quot; + Environment.NewLine + Environment.NewLine);
+-            output.Write(&quot;namespace libsecondlife&quot; + Environment.NewLine);
+-            output.Write(&quot;{&quot; + Environment.NewLine);
+-            output.Write(&quot;    public static class VisualParams&quot; + Environment.NewLine);
+-            output.Write(&quot;    {&quot; + Environment.NewLine);
+-            output.Write(&quot;        public static VisualParam[] Params = new VisualParam[]&quot; + Environment.NewLine);
+-            output.Write(&quot;        {&quot; + Environment.NewLine);
+-
+             foreach (XmlNode node in list)
+             {
+                 if ((node.Attributes[&quot;shared&quot;] != null) &amp;&amp; (node.Attributes[&quot;shared&quot;].Value.Equals(&quot;1&quot;)))
+@@ -65,7 +82,7 @@
+                 {
+                     if (!first)
+                     {
+-                        output.Write(&quot;,&quot; + Environment.NewLine);
++                        output.Write(Environment.NewLine);
+                     }
+                     else
+                     {
+@@ -100,10 +117,9 @@
+                         else
+                             def = min;
+                         
+-
+-                        output.Write(&quot;            new VisualParam(&quot; + id + &quot;, \&quot;&quot; + name + &quot;\&quot;, &quot; + group + 
++                        output.Write(&quot;                    paramsDict.Add(&quot; + id + &quot;, new VisualParam(&quot; + id + &quot;, \&quot;&quot; + name + &quot;\&quot;, &quot; + group + 
+                             &quot;, \&quot;&quot; + wearable + &quot;\&quot;, \&quot;&quot; + label + &quot;\&quot;, \&quot;&quot; + label_min + &quot;\&quot;, \&quot;&quot; + label_max + 
+-                            &quot;\&quot;, &quot; + def + &quot;f, &quot; + min + &quot;f, &quot; + max + &quot;f)&quot;);
++                            &quot;\&quot;, &quot; + def + &quot;f, &quot; + min + &quot;f, &quot; + max + &quot;f));&quot;);
+                     }
+                     catch (Exception e)
+                     {
+@@ -112,13 +128,17 @@
+                 }
+             }
+ 
+-            output.Write(Environment.NewLine + &quot;        };&quot; + Environment.NewLine);
++            output.Write(Environment.NewLine + &quot;                }&quot; + Environment.NewLine);
++            output.Write(&quot;                return paramsDict;&quot; + Environment.NewLine);
++            output.Write(&quot;            }&quot; + Environment.NewLine);
++            output.Write(&quot;        }&quot; + Environment.NewLine);
+             output.Write(&quot;    }&quot; + Environment.NewLine);
+             output.Write(&quot;}&quot; + Environment.NewLine);
+ 
+             try
+             {
+-                File.WriteAllText(args[1], output.ToString());
++                writer.Write(output.ToString());
++                writer.Close();
+             }
+             catch (Exception e)
+             {
+
+Added: trunk/libsecondlife-cs/VisualParamGenerator/template.cs
+===================================================================
+--- trunk/libsecondlife-cs/VisualParamGenerator/template.cs	2007-01-23 04:18:24 UTC (rev 885)
++++ trunk/libsecondlife-cs/VisualParamGenerator/template.cs	2007-01-23 04:30:43 UTC (rev 886)
+@@ -0,0 +1,72 @@
++using System;
++using System.Collections.Generic;
++
++namespace libsecondlife
++{
++    /// &lt;summary&gt;
++    /// A single visual characteristic of an avatar mesh, such as eyebrow height
++    /// &lt;/summary&gt;
++    public struct VisualParam
++    {
++        /// &lt;summary&gt;Index of this visual param&lt;/summary&gt;
++        public int ParamID;
++        /// &lt;summary&gt;Internal name&lt;/summary&gt;
++        public string Name;
++        /// &lt;summary&gt;Group ID this parameter belongs to&lt;/summary&gt;
++        public int Group;
++        /// &lt;summary&gt;Name of the wearable this parameter belongs to&lt;/summary&gt;
++        public string Wearable;
++        /// &lt;summary&gt;Displayable label of this characteristic&lt;/summary&gt;
++        public string Label;
++        /// &lt;summary&gt;Displayable label for the minimum value of this characteristic&lt;/summary&gt;
++        public string LabelMin;
++        /// &lt;summary&gt;Displayable label for the maximum value of this characteristic&lt;/summary&gt;
++        public string LabelMax;
++        /// &lt;summary&gt;Default value&lt;/summary&gt;
++        public float DefaultValue;
++        /// &lt;summary&gt;Minimum value&lt;/summary&gt;
++        public float MinValue;
++        /// &lt;summary&gt;Maximum value&lt;/summary&gt;
++        public float MaxValue;
++
++        /// &lt;summary&gt;
++        /// Set all the values through the constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;paramID&quot;&gt;Index of this visual param&lt;/param&gt;
++        /// &lt;param name=&quot;name&quot;&gt;Internal name&lt;/param&gt;
++        /// &lt;param name=&quot;group&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;wearable&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;label&quot;&gt;Displayable label of this characteristic&lt;/param&gt;
++        /// &lt;param name=&quot;labelMin&quot;&gt;Displayable label for the minimum value of this characteristic&lt;/param&gt;
++        /// &lt;param name=&quot;labelMax&quot;&gt;Displayable label for the maximum value of this characteristic&lt;/param&gt;
++        /// &lt;param name=&quot;def&quot;&gt;Default value&lt;/param&gt;
++        /// &lt;param name=&quot;min&quot;&gt;Minimum value&lt;/param&gt;
++        /// &lt;param name=&quot;max&quot;&gt;Maximum value&lt;/param&gt;
++        public VisualParam(int paramID, string name, int group, string wearable, string label, string labelMin, string labelMax, float def, float min, float max)
++        {
++            ParamID = paramID;
++            Name = name;
++            Group = group;
++            Wearable = wearable;
++            Label = label;
++            LabelMin = labelMin;
++            LabelMax = labelMax;
++            DefaultValue = def;
++            MaxValue = max;
++            MinValue = min;
++        }
++    }
++
++    /// &lt;summary&gt;
++    /// Holds the Params array of all the avatar appearance parameters
++    /// &lt;/summary&gt;
++    public static class VisualParams
++    {
++        private static Dictionary&lt;int, VisualParam&gt; paramsDict = new Dictionary&lt;int,VisualParam&gt;();
++
++        public static Dictionary&lt;int, VisualParam&gt; Params
++        {
++            get
++            {
++                if (paramsDict.Count == 0)
++                {
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/_VisualParam_.cs
+===================================================================
+--- trunk/libsecondlife-cs/_VisualParam_.cs	2007-01-23 04:18:24 UTC (rev 885)
++++ trunk/libsecondlife-cs/_VisualParam_.cs	2007-01-23 04:30:43 UTC (rev 886)
+@@ -62,367 +62,355 @@
+     /// &lt;/summary&gt;
+     public static class VisualParams
+     {
+-        private static Dictionary&lt;int, VisualParam&gt; _ParamDictionary = null;
+-        public static Dictionary&lt;int, VisualParam&gt; ParamDictionary
++        private static Dictionary&lt;int, VisualParam&gt; paramsDict = new Dictionary&lt;int,VisualParam&gt;();
++
++        public static Dictionary&lt;int, VisualParam&gt; Params
+         {
+             get
+             {
+-                if (_ParamDictionary == null)
++                if (paramsDict.Count == 0)
+                 {
+-                    _ParamDictionary = new Dictionary&lt;int, VisualParam&gt;();
+-                    foreach (VisualParam vp in Params)
+-                    {
+-                        _ParamDictionary[vp.ParamID] = vp;
+-                    }
++                    paramsDict.Add(32, new VisualParam(32, &quot;Male_Skeleton&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Female&quot;, &quot;Male&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(33, new VisualParam(33, &quot;Height&quot;, 0, &quot;shape&quot;, &quot;Height&quot;, &quot;Short&quot;, &quot;Tall&quot;, -2.3f, -2.3f, 2f));
++                    paramsDict.Add(34, new VisualParam(34, &quot;Thickness&quot;, 0, &quot;shape&quot;, &quot;Body Thickness&quot;, &quot;Body Thin&quot;, &quot;Body Thick&quot;, -0.7f, -0.7f, 1.5f));
++                    paramsDict.Add(36, new VisualParam(36, &quot;Shoulders&quot;, 0, &quot;shape&quot;, &quot;Shoulders&quot;, &quot;Narrow&quot;, &quot;Broad&quot;, -0.5f, -1.8f, 1.4f));
++                    paramsDict.Add(37, new VisualParam(37, &quot;Hip Width&quot;, 0, &quot;shape&quot;, &quot;Hip Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -3.2f, -3.2f, 2.8f));
++                    paramsDict.Add(842, new VisualParam(842, &quot;Hip Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short hips&quot;, &quot;Long Hips&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(38, new VisualParam(38, &quot;Torso Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Torso&quot;, &quot;Long Torso&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(195, new VisualParam(195, &quot;EyeBone_Spread&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Together&quot;, &quot;Eyes Spread&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(661, new VisualParam(661, &quot;EyeBone_Head_Shear&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Shear Left Up&quot;, &quot;Eyes Shear Right Up&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(772, new VisualParam(772, &quot;EyeBone_Head_Elongate&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Short Head&quot;, &quot;Eyes Long Head&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(768, new VisualParam(768, &quot;EyeBone_Bug&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Sunken&quot;, &quot;Eyes Bugged&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(655, new VisualParam(655, &quot;Head Size&quot;, 1, &quot;shape&quot;, &quot;Head Size&quot;, &quot;Small Head&quot;, &quot;Big Head&quot;, -0.25f, -0.25f, 0.1f));
++                    paramsDict.Add(197, new VisualParam(197, &quot;Shoe_Heels&quot;, 1, &quot;shoes&quot;, &quot;&quot;, &quot;No Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(502, new VisualParam(502, &quot;Shoe_Platform&quot;, 1, &quot;shoes&quot;, &quot;&quot;, &quot;No Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(675, new VisualParam(675, &quot;Hand Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small Hands&quot;, &quot;Large Hands&quot;, -0.3f, -0.3f, 0.3f));
++                    paramsDict.Add(683, new VisualParam(683, &quot;Neck Thickness&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Skinny Neck&quot;, &quot;Thick Neck&quot;, -0.15f, -0.4f, 0.2f));
++                    paramsDict.Add(689, new VisualParam(689, &quot;EyeBone_Big_Eyes&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Back&quot;, &quot;Eyes Forward&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(692, new VisualParam(692, &quot;Leg Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Legs&quot;, &quot;Long Legs&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(693, new VisualParam(693, &quot;Arm Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Arms&quot;, &quot;Long arms&quot;, 0.6f, -1f, 1f));
++                    paramsDict.Add(756, new VisualParam(756, &quot;Neck Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Neck&quot;, &quot;Long Neck&quot;, 0f, -1f, 1f));
++                    paramsDict.Add(180, new VisualParam(180, &quot;Hair_Volume&quot;, 1, &quot;hair&quot;, &quot;Hair Volume&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1.3f));
++                    paramsDict.Add(761, new VisualParam(761, &quot;Hair_Volume_Small&quot;, 1, &quot;hair&quot;, &quot;Hair Volume&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1.3f));
++                    paramsDict.Add(181, new VisualParam(181, &quot;Hair_Big_Front&quot;, 0, &quot;hair&quot;, &quot;Big Hair Front&quot;, &quot;Less&quot;, &quot;More&quot;, 0.14f, -1f, 1f));
++                    paramsDict.Add(182, new VisualParam(182, &quot;Hair_Big_Top&quot;, 0, &quot;hair&quot;, &quot;Big Hair Top&quot;, &quot;Less&quot;, &quot;More&quot;, 0.7f, -1f, 1f));
++                    paramsDict.Add(183, new VisualParam(183, &quot;Hair_Big_Back&quot;, 0, &quot;hair&quot;, &quot;Big Hair Back&quot;, &quot;Less&quot;, &quot;More&quot;, 0.05f, -1f, 1f));
++                    paramsDict.Add(184, new VisualParam(184, &quot;Hair_Spiked&quot;, 0, &quot;hair&quot;, &quot;Spiked Hair&quot;, &quot;No Spikes&quot;, &quot;Big Spikes&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(140, new VisualParam(140, &quot;Hair_Part_Middle&quot;, 0, &quot;hair&quot;, &quot;Middle Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(141, new VisualParam(141, &quot;Hair_Part_Right&quot;, 0, &quot;hair&quot;, &quot;Right Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(142, new VisualParam(142, &quot;Hair_Part_Left&quot;, 0, &quot;hair&quot;, &quot;Left Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(143, new VisualParam(143, &quot;Hair_Sides_Full&quot;, 0, &quot;hair&quot;, &quot;Full Hair Sides&quot;, &quot;Mowhawk&quot;, &quot;Full Sides&quot;, 0.125f, -4f, 1.5f));
++                    paramsDict.Add(144, new VisualParam(144, &quot;Bangs_Front_Up&quot;, 1, &quot;hair&quot;, &quot;Front Bangs Up&quot;, &quot;Bangs&quot;, &quot;Bangs Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(145, new VisualParam(145, &quot;Bangs_Front_Down&quot;, 1, &quot;hair&quot;, &quot;Front Bangs Down&quot;, &quot;Bangs&quot;, &quot;Bangs Down&quot;, 0f, 0f, 5f));
++                    paramsDict.Add(146, new VisualParam(146, &quot;Bangs_Sides_Up&quot;, 1, &quot;hair&quot;, &quot;Side Bangs Up&quot;, &quot;Side Bangs&quot;, &quot;Side Bangs Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(147, new VisualParam(147, &quot;Bangs_Sides_Down&quot;, 1, &quot;hair&quot;, &quot;Side Bangs Down&quot;, &quot;Side Bangs&quot;, &quot;Side Bangs Down&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(148, new VisualParam(148, &quot;Bangs_Back_Up&quot;, 1, &quot;hair&quot;, &quot;Back Bangs Up&quot;, &quot;Back Bangs&quot;, &quot;Back Bangs Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(149, new VisualParam(149, &quot;Bangs_Back_Down&quot;, 1, &quot;hair&quot;, &quot;Back Bangs Down&quot;, &quot;Back Bangs&quot;, &quot;Back Bangs Down&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(171, new VisualParam(171, &quot;Hair_Front_Down&quot;, 1, &quot;hair&quot;, &quot;Front Hair Down&quot;, &quot;Front Hair&quot;, &quot;Front Hair Down&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(172, new VisualParam(172, &quot;Hair_Front_Up&quot;, 1, &quot;hair&quot;, &quot;Front Hair Up&quot;, &quot;Front Hair&quot;, &quot;Front Hair Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(173, new VisualParam(173, &quot;Hair_Sides_Down&quot;, 1, &quot;hair&quot;, &quot;Sides Hair Down&quot;, &quot;Sides Hair&quot;, &quot;Sides Hair Down&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(174, new VisualParam(174, &quot;Hair_Sides_Up&quot;, 1, &quot;hair&quot;, &quot;Sides Hair Up&quot;, &quot;Sides Hair&quot;, &quot;Sides Hair Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(175, new VisualParam(175, &quot;Hair_Back_Down&quot;, 1, &quot;hair&quot;, &quot;Back Hair Down&quot;, &quot;Back Hair&quot;, &quot;Back Hair Down&quot;, 0f, 0f, 3f));
++                    paramsDict.Add(176, new VisualParam(176, &quot;Hair_Back_Up&quot;, 1, &quot;hair&quot;, &quot;Back Hair Up&quot;, &quot;Back Hair&quot;, &quot;Back Hair Up&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(177, new VisualParam(177, &quot;Hair_Rumpled&quot;, 0, &quot;hair&quot;, &quot;Rumpled Hair&quot;, &quot;Smooth Hair&quot;, &quot;Rumpled Hair&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(178, new VisualParam(178, &quot;Hair_Swept_Back&quot;, 1, &quot;hair&quot;, &quot;Swept Back Hair&quot;, &quot;NotHair&quot;, &quot;Swept Back&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(179, new VisualParam(179, &quot;Hair_Swept_Forward&quot;, 1, &quot;hair&quot;, &quot;Swept Forward Hair&quot;, &quot;Hair&quot;, &quot;Swept Forward&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(190, new VisualParam(190, &quot;Hair_Tilt_Right&quot;, 1, &quot;hair&quot;, &quot;Hair Tilted Right&quot;, &quot;Hair&quot;, &quot;Tilt Right&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(191, new VisualParam(191, &quot;Hair_Tilt_Left&quot;, 1, &quot;hair&quot;, &quot;Hair Tilted Left&quot;, &quot;Hair&quot;, &quot;Tilt Left&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(192, new VisualParam(192, &quot;Bangs_Part_Middle&quot;, 0, &quot;hair&quot;, &quot;Part Bangs&quot;, &quot;No Part&quot;, &quot;Part Bangs&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(640, new VisualParam(640, &quot;Hair_Egg_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -1.3f, -1.3f, 1f));
++                    paramsDict.Add(641, new VisualParam(641, &quot;Hair_Squash_Stretch_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(642, new VisualParam(642, &quot;Hair_Square_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(643, new VisualParam(643, &quot;Hair_Round_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(644, new VisualParam(644, &quot;Hair_Forehead_Round&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(645, new VisualParam(645, &quot;Hair_Forehead_Slant&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(774, new VisualParam(774, &quot;Shear_Head_Hair&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(771, new VisualParam(771, &quot;Elongate_Head_Hair&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(674, new VisualParam(674, &quot;Hair_Shear_Back&quot;, 0, &quot;hair&quot;, &quot;Shear Back&quot;, &quot;Full Back&quot;, &quot;Sheared Back&quot;, -0.3f, -1f, 2f));
++                    paramsDict.Add(762, new VisualParam(762, &quot;Hair_Shear_Front&quot;, 0, &quot;hair&quot;, &quot;Shear Front&quot;, &quot;Full Front&quot;, &quot;Sheared Front&quot;, 0f, 0f, 3f));
++                    paramsDict.Add(754, new VisualParam(754, &quot;Hair_Taper_Back&quot;, 0, &quot;hair&quot;, &quot;Taper Back&quot;, &quot;Wide Back&quot;, &quot;Narrow Back&quot;, 0f, -1f, 2f));
++                    paramsDict.Add(755, new VisualParam(755, &quot;Hair_Taper_Front&quot;, 0, &quot;hair&quot;, &quot;Taper Front&quot;, &quot;Wide Front&quot;, &quot;Narrow Front&quot;, 0.05f, -1.5f, 1.5f));
++                    paramsDict.Add(782, new VisualParam(782, &quot;Hair_Pigtails_Short&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(783, new VisualParam(783, &quot;Hair_Pigtails_Med&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(790, new VisualParam(790, &quot;Hair_Pigtails_Medlong&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(784, new VisualParam(784, &quot;Hair_Pigtails_Long&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(786, new VisualParam(786, &quot;Hair_Ponytail_Short&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(787, new VisualParam(787, &quot;Hair_Ponytail_Med&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(788, new VisualParam(788, &quot;Hair_Ponytail_Long&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(1, new VisualParam(1, &quot;Big_Brow&quot;, 0, &quot;shape&quot;, &quot;Brow Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -0.3f, -0.3f, 2f));
++                    paramsDict.Add(2, new VisualParam(2, &quot;Nose_Big_Out&quot;, 0, &quot;shape&quot;, &quot;Nose Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -0.8f, -0.8f, 2.5f));
++                    paramsDict.Add(4, new VisualParam(4, &quot;Broad_Nostrils&quot;, 0, &quot;shape&quot;, &quot;Nostril Width&quot;, &quot;Narrow&quot;, &quot;Broad&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(759, new VisualParam(759, &quot;Low_Septum_Nose&quot;, 0, &quot;shape&quot;, &quot;Nostril Division&quot;, &quot;High&quot;, &quot;Low&quot;, 0.5f, -1f, 1.5f));
++                    paramsDict.Add(517, new VisualParam(517, &quot;Wide_Nose&quot;, 0, &quot;shape&quot;, &quot;Nose Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(5, new VisualParam(5, &quot;Cleft_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Cleft&quot;, &quot;Round&quot;, &quot;Cleft&quot;, -0.1f, -0.1f, 1f));
++                    paramsDict.Add(6, new VisualParam(6, &quot;Bulbous_Nose_Tip&quot;, 0, &quot;shape&quot;, &quot;Nose Tip Shape&quot;, &quot;Pointy&quot;, &quot;Bulbous&quot;, -0.3f, -0.3f, 1f));
++                    paramsDict.Add(7, new VisualParam(7, &quot;Weak_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Angle&quot;, &quot;Chin Out&quot;, &quot;Chin In&quot;, -0.5f, -0.5f, 0.5f));
++                    paramsDict.Add(8, new VisualParam(8, &quot;Double_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin-Neck&quot;, &quot;Tight Chin&quot;, &quot;Double Chin&quot;, -0.5f, -0.5f, 1.5f));
++                    paramsDict.Add(10, new VisualParam(10, &quot;Sunken_Cheeks&quot;, 0, &quot;shape&quot;, &quot;Lower Cheeks&quot;, &quot;Well-Fed&quot;, &quot;Sunken&quot;, -1.5f, -1.5f, 3f));
++                    paramsDict.Add(11, new VisualParam(11, &quot;Noble_Nose_Bridge&quot;, 0, &quot;shape&quot;, &quot;Upper Bridge&quot;, &quot;Low&quot;, &quot;High&quot;, -0.5f, -0.5f, 1.5f));
++                    paramsDict.Add(758, new VisualParam(758, &quot;Lower_Bridge_Nose&quot;, 0, &quot;shape&quot;, &quot;Lower Bridge&quot;, &quot;Low&quot;, &quot;High&quot;, -1.5f, -1.5f, 1.5f));
++                    paramsDict.Add(12, new VisualParam(12, &quot;Jowls&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, -0.5f, -0.5f, 2.5f));
++                    paramsDict.Add(13, new VisualParam(13, &quot;Cleft_Chin_Upper&quot;, 0, &quot;shape&quot;, &quot;Upper Chin Cleft&quot;, &quot;Round&quot;, &quot;Cleft&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(14, new VisualParam(14, &quot;High_Cheek_Bones&quot;, 0, &quot;shape&quot;, &quot;Cheek Bones&quot;, &quot;Low&quot;, &quot;High&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(15, new VisualParam(15, &quot;Ears_Out&quot;, 0, &quot;shape&quot;, &quot;Ear Angle&quot;, &quot;In&quot;, &quot;Out&quot;, -0.5f, -0.5f, 1.5f));
++                    paramsDict.Add(870, new VisualParam(870, &quot;Pointy_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Points&quot;, &quot;Smooth&quot;, &quot;Pointy&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(17, new VisualParam(17, &quot;Square_Jaw&quot;, 0, &quot;shape&quot;, &quot;Jaw Shape&quot;, &quot;Pointy&quot;, &quot;Square&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(18, new VisualParam(18, &quot;Puffy_Upper_Cheeks&quot;, 0, &quot;shape&quot;, &quot;Upper Cheeks&quot;, &quot;Thin&quot;, &quot;Puffy&quot;, -1.5f, -1.5f, 2.5f));
++                    paramsDict.Add(19, new VisualParam(19, &quot;Upturned_Nose_Tip&quot;, 0, &quot;shape&quot;, &quot;Nose Tip Angle&quot;, &quot;Downturned&quot;, &quot;Upturned&quot;, -1.5f, -1.5f, 1f));
++                    paramsDict.Add(20, new VisualParam(20, &quot;Bulbous_Nose&quot;, 0, &quot;shape&quot;, &quot;Nose Thickness&quot;, &quot;Thin Nose&quot;, &quot;Bulbous Nose&quot;, -0.5f, -0.5f, 1.5f));
++                    paramsDict.Add(21, new VisualParam(21, &quot;Upper_Eyelid_Fold&quot;, 0, &quot;shape&quot;, &quot;Upper Eyelid Fold&quot;, &quot;Uncreased&quot;, &quot;Creased&quot;, -0.2f, -0.2f, 1.3f));
++                    paramsDict.Add(22, new VisualParam(22, &quot;Attached_Earlobes&quot;, 0, &quot;shape&quot;, &quot;Attached Earlobes&quot;, &quot;Unattached&quot;, &quot;Attached&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(23, new VisualParam(23, &quot;Baggy_Eyes&quot;, 0, &quot;shape&quot;, &quot;Eye Bags&quot;, &quot;Smooth&quot;, &quot;Baggy&quot;, -0.5f, -0.5f, 1.5f));
++                    paramsDict.Add(765, new VisualParam(765, &quot;Puffy_Lower_Lids&quot;, 0, &quot;shape&quot;, &quot;Puffy Eyelids&quot;, &quot;Flat&quot;, &quot;Puffy&quot;, -0.3f, -0.3f, 2.5f));
++                    paramsDict.Add(24, new VisualParam(24, &quot;Wide_Eyes&quot;, 0, &quot;shape&quot;, &quot;Eye Opening&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1.5f, -1.5f, 2f));
++                    paramsDict.Add(25, new VisualParam(25, &quot;Wide_Lip_Cleft&quot;, 0, &quot;shape&quot;, &quot;Lip Cleft&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -0.8f, -0.8f, 1.5f));
++                    paramsDict.Add(764, new VisualParam(764, &quot;Lip_Cleft_Deep&quot;, 0, &quot;shape&quot;, &quot;Lip Cleft Depth&quot;, &quot;Shallow&quot;, &quot;Deep&quot;, -0.5f, -0.5f, 1.2f));
++                    paramsDict.Add(27, new VisualParam(27, &quot;Wide_Nose_Bridge&quot;, 0, &quot;shape&quot;, &quot;Bridge Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1.3f, -1.3f, 1.2f));
++                    paramsDict.Add(872, new VisualParam(872, &quot;Arced_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Arc&quot;, &quot;Flat&quot;, &quot;Arced&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(871, new VisualParam(871, &quot;Lower_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Height&quot;, &quot;Higher&quot;, &quot;Lower&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(35, new VisualParam(35, &quot;Big_Ears&quot;, 0, &quot;shape&quot;, &quot;Ear Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -1f, -1f, 2f));
++                    paramsDict.Add(796, new VisualParam(796, &quot;Pointy_Ears&quot;, 0, &quot;shape&quot;, &quot;Ear Tips&quot;, &quot;Flat&quot;, &quot;Pointy&quot;, -0.4f, -0.4f, 3f));
++                    paramsDict.Add(185, new VisualParam(185, &quot;Deep_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Depth&quot;, &quot;Shallow&quot;, &quot;Deep&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(186, new VisualParam(186, &quot;Egg_Head&quot;, 1, &quot;shape&quot;, &quot;Egg Head&quot;, &quot;Chin Heavy&quot;, &quot;Forehead Heavy&quot;, -1.3f, -1.3f, 1f));
++                    paramsDict.Add(187, new VisualParam(187, &quot;Squash_Stretch_Head&quot;, 1, &quot;shape&quot;, &quot;Squash/Stretch Head&quot;, &quot;Squash Head&quot;, &quot;Stretch Head&quot;, -0.5f, -0.5f, 1f));
++                    paramsDict.Add(188, new VisualParam(188, &quot;Square_Head&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Less Square&quot;, &quot;More Square&quot;, 0f, 0f, 0.7f));
++                    paramsDict.Add(189, new VisualParam(189, &quot;Round_Head&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Less Round&quot;, &quot;More Round&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(194, new VisualParam(194, &quot;Eye_Spread&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Together&quot;, &quot;Eyes Spread&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(400, new VisualParam(400, &quot;Displace_Hair_Facial&quot;, 1, &quot;hair&quot;, &quot;Hair Thickess&quot;, &quot;Cropped Hair&quot;, &quot;Bushy Hair&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(506, new VisualParam(506, &quot;Mouth_Height&quot;, 0, &quot;shape&quot;, &quot;Mouth Position&quot;, &quot;High&quot;, &quot;Low&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(633, new VisualParam(633, &quot;Fat_Head&quot;, 1, &quot;shape&quot;, &quot;Fat Head&quot;, &quot;Skinny&quot;, &quot;Fat&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(630, new VisualParam(630, &quot;Forehead_Round&quot;, 1, &quot;shape&quot;, &quot;Round Forehead&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(631, new VisualParam(631, &quot;Forehead_Slant&quot;, 1, &quot;shape&quot;, &quot;Slanted Forehead&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(650, new VisualParam(650, &quot;Eyelid_Corner_Up&quot;, 0, &quot;shape&quot;, &quot;Outer Eye Corner&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, -1.3f, -1.3f, 1.2f));
++                    paramsDict.Add(880, new VisualParam(880, &quot;Eyelid_Inner_Corner_Up&quot;, 0, &quot;shape&quot;, &quot;Inner Eye Corner&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, -1.3f, -1.3f, 1.2f));
++                    paramsDict.Add(653, new VisualParam(653, &quot;Tall_Lips&quot;, 0, &quot;shape&quot;, &quot;Lip Fullness&quot;, &quot;Less Full&quot;, &quot;More Full&quot;, -1f, -1f, 2f));
++                    paramsDict.Add(656, new VisualParam(656, &quot;Crooked_Nose&quot;, 0, &quot;shape&quot;, &quot;Crooked Nose&quot;, &quot;Nose Left&quot;, &quot;Nose Right&quot;, -2f, -2f, 2f));
++                    paramsDict.Add(657, new VisualParam(657, &quot;Smile_Mouth&quot;, 1, &quot;shape&quot;, &quot;Mouth Corner&quot;, &quot;Corner Normal&quot;, &quot;Corner Up&quot;, 0f, 0f, 1.4f));
++                    paramsDict.Add(658, new VisualParam(658, &quot;Frown_Mouth&quot;, 1, &quot;shape&quot;, &quot;Mouth Corner&quot;, &quot;Corner Normal&quot;, &quot;Corner Down&quot;, 0f, 0f, 1.2f));
++                    paramsDict.Add(797, new VisualParam(797, &quot;Fat_Upper_Lip&quot;, 1, &quot;shape&quot;, &quot;Fat Upper Lip&quot;, &quot;Normal Upper&quot;, &quot;Fat Upper&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(798, new VisualParam(798, &quot;Fat_Lower_Lip&quot;, 1, &quot;shape&quot;, &quot;Fat Lower Lip&quot;, &quot;Normal Lower&quot;, &quot;Fat Lower&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(660, new VisualParam(660, &quot;Shear_Head&quot;, 1, &quot;shape&quot;, &quot;Shear Face&quot;, &quot;Shear Left&quot;, &quot;Shear Right&quot;, 0f, -2f, 2f));
++                    paramsDict.Add(770, new VisualParam(770, &quot;Elongate_Head&quot;, 1, &quot;shape&quot;, &quot;Shear Face&quot;, &quot;Flat Head&quot;, &quot;Long Head&quot;, 0f, -1f, 1f));
++                    paramsDict.Add(663, new VisualParam(663, &quot;Shift_Mouth&quot;, 0, &quot;shape&quot;, &quot;Shift Mouth&quot;, &quot;Shift Left&quot;, &quot;Shift Right&quot;, 0f, -2f, 2f));
++                    paramsDict.Add(664, new VisualParam(664, &quot;Pop_Eye&quot;, 0, &quot;shape&quot;, &quot;Eye Pop&quot;, &quot;Pop Right Eye&quot;, &quot;Pop Left Eye&quot;, 0f, -1.3f, 1.3f));
++                    paramsDict.Add(760, new VisualParam(760, &quot;Jaw_Angle&quot;, 0, &quot;shape&quot;, &quot;Jaw Angle&quot;, &quot;Low Jaw&quot;, &quot;High Jaw&quot;, 0f, -1.2f, 2f));
++                    paramsDict.Add(665, new VisualParam(665, &quot;Jaw_Jut&quot;, 0, &quot;shape&quot;, &quot;Jaw Jut&quot;, &quot;Overbite&quot;, &quot;Underbite&quot;, 0f, -2f, 2f));
++                    paramsDict.Add(686, new VisualParam(686, &quot;Head_Eyes_Big&quot;, 1, &quot;shape&quot;, &quot;Eye Size&quot;, &quot;Beady Eyes&quot;, &quot;Anime Eyes&quot;, 0f, -2f, 2f));
++                    paramsDict.Add(767, new VisualParam(767, &quot;Bug_Eyed_Head&quot;, 1, &quot;shape&quot;, &quot;Eye Depth&quot;, &quot;Sunken Eyes&quot;, &quot;Bug Eyes&quot;, 0f, -2f, 2f));
++                    paramsDict.Add(518, new VisualParam(518, &quot;Eyelashes_Long&quot;, 0, &quot;shape&quot;, &quot;Eyelash Length&quot;, &quot;Short&quot;, &quot;Long&quot;, -0.3f, -0.3f, 1.5f));
++                    paramsDict.Add(626, new VisualParam(626, &quot;Big_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Small&quot;, &quot;Large&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(627, new VisualParam(627, &quot;Small_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Large&quot;, &quot;Small&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(843, new VisualParam(843, &quot;No_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Some&quot;, &quot;None&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(106, new VisualParam(106, &quot;Muscular_Torso&quot;, 1, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Regular&quot;, &quot;Muscular&quot;, 0f, 0f, 1.4f));
++                    paramsDict.Add(648, new VisualParam(648, &quot;Scrawny_Torso&quot;, 1, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Regular&quot;, &quot;Scrawny&quot;, 0f, 0f, 1.3f));
++                    paramsDict.Add(677, new VisualParam(677, &quot;Scrawny_Torso_Male&quot;, 1, &quot;shape&quot;, &quot;Torso Scrawny&quot;, &quot;Regular&quot;, &quot;Scrawny&quot;, 0f, 0f, 1.3f));
++                    paramsDict.Add(634, new VisualParam(634, &quot;Fat_Torso&quot;, 1, &quot;shape&quot;, &quot;Fat Torso&quot;, &quot;skinny&quot;, &quot;fat&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(507, new VisualParam(507, &quot;Breast_Gravity&quot;, 0, &quot;shape&quot;, &quot;Breast Buoyancy&quot;, &quot;Less Gravity&quot;, &quot;More Gravity&quot;, 0f, -1.5f, 2f));
++                    paramsDict.Add(840, new VisualParam(840, &quot;Shirtsleeve_flair&quot;, 0, &quot;shirt&quot;, &quot;Sleeve Looseness&quot;, &quot;Tight Sleeves&quot;, &quot;Loose Sleeves&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(684, new VisualParam(684, &quot;Breast_Female_Cleavage&quot;, 0, &quot;shape&quot;, &quot;Breast Cleavage&quot;, &quot;Separate&quot;, &quot;Join&quot;, 0f, -0.3f, 1.3f));
++                    paramsDict.Add(685, new VisualParam(685, &quot;Chest_Male_No_Pecs&quot;, 0, &quot;shape&quot;, &quot;Pectorals&quot;, &quot;Big Pectorals&quot;, &quot;Sunken Chest&quot;, 0f, -0.5f, 1.1f));
++                    paramsDict.Add(151, new VisualParam(151, &quot;Big_Butt_Legs&quot;, 1, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Regular&quot;, &quot;Large&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(794, new VisualParam(794, &quot;Small_Butt&quot;, 1, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Regular&quot;, &quot;Small&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(152, new VisualParam(152, &quot;Muscular_Legs&quot;, 1, &quot;shape&quot;, &quot;Leg Muscles&quot;, &quot;Regular Muscles&quot;, &quot;More Muscles&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(651, new VisualParam(651, &quot;Scrawny_Legs&quot;, 1, &quot;shape&quot;, &quot;Scrawny Leg&quot;, &quot;Regular Muscles&quot;, &quot;Less Muscles&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(853, new VisualParam(853, &quot;Bowed_Legs&quot;, 1, &quot;shape&quot;, &quot;Knee Angle&quot;, &quot;&quot;, &quot;&quot;, -1f, -1f, 1f));
++                    paramsDict.Add(500, new VisualParam(500, &quot;Shoe_Heel_Height&quot;, 1, &quot;shoes&quot;, &quot;Heel Height&quot;, &quot;Low Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(501, new VisualParam(501, &quot;Shoe_Platform_Height&quot;, 1, &quot;shoes&quot;, &quot;Platform Height&quot;, &quot;Low Platforms&quot;, &quot;High Platforms&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(508, new VisualParam(508, &quot;Shoe_Platform_Width&quot;, 0, &quot;shoes&quot;, &quot;Platform Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1f, -1f, 2f));
++                    paramsDict.Add(509, new VisualParam(509, &quot;Shoe_Heel_Point&quot;, 1, &quot;shoes&quot;, &quot;Heel Shape&quot;, &quot;Default Heels&quot;, &quot;Pointy Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(510, new VisualParam(510, &quot;Shoe_Heel_Thick&quot;, 1, &quot;shoes&quot;, &quot;Heel Shape&quot;, &quot;default Heels&quot;, &quot;Thick Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(511, new VisualParam(511, &quot;Shoe_Toe_Point&quot;, 1, &quot;shoes&quot;, &quot;Toe Shape&quot;, &quot;Default Toe&quot;, &quot;Pointy Toe&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(512, new VisualParam(512, &quot;Shoe_Toe_Square&quot;, 1, &quot;shoes&quot;, &quot;Toe Shape&quot;, &quot;Default Toe&quot;, &quot;Square Toe&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(654, new VisualParam(654, &quot;Shoe_Toe_Thick&quot;, 0, &quot;shoes&quot;, &quot;Toe Thickness&quot;, &quot;Flat Toe&quot;, &quot;Thick Toe&quot;, 0f, 0f, 2f));
++                    paramsDict.Add(515, new VisualParam(515, &quot;Foot_Size&quot;, 0, &quot;shape&quot;, &quot;Foot Size&quot;, &quot;Small&quot;, &quot;Big&quot;, -1f, -1f, 3f));
++                    paramsDict.Add(625, new VisualParam(625, &quot;Leg_Pantflair&quot;, 0, &quot;pants&quot;, &quot;Cuff Flare&quot;, &quot;Tight Cuffs&quot;, &quot;Flared Cuffs&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(638, new VisualParam(638, &quot;Low_Crotch&quot;, 0, &quot;pants&quot;, &quot;Pants Crotch&quot;, &quot;High and Tight&quot;, &quot;Low and Loose&quot;, 0f, 0f, 1.3f));
++                    paramsDict.Add(635, new VisualParam(635, &quot;Fat_Legs&quot;, 1, &quot;shape&quot;, &quot;Fat Torso&quot;, &quot;skinny&quot;, &quot;fat&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(879, new VisualParam(879, &quot;Male_Package&quot;, 0, &quot;shape&quot;, &quot;Package&quot;, &quot;Coin Purse&quot;, &quot;Duffle Bag&quot;, 0f, -0.5f, 2f));
++                    paramsDict.Add(679, new VisualParam(679, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f));
++                    paramsDict.Add(687, new VisualParam(687, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f));
++                    paramsDict.Add(694, new VisualParam(694, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f));
++                    paramsDict.Add(695, new VisualParam(695, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f));
++                    paramsDict.Add(680, new VisualParam(680, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f));
++                    paramsDict.Add(688, new VisualParam(688, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f));
++                    paramsDict.Add(681, new VisualParam(681, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f));
++                    paramsDict.Add(691, new VisualParam(691, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f));
++                    paramsDict.Add(845, new VisualParam(845, &quot;skirt_poofy&quot;, 1, &quot;skirt&quot;, &quot;poofy skirt&quot;, &quot;less poofy&quot;, &quot;more poofy&quot;, 0f, 0f, 1.5f));
++                    paramsDict.Add(846, new VisualParam(846, &quot;skirt_loose&quot;, 1, &quot;skirt&quot;, &quot;loose skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(866, new VisualParam(866, &quot;skirt_tight&quot;, 1, &quot;skirt&quot;, &quot;tight skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(867, new VisualParam(867, &quot;skirt_smallbutt&quot;, 1, &quot;skirt&quot;, &quot;tight skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(848, new VisualParam(848, &quot;skirt_bustle&quot;, 0, &quot;skirt&quot;, &quot;bustle skirt&quot;, &quot;no bustle&quot;, &quot;more bustle&quot;, 0.2f, 0f, 2f));
++                    paramsDict.Add(847, new VisualParam(847, &quot;skirt_bowlegs&quot;, 1, &quot;skirt&quot;, &quot;legs skirt&quot;, &quot;&quot;, &quot;&quot;, 0f, -1f, 1f));
++                    paramsDict.Add(111, new VisualParam(111, &quot;Pigment&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(110, new VisualParam(110, &quot;Red Skin&quot;, 0, &quot;skin&quot;, &quot;Ruddiness&quot;, &quot;Pale&quot;, &quot;Ruddy&quot;, 0f, 0f, 0.1f));
++                    paramsDict.Add(108, new VisualParam(108, &quot;Rainbow Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;None&quot;, &quot;Wild&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(114, new VisualParam(114, &quot;Blonde Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Black&quot;, &quot;Blonde&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(113, new VisualParam(113, &quot;Red Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;No Red&quot;, &quot;Very Red&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(115, new VisualParam(115, &quot;White Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;No White&quot;, &quot;All White&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(112, new VisualParam(112, &quot;Rainbow Color&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;None&quot;, &quot;Wild&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(99, new VisualParam(99, &quot;Eye Color&quot;, 0, &quot;eyes&quot;, &quot;&quot;, &quot;Natural&quot;, &quot;Unnatural&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(98, new VisualParam(98, &quot;Eye Lightness&quot;, 0, &quot;eyes&quot;, &quot;&quot;, &quot;Darker&quot;, &quot;Lighter&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(158, new VisualParam(158, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(159, new VisualParam(159, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(116, new VisualParam(116, &quot;Rosy Complexion&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less Rosy&quot;, &quot;More Rosy&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(117, new VisualParam(117, &quot;Lip Pinkness&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Darker&quot;, &quot;Pinker&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(118, new VisualParam(118, &quot;Wrinkles&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(165, new VisualParam(165, &quot;Freckles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(1001, new VisualParam(1001, &quot;Eyebrow Size&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(700, new VisualParam(700, &quot;Lipstick Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Black&quot;, 0.25f, 0f, 1f));
++                    paramsDict.Add(701, new VisualParam(701, &quot;Lipstick&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Lipstick&quot;, &quot;More Lipstick&quot;, 0f, 0f, 0.9f));
++                    paramsDict.Add(702, new VisualParam(702, &quot;Lipgloss&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Lipgloss&quot;, &quot;Glossy&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(704, new VisualParam(704, &quot;Blush&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Blush&quot;, &quot;More Blush&quot;, 0f, 0f, 0.9f));
++                    paramsDict.Add(705, new VisualParam(705, &quot;Blush Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Orange&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(711, new VisualParam(711, &quot;Blush Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(708, new VisualParam(708, &quot;Out Shdw Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(706, new VisualParam(706, &quot;Out Shdw Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.6f, 0.2f, 1f));
++                    paramsDict.Add(707, new VisualParam(707, &quot;Outer Shadow&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeshadow&quot;, &quot;More Eyeshadow&quot;, 0f, 0f, 0.7f));
++                    paramsDict.Add(712, new VisualParam(712, &quot;In Shdw Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(713, new VisualParam(713, &quot;In Shdw Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.7f, 0.2f, 1f));
++                    paramsDict.Add(709, new VisualParam(709, &quot;Inner Shadow&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeshadow&quot;, &quot;More Eyeshadow&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(703, new VisualParam(703, &quot;Eyeliner&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeliner&quot;, &quot;Full Eyeliner&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(714, new VisualParam(714, &quot;Eyeliner Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Dark Green&quot;, &quot;Black&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(751, new VisualParam(751, &quot;5 O'Clock Shadow&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;Dense hair&quot;, &quot;Shadow hair&quot;, 0.7f, 0f, 1f));
++                    paramsDict.Add(125, new VisualParam(125, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(126, new VisualParam(126, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(776, new VisualParam(776, &quot;freckles upper&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(1045, new VisualParam(1045, &quot;Bottom bump&quot;, 1, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(821, new VisualParam(821, &quot;undershirt_red&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(822, new VisualParam(822, &quot;undershirt_green&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(823, new VisualParam(823, &quot;undershirt_blue&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(710, new VisualParam(710, &quot;Nail Polish&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Polish&quot;, &quot;Painted Nails&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(715, new VisualParam(715, &quot;Nail Polish Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Black&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(827, new VisualParam(827, &quot;gloves_red&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(829, new VisualParam(829, &quot;gloves_green&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(830, new VisualParam(830, &quot;gloves_blue&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(868, new VisualParam(868, &quot;Shirt Wrinkles&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(803, new VisualParam(803, &quot;shirt_red&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(804, new VisualParam(804, &quot;shirt_green&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(805, new VisualParam(805, &quot;shirt_blue&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(875, new VisualParam(875, &quot;jacket upper Wrinkles&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(831, new VisualParam(831, &quot;upper_jacket_red&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(832, new VisualParam(832, &quot;upper_jacket_green&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(833, new VisualParam(833, &quot;upper_jacket_blue&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(620, new VisualParam(620, &quot;bottom length upper&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;hi cut&quot;, &quot;low cut&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(622, new VisualParam(622, &quot;open upper&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;closed&quot;, &quot;open&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(160, new VisualParam(160, &quot;Shading&quot;, 1, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(161, new VisualParam(161, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(777, new VisualParam(777, &quot;freckles lower&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(1055, new VisualParam(1055, &quot;Pants Length&quot;, 1, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.3f, 0f, 1f));
++                    paramsDict.Add(1057, new VisualParam(1057, &quot;Pants Waist&quot;, 1, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(824, new VisualParam(824, &quot;underpants_red&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(825, new VisualParam(825, &quot;underpants_green&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(826, new VisualParam(826, &quot;underpants_blue&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(818, new VisualParam(818, &quot;socks_red&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(819, new VisualParam(819, &quot;socks_green&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(820, new VisualParam(820, &quot;socks_blue&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(812, new VisualParam(812, &quot;shoes_red&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(813, new VisualParam(813, &quot;shoes_green&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(817, new VisualParam(817, &quot;shoes_blue&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(869, new VisualParam(869, &quot;Pants Wrinkles&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(806, new VisualParam(806, &quot;pants_red&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(807, new VisualParam(807, &quot;pants_green&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(808, new VisualParam(808, &quot;pants_blue&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(876, new VisualParam(876, &quot;jacket upper Wrinkles&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(809, new VisualParam(809, &quot;lower_jacket_red&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(810, new VisualParam(810, &quot;lower_jacket_green&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(811, new VisualParam(811, &quot;lower_jacket_blue&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(621, new VisualParam(621, &quot;bottom length lower&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;hi cut&quot;, &quot;low cut&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(623, new VisualParam(623, &quot;open lower&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;open&quot;, &quot;closed&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(921, new VisualParam(921, &quot;skirt_red&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(922, new VisualParam(922, &quot;skirt_green&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(923, new VisualParam(923, &quot;skirt_blue&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(858, new VisualParam(858, &quot;Skirt Length&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.4f, 0.01f, 1f));
++                    paramsDict.Add(859, new VisualParam(859, &quot;Slit Front&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Front&quot;, &quot;Closed Front&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(860, new VisualParam(860, &quot;Slit Back&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Back&quot;, &quot;Closed Back&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(861, new VisualParam(861, &quot;Slit Left&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Left&quot;, &quot;Closed Left&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(862, new VisualParam(862, &quot;Slit Right&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Right&quot;, &quot;Closed Right&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(828, new VisualParam(828, &quot;Loose Upper Clothing&quot;, 0, &quot;shirt&quot;, &quot;Shirt Fit&quot;, &quot;Tight Shirt&quot;, &quot;Loose Shirt&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(816, new VisualParam(816, &quot;Loose Lower Clothing&quot;, 0, &quot;pants&quot;, &quot;Pants Fit&quot;, &quot;Tight Pants&quot;, &quot;Loose Pants&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(814, new VisualParam(814, &quot;Waist Height&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(815, new VisualParam(815, &quot;Pants Length&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(800, new VisualParam(800, &quot;Sleeve Length&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.89f, 0f, 1f));
++                    paramsDict.Add(801, new VisualParam(801, &quot;Shirt Bottom&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(802, new VisualParam(802, &quot;Collar Front&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.78f, 0f, 1f));
++                    paramsDict.Add(781, new VisualParam(781, &quot;Collar Back&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.78f, 0f, 1f));
++                    paramsDict.Add(150, new VisualParam(150, &quot;Body Definition&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(775, new VisualParam(775, &quot;Body Freckles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less Freckles&quot;, &quot;More Freckles&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(162, new VisualParam(162, &quot;Facial Definition&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(163, new VisualParam(163, &quot;wrinkles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(505, new VisualParam(505, &quot;Lip Thickness&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Thin Lips&quot;, &quot;Fat Lips&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(799, new VisualParam(799, &quot;Lip Ratio&quot;, 0, &quot;shape&quot;, &quot;Lip Ratio&quot;, &quot;More Upper Lip&quot;, &quot;More Lower Lip&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(155, new VisualParam(155, &quot;Lip Width&quot;, 0, &quot;shape&quot;, &quot;Lip Width&quot;, &quot;Narrow Lips&quot;, &quot;Wide Lips&quot;, 0f, -0.9f, 1.3f));
++                    paramsDict.Add(196, new VisualParam(196, &quot;Eye Spacing&quot;, 0, &quot;shape&quot;, &quot;Eye Spacing&quot;, &quot;Close Set Eyes&quot;, &quot;Far Set Eyes&quot;, 0f, -2f, 1f));
++                    paramsDict.Add(769, new VisualParam(769, &quot;Eye Depth&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Sunken Eyes&quot;, &quot;Bugged Eyes&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(198, new VisualParam(198, &quot;Heel Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Low Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(513, new VisualParam(513, &quot;Heel Shape&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Pointy Heels&quot;, &quot;Thick Heels&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(514, new VisualParam(514, &quot;Toe Shape&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Pointy&quot;, &quot;Square&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(503, new VisualParam(503, &quot;Platform Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Low Platforms&quot;, &quot;High Platforms&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(193, new VisualParam(193, &quot;Head Shape&quot;, 0, &quot;shape&quot;, &quot;Head Shape&quot;, &quot;More Square&quot;, &quot;More Round&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(157, new VisualParam(157, &quot;Belly Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small&quot;, &quot;Big&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(637, new VisualParam(637, &quot;Body Fat&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Body Fat&quot;, &quot;More Body Fat&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(130, new VisualParam(130, &quot;Front Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.45f, 0f, 1f));
++                    paramsDict.Add(131, new VisualParam(131, &quot;Side Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(132, new VisualParam(132, &quot;Back Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.39f, 0f, 1f));
++                    paramsDict.Add(133, new VisualParam(133, &quot;Hair Front&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.25f, 0f, 1f));
++                    paramsDict.Add(134, new VisualParam(134, &quot;Hair Sides&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(135, new VisualParam(135, &quot;Hair Back&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.55f, 0f, 1f));
++                    paramsDict.Add(136, new VisualParam(136, &quot;Hair Sweep&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Sweep Forward&quot;, &quot;Sweep Back&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(137, new VisualParam(137, &quot;Hair Tilt&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Left&quot;, &quot;Right&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(608, new VisualParam(608, &quot;bottom length lower&quot;, 0, &quot;jacket&quot;, &quot;Jacket Length&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(609, new VisualParam(609, &quot;open jacket&quot;, 0, &quot;jacket&quot;, &quot;Open Front&quot;, &quot;Open&quot;, &quot;Closed&quot;, 0.2f, 0f, 1f));
++                    paramsDict.Add(105, new VisualParam(105, &quot;Breast Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small&quot;, &quot;Large&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(629, new VisualParam(629, &quot;Forehead Angle&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;More Vertical&quot;, &quot;More Sloped&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(646, new VisualParam(646, &quot;Egg_Head&quot;, 0, &quot;shape&quot;, &quot;Egg Head&quot;, &quot;Chin Heavy&quot;, &quot;Forehead Heavy&quot;, 0f, -1.3f, 1f));
++                    paramsDict.Add(647, new VisualParam(647, &quot;Squash_Stretch_Head&quot;, 0, &quot;shape&quot;, &quot;Head Stretch&quot;, &quot;Squash Head&quot;, &quot;Stretch Head&quot;, 0f, -0.5f, 1f));
++                    paramsDict.Add(649, new VisualParam(649, &quot;Torso Muscles&quot;, 0, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(678, new VisualParam(678, &quot;Torso Muscles&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(652, new VisualParam(652, &quot;Leg Muscles&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(80, new VisualParam(80, &quot;male&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(659, new VisualParam(659, &quot;Mouth Corner&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(662, new VisualParam(662, &quot;Face Shear&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Shear Right Up&quot;, &quot;Shear Left Up&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(773, new VisualParam(773, &quot;Head Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Flat Head&quot;, &quot;Long Head&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(682, new VisualParam(682, &quot;Head Size&quot;, 0, &quot;shape&quot;, &quot;Head Size&quot;, &quot;Small Head&quot;, &quot;Big Head&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(690, new VisualParam(690, &quot;Eye Size&quot;, 0, &quot;shape&quot;, &quot;Eye Size&quot;, &quot;Beady Eyes&quot;, &quot;Anime Eyes&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(752, new VisualParam(752, &quot;Hair Thickness&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;5 O'Clock Shadow&quot;, &quot;Bushy Hair&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(763, new VisualParam(763, &quot;Hair Volume&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less Volume&quot;, &quot;More Volume&quot;, 0.55f, 0f, 1f));
++                    paramsDict.Add(834, new VisualParam(834, &quot;jacket_red&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(835, new VisualParam(835, &quot;jacket_green&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(836, new VisualParam(836, &quot;jacket_blue&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f));
++                    paramsDict.Add(785, new VisualParam(785, &quot;Pigtails&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Pigtails&quot;, &quot;Long Pigtails&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(789, new VisualParam(789, &quot;Ponytail&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Ponytail&quot;, &quot;Long Ponytail&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(795, new VisualParam(795, &quot;Butt Size&quot;, 0, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Flat Butt&quot;, &quot;Big Butt&quot;, 0.25f, 0f, 1f));
++                    paramsDict.Add(841, new VisualParam(841, &quot;Bowed_Legs&quot;, 0, &quot;shape&quot;, &quot;Knee Angle&quot;, &quot;Knock Kneed&quot;, &quot;Bow Legged&quot;, 0f, -1f, 1f));
++                    paramsDict.Add(753, new VisualParam(753, &quot;Saddlebags&quot;, 0, &quot;shape&quot;, &quot;Saddle Bags&quot;, &quot;Less Saddle&quot;, &quot;More Saddle&quot;, 0f, -0.5f, 3f));
++                    paramsDict.Add(676, new VisualParam(676, &quot;Love_Handles&quot;, 0, &quot;shape&quot;, &quot;Love Handles&quot;, &quot;Less Love&quot;, &quot;More Love&quot;, 0f, -1f, 2f));
++                    paramsDict.Add(863, new VisualParam(863, &quot;skirt_looseness&quot;, 0, &quot;skirt&quot;, &quot;Skirt Fit&quot;, &quot;Tight Skirt&quot;, &quot;Poofy Skirt&quot;, 0.333f, 0f, 1f));
++                    paramsDict.Add(119, new VisualParam(119, &quot;Eyebrow Size&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Thin Eyebrows&quot;, &quot;Bushy Eyebrows&quot;, 0.5f, 0f, 1f));
++                    paramsDict.Add(750, new VisualParam(750, &quot;Eyebrow Density&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Sparse&quot;, &quot;Dense&quot;, 0.7f, 0f, 1f));
++                    paramsDict.Add(166, new VisualParam(166, &quot;Sideburns&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Sideburns&quot;, &quot;Mutton Chops&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(167, new VisualParam(167, &quot;Moustache&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Chaplin&quot;, &quot;Handlebars&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(168, new VisualParam(168, &quot;Soulpatch&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less soul&quot;, &quot;More soul&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(169, new VisualParam(169, &quot;Chin Curtains&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less Curtains&quot;, &quot;More Curtains&quot;, 0f, 0f, 1f));
++                    paramsDict.Add(606, new VisualParam(606, &quot;Sleeve Length&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(607, new VisualParam(607, &quot;Collar Front&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(780, new VisualParam(780, &quot;Collar Back&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(603, new VisualParam(603, &quot;Sleeve Length&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.4f, 0.01f, 1f));
++                    paramsDict.Add(604, new VisualParam(604, &quot;Bottom&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.85f, 0f, 1f));
++                    paramsDict.Add(605, new VisualParam(605, &quot;Collar Front&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.84f, 0f, 1f));
++                    paramsDict.Add(779, new VisualParam(779, &quot;Collar Back&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.84f, 0f, 1f));
++                    paramsDict.Add(617, new VisualParam(617, &quot;Socks Length&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.35f, 0f, 1f));
++                    paramsDict.Add(616, new VisualParam(616, &quot;Shoe Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Tall&quot;, 0.1f, 0f, 1f));
++                    paramsDict.Add(619, new VisualParam(619, &quot;Pants Length&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.3f, 0f, 1f));
++                    paramsDict.Add(624, new VisualParam(624, &quot;Pants Waist&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f));
++                    paramsDict.Add(93, new VisualParam(93, &quot;Glove Length&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0.01f, 1f));
++                    paramsDict.Add(844, new VisualParam(844, &quot;Glove Fingers&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;Fingerless&quot;, &quot;Fingers&quot;, 1f, 0.01f, 1f));
++                    paramsDict.Add(16, new VisualParam(16, &quot;Pointy_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Points&quot;, &quot;Smooth&quot;, &quot;Pointy&quot;, -0.5f, -0.5f, 3f));
++                    paramsDict.Add(757, new VisualParam(757, &quot;Lower_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Height&quot;, &quot;Higher&quot;, &quot;Lower&quot;, -1f, -4f, 2f));
++                    paramsDict.Add(31, new VisualParam(31, &quot;Arced_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Arc&quot;, &quot;Flat&quot;, &quot;Arced&quot;, 0.5f, 0f, 2f));
++                    paramsDict.Add(877, new VisualParam(877, &quot;Jacket Wrinkles&quot;, 0, &quot;jacket&quot;, &quot;Jacket Wrinkles&quot;, &quot;No Wrinkles&quot;, &quot;Wrinkles&quot;, 0f, 0f, 1f));
+                 }
+-
+-                return _ParamDictionary;
++                return paramsDict;
+             }
+-
+         }
+-
+-
+-        /// &lt;summary&gt;Array of all the visual parameters available for avatar appearances&lt;/summary&gt;
+-        public static VisualParam[] Params = new VisualParam[]
+-        {
+-            new VisualParam(32, &quot;Male_Skeleton&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Female&quot;, &quot;Male&quot;, 0f, 0f, 1f),
+-            new VisualParam(33, &quot;Height&quot;, 0, &quot;shape&quot;, &quot;Height&quot;, &quot;Short&quot;, &quot;Tall&quot;, -2.3f, -2.3f, 2f),
+-            new VisualParam(34, &quot;Thickness&quot;, 0, &quot;shape&quot;, &quot;Body Thickness&quot;, &quot;Body Thin&quot;, &quot;Body Thick&quot;, -0.7f, -0.7f, 1.5f),
+-            new VisualParam(36, &quot;Shoulders&quot;, 0, &quot;shape&quot;, &quot;Shoulders&quot;, &quot;Narrow&quot;, &quot;Broad&quot;, -0.5f, -1.8f, 1.4f),
+-            new VisualParam(37, &quot;Hip Width&quot;, 0, &quot;shape&quot;, &quot;Hip Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -3.2f, -3.2f, 2.8f),
+-            new VisualParam(842, &quot;Hip Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short hips&quot;, &quot;Long Hips&quot;, -1f, -1f, 1f),
+-            new VisualParam(38, &quot;Torso Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Torso&quot;, &quot;Long Torso&quot;, -1f, -1f, 1f),
+-            new VisualParam(195, &quot;EyeBone_Spread&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Together&quot;, &quot;Eyes Spread&quot;, -1f, -1f, 1f),
+-            new VisualParam(661, &quot;EyeBone_Head_Shear&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Shear Left Up&quot;, &quot;Eyes Shear Right Up&quot;, -2f, -2f, 2f),
+-            new VisualParam(772, &quot;EyeBone_Head_Elongate&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Short Head&quot;, &quot;Eyes Long Head&quot;, -1f, -1f, 1f),
+-            new VisualParam(768, &quot;EyeBone_Bug&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Sunken&quot;, &quot;Eyes Bugged&quot;, -2f, -2f, 2f),
+-            new VisualParam(655, &quot;Head Size&quot;, 1, &quot;shape&quot;, &quot;Head Size&quot;, &quot;Small Head&quot;, &quot;Big Head&quot;, -0.25f, -0.25f, 0.1f),
+-            new VisualParam(197, &quot;Shoe_Heels&quot;, 1, &quot;shoes&quot;, &quot;&quot;, &quot;No Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(502, &quot;Shoe_Platform&quot;, 1, &quot;shoes&quot;, &quot;&quot;, &quot;No Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(675, &quot;Hand Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small Hands&quot;, &quot;Large Hands&quot;, -0.3f, -0.3f, 0.3f),
+-            new VisualParam(683, &quot;Neck Thickness&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Skinny Neck&quot;, &quot;Thick Neck&quot;, -0.15f, -0.4f, 0.2f),
+-            new VisualParam(689, &quot;EyeBone_Big_Eyes&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Back&quot;, &quot;Eyes Forward&quot;, -1f, -1f, 1f),
+-            new VisualParam(692, &quot;Leg Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Legs&quot;, &quot;Long Legs&quot;, -1f, -1f, 1f),
+-            new VisualParam(693, &quot;Arm Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Arms&quot;, &quot;Long arms&quot;, 0.6f, -1f, 1f),
+-            new VisualParam(756, &quot;Neck Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Short Neck&quot;, &quot;Long Neck&quot;, 0f, -1f, 1f),
+-            new VisualParam(180, &quot;Hair_Volume&quot;, 1, &quot;hair&quot;, &quot;Hair Volume&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1.3f),
+-            new VisualParam(761, &quot;Hair_Volume_Small&quot;, 1, &quot;hair&quot;, &quot;Hair Volume&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1.3f),
+-            new VisualParam(181, &quot;Hair_Big_Front&quot;, 0, &quot;hair&quot;, &quot;Big Hair Front&quot;, &quot;Less&quot;, &quot;More&quot;, 0.14f, -1f, 1f),
+-            new VisualParam(182, &quot;Hair_Big_Top&quot;, 0, &quot;hair&quot;, &quot;Big Hair Top&quot;, &quot;Less&quot;, &quot;More&quot;, 0.7f, -1f, 1f),
+-            new VisualParam(183, &quot;Hair_Big_Back&quot;, 0, &quot;hair&quot;, &quot;Big Hair Back&quot;, &quot;Less&quot;, &quot;More&quot;, 0.05f, -1f, 1f),
+-            new VisualParam(184, &quot;Hair_Spiked&quot;, 0, &quot;hair&quot;, &quot;Spiked Hair&quot;, &quot;No Spikes&quot;, &quot;Big Spikes&quot;, 0f, 0f, 1f),
+-            new VisualParam(140, &quot;Hair_Part_Middle&quot;, 0, &quot;hair&quot;, &quot;Middle Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f),
+-            new VisualParam(141, &quot;Hair_Part_Right&quot;, 0, &quot;hair&quot;, &quot;Right Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f),
+-            new VisualParam(142, &quot;Hair_Part_Left&quot;, 0, &quot;hair&quot;, &quot;Left Part&quot;, &quot;No Part&quot;, &quot;Part&quot;, 0f, 0f, 2f),
+-            new VisualParam(143, &quot;Hair_Sides_Full&quot;, 0, &quot;hair&quot;, &quot;Full Hair Sides&quot;, &quot;Mowhawk&quot;, &quot;Full Sides&quot;, 0.125f, -4f, 1.5f),
+-            new VisualParam(144, &quot;Bangs_Front_Up&quot;, 1, &quot;hair&quot;, &quot;Front Bangs Up&quot;, &quot;Bangs&quot;, &quot;Bangs Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(145, &quot;Bangs_Front_Down&quot;, 1, &quot;hair&quot;, &quot;Front Bangs Down&quot;, &quot;Bangs&quot;, &quot;Bangs Down&quot;, 0f, 0f, 5f),
+-            new VisualParam(146, &quot;Bangs_Sides_Up&quot;, 1, &quot;hair&quot;, &quot;Side Bangs Up&quot;, &quot;Side Bangs&quot;, &quot;Side Bangs Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(147, &quot;Bangs_Sides_Down&quot;, 1, &quot;hair&quot;, &quot;Side Bangs Down&quot;, &quot;Side Bangs&quot;, &quot;Side Bangs Down&quot;, 0f, 0f, 2f),
+-            new VisualParam(148, &quot;Bangs_Back_Up&quot;, 1, &quot;hair&quot;, &quot;Back Bangs Up&quot;, &quot;Back Bangs&quot;, &quot;Back Bangs Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(149, &quot;Bangs_Back_Down&quot;, 1, &quot;hair&quot;, &quot;Back Bangs Down&quot;, &quot;Back Bangs&quot;, &quot;Back Bangs Down&quot;, 0f, 0f, 2f),
+-            new VisualParam(171, &quot;Hair_Front_Down&quot;, 1, &quot;hair&quot;, &quot;Front Hair Down&quot;, &quot;Front Hair&quot;, &quot;Front Hair Down&quot;, 0f, 0f, 1f),
+-            new VisualParam(172, &quot;Hair_Front_Up&quot;, 1, &quot;hair&quot;, &quot;Front Hair Up&quot;, &quot;Front Hair&quot;, &quot;Front Hair Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(173, &quot;Hair_Sides_Down&quot;, 1, &quot;hair&quot;, &quot;Sides Hair Down&quot;, &quot;Sides Hair&quot;, &quot;Sides Hair Down&quot;, 0f, 0f, 1f),
+-            new VisualParam(174, &quot;Hair_Sides_Up&quot;, 1, &quot;hair&quot;, &quot;Sides Hair Up&quot;, &quot;Sides Hair&quot;, &quot;Sides Hair Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(175, &quot;Hair_Back_Down&quot;, 1, &quot;hair&quot;, &quot;Back Hair Down&quot;, &quot;Back Hair&quot;, &quot;Back Hair Down&quot;, 0f, 0f, 3f),
+-            new VisualParam(176, &quot;Hair_Back_Up&quot;, 1, &quot;hair&quot;, &quot;Back Hair Up&quot;, &quot;Back Hair&quot;, &quot;Back Hair Up&quot;, 0f, 0f, 1f),
+-            new VisualParam(177, &quot;Hair_Rumpled&quot;, 0, &quot;hair&quot;, &quot;Rumpled Hair&quot;, &quot;Smooth Hair&quot;, &quot;Rumpled Hair&quot;, 0f, 0f, 1f),
+-            new VisualParam(178, &quot;Hair_Swept_Back&quot;, 1, &quot;hair&quot;, &quot;Swept Back Hair&quot;, &quot;NotHair&quot;, &quot;Swept Back&quot;, 0f, 0f, 1f),
+-            new VisualParam(179, &quot;Hair_Swept_Forward&quot;, 1, &quot;hair&quot;, &quot;Swept Forward Hair&quot;, &quot;Hair&quot;, &quot;Swept Forward&quot;, 0f, 0f, 1f),
+-            new VisualParam(190, &quot;Hair_Tilt_Right&quot;, 1, &quot;hair&quot;, &quot;Hair Tilted Right&quot;, &quot;Hair&quot;, &quot;Tilt Right&quot;, 0f, 0f, 1f),
+-            new VisualParam(191, &quot;Hair_Tilt_Left&quot;, 1, &quot;hair&quot;, &quot;Hair Tilted Left&quot;, &quot;Hair&quot;, &quot;Tilt Left&quot;, 0f, 0f, 1f),
+-            new VisualParam(192, &quot;Bangs_Part_Middle&quot;, 0, &quot;hair&quot;, &quot;Part Bangs&quot;, &quot;No Part&quot;, &quot;Part Bangs&quot;, 0f, 0f, 1f),
+-            new VisualParam(640, &quot;Hair_Egg_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -1.3f, -1.3f, 1f),
+-            new VisualParam(641, &quot;Hair_Squash_Stretch_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(642, &quot;Hair_Square_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(643, &quot;Hair_Round_Head&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(644, &quot;Hair_Forehead_Round&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(645, &quot;Hair_Forehead_Slant&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(774, &quot;Shear_Head_Hair&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -2f, -2f, 2f),
+-            new VisualParam(771, &quot;Elongate_Head_Hair&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, -1f, -1f, 1f),
+-            new VisualParam(674, &quot;Hair_Shear_Back&quot;, 0, &quot;hair&quot;, &quot;Shear Back&quot;, &quot;Full Back&quot;, &quot;Sheared Back&quot;, -0.3f, -1f, 2f),
+-            new VisualParam(762, &quot;Hair_Shear_Front&quot;, 0, &quot;hair&quot;, &quot;Shear Front&quot;, &quot;Full Front&quot;, &quot;Sheared Front&quot;, 0f, 0f, 3f),
+-            new VisualParam(754, &quot;Hair_Taper_Back&quot;, 0, &quot;hair&quot;, &quot;Taper Back&quot;, &quot;Wide Back&quot;, &quot;Narrow Back&quot;, 0f, -1f, 2f),
+-            new VisualParam(755, &quot;Hair_Taper_Front&quot;, 0, &quot;hair&quot;, &quot;Taper Front&quot;, &quot;Wide Front&quot;, &quot;Narrow Front&quot;, 0.05f, -1.5f, 1.5f),
+-            new VisualParam(782, &quot;Hair_Pigtails_Short&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(783, &quot;Hair_Pigtails_Med&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(790, &quot;Hair_Pigtails_Medlong&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(784, &quot;Hair_Pigtails_Long&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(786, &quot;Hair_Ponytail_Short&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(787, &quot;Hair_Ponytail_Med&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(788, &quot;Hair_Ponytail_Long&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(1, &quot;Big_Brow&quot;, 0, &quot;shape&quot;, &quot;Brow Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -0.3f, -0.3f, 2f),
+-            new VisualParam(2, &quot;Nose_Big_Out&quot;, 0, &quot;shape&quot;, &quot;Nose Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -0.8f, -0.8f, 2.5f),
+-            new VisualParam(4, &quot;Broad_Nostrils&quot;, 0, &quot;shape&quot;, &quot;Nostril Width&quot;, &quot;Narrow&quot;, &quot;Broad&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(759, &quot;Low_Septum_Nose&quot;, 0, &quot;shape&quot;, &quot;Nostril Division&quot;, &quot;High&quot;, &quot;Low&quot;, 0.5f, -1f, 1.5f),
+-            new VisualParam(517, &quot;Wide_Nose&quot;, 0, &quot;shape&quot;, &quot;Nose Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(5, &quot;Cleft_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Cleft&quot;, &quot;Round&quot;, &quot;Cleft&quot;, -0.1f, -0.1f, 1f),
+-            new VisualParam(6, &quot;Bulbous_Nose_Tip&quot;, 0, &quot;shape&quot;, &quot;Nose Tip Shape&quot;, &quot;Pointy&quot;, &quot;Bulbous&quot;, -0.3f, -0.3f, 1f),
+-            new VisualParam(7, &quot;Weak_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Angle&quot;, &quot;Chin Out&quot;, &quot;Chin In&quot;, -0.5f, -0.5f, 0.5f),
+-            new VisualParam(8, &quot;Double_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin-Neck&quot;, &quot;Tight Chin&quot;, &quot;Double Chin&quot;, -0.5f, -0.5f, 1.5f),
+-            new VisualParam(10, &quot;Sunken_Cheeks&quot;, 0, &quot;shape&quot;, &quot;Lower Cheeks&quot;, &quot;Well-Fed&quot;, &quot;Sunken&quot;, -1.5f, -1.5f, 3f),
+-            new VisualParam(11, &quot;Noble_Nose_Bridge&quot;, 0, &quot;shape&quot;, &quot;Upper Bridge&quot;, &quot;Low&quot;, &quot;High&quot;, -0.5f, -0.5f, 1.5f),
+-            new VisualParam(758, &quot;Lower_Bridge_Nose&quot;, 0, &quot;shape&quot;, &quot;Lower Bridge&quot;, &quot;Low&quot;, &quot;High&quot;, -1.5f, -1.5f, 1.5f),
+-            new VisualParam(12, &quot;Jowls&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, -0.5f, -0.5f, 2.5f),
+-            new VisualParam(13, &quot;Cleft_Chin_Upper&quot;, 0, &quot;shape&quot;, &quot;Upper Chin Cleft&quot;, &quot;Round&quot;, &quot;Cleft&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(14, &quot;High_Cheek_Bones&quot;, 0, &quot;shape&quot;, &quot;Cheek Bones&quot;, &quot;Low&quot;, &quot;High&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(15, &quot;Ears_Out&quot;, 0, &quot;shape&quot;, &quot;Ear Angle&quot;, &quot;In&quot;, &quot;Out&quot;, -0.5f, -0.5f, 1.5f),
+-            new VisualParam(870, &quot;Pointy_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Points&quot;, &quot;Smooth&quot;, &quot;Pointy&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(17, &quot;Square_Jaw&quot;, 0, &quot;shape&quot;, &quot;Jaw Shape&quot;, &quot;Pointy&quot;, &quot;Square&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(18, &quot;Puffy_Upper_Cheeks&quot;, 0, &quot;shape&quot;, &quot;Upper Cheeks&quot;, &quot;Thin&quot;, &quot;Puffy&quot;, -1.5f, -1.5f, 2.5f),
+-            new VisualParam(19, &quot;Upturned_Nose_Tip&quot;, 0, &quot;shape&quot;, &quot;Nose Tip Angle&quot;, &quot;Downturned&quot;, &quot;Upturned&quot;, -1.5f, -1.5f, 1f),
+-            new VisualParam(20, &quot;Bulbous_Nose&quot;, 0, &quot;shape&quot;, &quot;Nose Thickness&quot;, &quot;Thin Nose&quot;, &quot;Bulbous Nose&quot;, -0.5f, -0.5f, 1.5f),
+-            new VisualParam(21, &quot;Upper_Eyelid_Fold&quot;, 0, &quot;shape&quot;, &quot;Upper Eyelid Fold&quot;, &quot;Uncreased&quot;, &quot;Creased&quot;, -0.2f, -0.2f, 1.3f),
+-            new VisualParam(22, &quot;Attached_Earlobes&quot;, 0, &quot;shape&quot;, &quot;Attached Earlobes&quot;, &quot;Unattached&quot;, &quot;Attached&quot;, 0f, 0f, 1f),
+-            new VisualParam(23, &quot;Baggy_Eyes&quot;, 0, &quot;shape&quot;, &quot;Eye Bags&quot;, &quot;Smooth&quot;, &quot;Baggy&quot;, -0.5f, -0.5f, 1.5f),
+-            new VisualParam(765, &quot;Puffy_Lower_Lids&quot;, 0, &quot;shape&quot;, &quot;Puffy Eyelids&quot;, &quot;Flat&quot;, &quot;Puffy&quot;, -0.3f, -0.3f, 2.5f),
+-            new VisualParam(24, &quot;Wide_Eyes&quot;, 0, &quot;shape&quot;, &quot;Eye Opening&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1.5f, -1.5f, 2f),
+-            new VisualParam(25, &quot;Wide_Lip_Cleft&quot;, 0, &quot;shape&quot;, &quot;Lip Cleft&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -0.8f, -0.8f, 1.5f),
+-            new VisualParam(764, &quot;Lip_Cleft_Deep&quot;, 0, &quot;shape&quot;, &quot;Lip Cleft Depth&quot;, &quot;Shallow&quot;, &quot;Deep&quot;, -0.5f, -0.5f, 1.2f),
+-            new VisualParam(27, &quot;Wide_Nose_Bridge&quot;, 0, &quot;shape&quot;, &quot;Bridge Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1.3f, -1.3f, 1.2f),
+-            new VisualParam(872, &quot;Arced_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Arc&quot;, &quot;Flat&quot;, &quot;Arced&quot;, 0f, 0f, 1f),
+-            new VisualParam(871, &quot;Lower_Eyebrows&quot;, 1, &quot;hair&quot;, &quot;Eyebrow Height&quot;, &quot;Higher&quot;, &quot;Lower&quot;, -2f, -2f, 2f),
+-            new VisualParam(35, &quot;Big_Ears&quot;, 0, &quot;shape&quot;, &quot;Ear Size&quot;, &quot;Small&quot;, &quot;Large&quot;, -1f, -1f, 2f),
+-            new VisualParam(796, &quot;Pointy_Ears&quot;, 0, &quot;shape&quot;, &quot;Ear Tips&quot;, &quot;Flat&quot;, &quot;Pointy&quot;, -0.4f, -0.4f, 3f),
+-            new VisualParam(185, &quot;Deep_Chin&quot;, 0, &quot;shape&quot;, &quot;Chin Depth&quot;, &quot;Shallow&quot;, &quot;Deep&quot;, -1f, -1f, 1f),
+-            new VisualParam(186, &quot;Egg_Head&quot;, 1, &quot;shape&quot;, &quot;Egg Head&quot;, &quot;Chin Heavy&quot;, &quot;Forehead Heavy&quot;, -1.3f, -1.3f, 1f),
+-            new VisualParam(187, &quot;Squash_Stretch_Head&quot;, 1, &quot;shape&quot;, &quot;Squash/Stretch Head&quot;, &quot;Squash Head&quot;, &quot;Stretch Head&quot;, -0.5f, -0.5f, 1f),
+-            new VisualParam(188, &quot;Square_Head&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Less Square&quot;, &quot;More Square&quot;, 0f, 0f, 0.7f),
+-            new VisualParam(189, &quot;Round_Head&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Less Round&quot;, &quot;More Round&quot;, 0f, 0f, 1f),
+-            new VisualParam(194, &quot;Eye_Spread&quot;, 1, &quot;shape&quot;, &quot;&quot;, &quot;Eyes Together&quot;, &quot;Eyes Spread&quot;, -2f, -2f, 2f),
+-            new VisualParam(400, &quot;Displace_Hair_Facial&quot;, 1, &quot;hair&quot;, &quot;Hair Thickess&quot;, &quot;Cropped Hair&quot;, &quot;Bushy Hair&quot;, 0f, 0f, 2f),
+-            new VisualParam(506, &quot;Mouth_Height&quot;, 0, &quot;shape&quot;, &quot;Mouth Position&quot;, &quot;High&quot;, &quot;Low&quot;, -2f, -2f, 2f),
+-            new VisualParam(633, &quot;Fat_Head&quot;, 1, &quot;shape&quot;, &quot;Fat Head&quot;, &quot;Skinny&quot;, &quot;Fat&quot;, 0f, 0f, 1f),
+-            new VisualParam(630, &quot;Forehead_Round&quot;, 1, &quot;shape&quot;, &quot;Round Forehead&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(631, &quot;Forehead_Slant&quot;, 1, &quot;shape&quot;, &quot;Slanted Forehead&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(650, &quot;Eyelid_Corner_Up&quot;, 0, &quot;shape&quot;, &quot;Outer Eye Corner&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, -1.3f, -1.3f, 1.2f),
+-            new VisualParam(880, &quot;Eyelid_Inner_Corner_Up&quot;, 0, &quot;shape&quot;, &quot;Inner Eye Corner&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, -1.3f, -1.3f, 1.2f),
+-            new VisualParam(653, &quot;Tall_Lips&quot;, 0, &quot;shape&quot;, &quot;Lip Fullness&quot;, &quot;Less Full&quot;, &quot;More Full&quot;, -1f, -1f, 2f),
+-            new VisualParam(656, &quot;Crooked_Nose&quot;, 0, &quot;shape&quot;, &quot;Crooked Nose&quot;, &quot;Nose Left&quot;, &quot;Nose Right&quot;, -2f, -2f, 2f),
+-            new VisualParam(657, &quot;Smile_Mouth&quot;, 1, &quot;shape&quot;, &quot;Mouth Corner&quot;, &quot;Corner Normal&quot;, &quot;Corner Up&quot;, 0f, 0f, 1.4f),
+-            new VisualParam(658, &quot;Frown_Mouth&quot;, 1, &quot;shape&quot;, &quot;Mouth Corner&quot;, &quot;Corner Normal&quot;, &quot;Corner Down&quot;, 0f, 0f, 1.2f),
+-            new VisualParam(797, &quot;Fat_Upper_Lip&quot;, 1, &quot;shape&quot;, &quot;Fat Upper Lip&quot;, &quot;Normal Upper&quot;, &quot;Fat Upper&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(798, &quot;Fat_Lower_Lip&quot;, 1, &quot;shape&quot;, &quot;Fat Lower Lip&quot;, &quot;Normal Lower&quot;, &quot;Fat Lower&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(660, &quot;Shear_Head&quot;, 1, &quot;shape&quot;, &quot;Shear Face&quot;, &quot;Shear Left&quot;, &quot;Shear Right&quot;, 0f, -2f, 2f),
+-            new VisualParam(770, &quot;Elongate_Head&quot;, 1, &quot;shape&quot;, &quot;Shear Face&quot;, &quot;Flat Head&quot;, &quot;Long Head&quot;, 0f, -1f, 1f),
+-            new VisualParam(663, &quot;Shift_Mouth&quot;, 0, &quot;shape&quot;, &quot;Shift Mouth&quot;, &quot;Shift Left&quot;, &quot;Shift Right&quot;, 0f, -2f, 2f),
+-            new VisualParam(664, &quot;Pop_Eye&quot;, 0, &quot;shape&quot;, &quot;Eye Pop&quot;, &quot;Pop Right Eye&quot;, &quot;Pop Left Eye&quot;, 0f, -1.3f, 1.3f),
+-            new VisualParam(760, &quot;Jaw_Angle&quot;, 0, &quot;shape&quot;, &quot;Jaw Angle&quot;, &quot;Low Jaw&quot;, &quot;High Jaw&quot;, 0f, -1.2f, 2f),
+-            new VisualParam(665, &quot;Jaw_Jut&quot;, 0, &quot;shape&quot;, &quot;Jaw Jut&quot;, &quot;Overbite&quot;, &quot;Underbite&quot;, 0f, -2f, 2f),
+-            new VisualParam(686, &quot;Head_Eyes_Big&quot;, 1, &quot;shape&quot;, &quot;Eye Size&quot;, &quot;Beady Eyes&quot;, &quot;Anime Eyes&quot;, 0f, -2f, 2f),
+-            new VisualParam(767, &quot;Bug_Eyed_Head&quot;, 1, &quot;shape&quot;, &quot;Eye Depth&quot;, &quot;Sunken Eyes&quot;, &quot;Bug Eyes&quot;, 0f, -2f, 2f),
+-            new VisualParam(518, &quot;Eyelashes_Long&quot;, 0, &quot;shape&quot;, &quot;Eyelash Length&quot;, &quot;Short&quot;, &quot;Long&quot;, -0.3f, -0.3f, 1.5f),
+-            new VisualParam(626, &quot;Big_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Small&quot;, &quot;Large&quot;, 0f, 0f, 1f),
+-            new VisualParam(627, &quot;Small_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Large&quot;, &quot;Small&quot;, 0f, 0f, 1f),
+-            new VisualParam(843, &quot;No_Chest&quot;, 1, &quot;shape&quot;, &quot;Chest Size&quot;, &quot;Some&quot;, &quot;None&quot;, 0f, 0f, 1f),
+-            new VisualParam(106, &quot;Muscular_Torso&quot;, 1, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Regular&quot;, &quot;Muscular&quot;, 0f, 0f, 1.4f),
+-            new VisualParam(648, &quot;Scrawny_Torso&quot;, 1, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Regular&quot;, &quot;Scrawny&quot;, 0f, 0f, 1.3f),
+-            new VisualParam(677, &quot;Scrawny_Torso_Male&quot;, 1, &quot;shape&quot;, &quot;Torso Scrawny&quot;, &quot;Regular&quot;, &quot;Scrawny&quot;, 0f, 0f, 1.3f),
+-            new VisualParam(634, &quot;Fat_Torso&quot;, 1, &quot;shape&quot;, &quot;Fat Torso&quot;, &quot;skinny&quot;, &quot;fat&quot;, 0f, 0f, 1f),
+-            new VisualParam(507, &quot;Breast_Gravity&quot;, 0, &quot;shape&quot;, &quot;Breast Buoyancy&quot;, &quot;Less Gravity&quot;, &quot;More Gravity&quot;, 0f, -1.5f, 2f),
+-            new VisualParam(840, &quot;Shirtsleeve_flair&quot;, 0, &quot;shirt&quot;, &quot;Sleeve Looseness&quot;, &quot;Tight Sleeves&quot;, &quot;Loose Sleeves&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(684, &quot;Breast_Female_Cleavage&quot;, 0, &quot;shape&quot;, &quot;Breast Cleavage&quot;, &quot;Separate&quot;, &quot;Join&quot;, 0f, -0.3f, 1.3f),
+-            new VisualParam(685, &quot;Chest_Male_No_Pecs&quot;, 0, &quot;shape&quot;, &quot;Pectorals&quot;, &quot;Big Pectorals&quot;, &quot;Sunken Chest&quot;, 0f, -0.5f, 1.1f),
+-            new VisualParam(151, &quot;Big_Butt_Legs&quot;, 1, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Regular&quot;, &quot;Large&quot;, 0f, 0f, 1f),
+-            new VisualParam(794, &quot;Small_Butt&quot;, 1, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Regular&quot;, &quot;Small&quot;, 0f, 0f, 1f),
+-            new VisualParam(152, &quot;Muscular_Legs&quot;, 1, &quot;shape&quot;, &quot;Leg Muscles&quot;, &quot;Regular Muscles&quot;, &quot;More Muscles&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(651, &quot;Scrawny_Legs&quot;, 1, &quot;shape&quot;, &quot;Scrawny Leg&quot;, &quot;Regular Muscles&quot;, &quot;Less Muscles&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(853, &quot;Bowed_Legs&quot;, 1, &quot;shape&quot;, &quot;Knee Angle&quot;, &quot;&quot;, &quot;&quot;, -1f, -1f, 1f),
+-            new VisualParam(500, &quot;Shoe_Heel_Height&quot;, 1, &quot;shoes&quot;, &quot;Heel Height&quot;, &quot;Low Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(501, &quot;Shoe_Platform_Height&quot;, 1, &quot;shoes&quot;, &quot;Platform Height&quot;, &quot;Low Platforms&quot;, &quot;High Platforms&quot;, 0f, 0f, 1f),
+-            new VisualParam(508, &quot;Shoe_Platform_Width&quot;, 0, &quot;shoes&quot;, &quot;Platform Width&quot;, &quot;Narrow&quot;, &quot;Wide&quot;, -1f, -1f, 2f),
+-            new VisualParam(509, &quot;Shoe_Heel_Point&quot;, 1, &quot;shoes&quot;, &quot;Heel Shape&quot;, &quot;Default Heels&quot;, &quot;Pointy Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(510, &quot;Shoe_Heel_Thick&quot;, 1, &quot;shoes&quot;, &quot;Heel Shape&quot;, &quot;default Heels&quot;, &quot;Thick Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(511, &quot;Shoe_Toe_Point&quot;, 1, &quot;shoes&quot;, &quot;Toe Shape&quot;, &quot;Default Toe&quot;, &quot;Pointy Toe&quot;, 0f, 0f, 1f),
+-            new VisualParam(512, &quot;Shoe_Toe_Square&quot;, 1, &quot;shoes&quot;, &quot;Toe Shape&quot;, &quot;Default Toe&quot;, &quot;Square Toe&quot;, 0f, 0f, 1f),
+-            new VisualParam(654, &quot;Shoe_Toe_Thick&quot;, 0, &quot;shoes&quot;, &quot;Toe Thickness&quot;, &quot;Flat Toe&quot;, &quot;Thick Toe&quot;, 0f, 0f, 2f),
+-            new VisualParam(515, &quot;Foot_Size&quot;, 0, &quot;shape&quot;, &quot;Foot Size&quot;, &quot;Small&quot;, &quot;Big&quot;, -1f, -1f, 3f),
+-            new VisualParam(625, &quot;Leg_Pantflair&quot;, 0, &quot;pants&quot;, &quot;Cuff Flare&quot;, &quot;Tight Cuffs&quot;, &quot;Flared Cuffs&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(638, &quot;Low_Crotch&quot;, 0, &quot;pants&quot;, &quot;Pants Crotch&quot;, &quot;High and Tight&quot;, &quot;Low and Loose&quot;, 0f, 0f, 1.3f),
+-            new VisualParam(635, &quot;Fat_Legs&quot;, 1, &quot;shape&quot;, &quot;Fat Torso&quot;, &quot;skinny&quot;, &quot;fat&quot;, 0f, 0f, 1f),
+-            new VisualParam(879, &quot;Male_Package&quot;, 0, &quot;shape&quot;, &quot;Package&quot;, &quot;Coin Purse&quot;, &quot;Duffle Bag&quot;, 0f, -0.5f, 2f),
+-            new VisualParam(679, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f),
+-            new VisualParam(687, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f),
+-            new VisualParam(694, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f),
+-            new VisualParam(695, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f),
+-            new VisualParam(680, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f),
+-            new VisualParam(688, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f),
+-            new VisualParam(681, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Eyeball Size&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.1f),
+-            new VisualParam(691, &quot;Eyeball_Size&quot;, 1, &quot;shape&quot;, &quot;Big Eyeball&quot;, &quot;small eye&quot;, &quot;big eye&quot;, -0.25f, -0.25f, 0.25f),
+-            new VisualParam(845, &quot;skirt_poofy&quot;, 1, &quot;skirt&quot;, &quot;poofy skirt&quot;, &quot;less poofy&quot;, &quot;more poofy&quot;, 0f, 0f, 1.5f),
+-            new VisualParam(846, &quot;skirt_loose&quot;, 1, &quot;skirt&quot;, &quot;loose skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f),
+-            new VisualParam(866, &quot;skirt_tight&quot;, 1, &quot;skirt&quot;, &quot;tight skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f),
+-            new VisualParam(867, &quot;skirt_smallbutt&quot;, 1, &quot;skirt&quot;, &quot;tight skirt&quot;, &quot;form fitting&quot;, &quot;loose&quot;, 0f, 0f, 1f),
+-            new VisualParam(848, &quot;skirt_bustle&quot;, 0, &quot;skirt&quot;, &quot;bustle skirt&quot;, &quot;no bustle&quot;, &quot;more bustle&quot;, 0.2f, 0f, 2f),
+-            new VisualParam(847, &quot;skirt_bowlegs&quot;, 1, &quot;skirt&quot;, &quot;legs skirt&quot;, &quot;&quot;, &quot;&quot;, 0f, -1f, 1f),
+-            new VisualParam(111, &quot;Pigment&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(110, &quot;Red Skin&quot;, 0, &quot;skin&quot;, &quot;Ruddiness&quot;, &quot;Pale&quot;, &quot;Ruddy&quot;, 0f, 0f, 0.1f),
+-            new VisualParam(108, &quot;Rainbow Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;None&quot;, &quot;Wild&quot;, 0f, 0f, 1f),
+-            new VisualParam(114, &quot;Blonde Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Black&quot;, &quot;Blonde&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(113, &quot;Red Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;No Red&quot;, &quot;Very Red&quot;, 0f, 0f, 1f),
+-            new VisualParam(115, &quot;White Hair&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;No White&quot;, &quot;All White&quot;, 0f, 0f, 1f),
+-            new VisualParam(112, &quot;Rainbow Color&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;None&quot;, &quot;Wild&quot;, 0f, 0f, 1f),
+-            new VisualParam(99, &quot;Eye Color&quot;, 0, &quot;eyes&quot;, &quot;&quot;, &quot;Natural&quot;, &quot;Unnatural&quot;, 0f, 0f, 1f),
+-            new VisualParam(98, &quot;Eye Lightness&quot;, 0, &quot;eyes&quot;, &quot;&quot;, &quot;Darker&quot;, &quot;Lighter&quot;, 0f, 0f, 1f),
+-            new VisualParam(158, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(159, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(116, &quot;Rosy Complexion&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less Rosy&quot;, &quot;More Rosy&quot;, 0f, 0f, 1f),
+-            new VisualParam(117, &quot;Lip Pinkness&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Darker&quot;, &quot;Pinker&quot;, 0f, 0f, 1f),
+-            new VisualParam(118, &quot;Wrinkles&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(165, &quot;Freckles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(1001, &quot;Eyebrow Size&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(700, &quot;Lipstick Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Black&quot;, 0.25f, 0f, 1f),
+-            new VisualParam(701, &quot;Lipstick&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Lipstick&quot;, &quot;More Lipstick&quot;, 0f, 0f, 0.9f),
+-            new VisualParam(702, &quot;Lipgloss&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Lipgloss&quot;, &quot;Glossy&quot;, 0f, 0f, 1f),
+-            new VisualParam(704, &quot;Blush&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Blush&quot;, &quot;More Blush&quot;, 0f, 0f, 0.9f),
+-            new VisualParam(705, &quot;Blush Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Orange&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(711, &quot;Blush Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(708, &quot;Out Shdw Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0f, 0f, 1f),
+-            new VisualParam(706, &quot;Out Shdw Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.6f, 0.2f, 1f),
+-            new VisualParam(707, &quot;Outer Shadow&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeshadow&quot;, &quot;More Eyeshadow&quot;, 0f, 0f, 0.7f),
+-            new VisualParam(712, &quot;In Shdw Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Light&quot;, &quot;Dark&quot;, 0f, 0f, 1f),
+-            new VisualParam(713, &quot;In Shdw Opacity&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Clear&quot;, &quot;Opaque&quot;, 0.7f, 0.2f, 1f),
+-            new VisualParam(709, &quot;Inner Shadow&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeshadow&quot;, &quot;More Eyeshadow&quot;, 0f, 0f, 1f),
+-            new VisualParam(703, &quot;Eyeliner&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Eyeliner&quot;, &quot;Full Eyeliner&quot;, 0f, 0f, 1f),
+-            new VisualParam(714, &quot;Eyeliner Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Dark Green&quot;, &quot;Black&quot;, 0f, 0f, 1f),
+-            new VisualParam(751, &quot;5 O'Clock Shadow&quot;, 1, &quot;hair&quot;, &quot;&quot;, &quot;Dense hair&quot;, &quot;Shadow hair&quot;, 0.7f, 0f, 1f),
+-            new VisualParam(125, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(126, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(776, &quot;freckles upper&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(1045, &quot;Bottom bump&quot;, 1, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(821, &quot;undershirt_red&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(822, &quot;undershirt_green&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(823, &quot;undershirt_blue&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(710, &quot;Nail Polish&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;No Polish&quot;, &quot;Painted Nails&quot;, 0f, 0f, 1f),
+-            new VisualParam(715, &quot;Nail Polish Color&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Pink&quot;, &quot;Black&quot;, 0f, 0f, 1f),
+-            new VisualParam(827, &quot;gloves_red&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(829, &quot;gloves_green&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(830, &quot;gloves_blue&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(868, &quot;Shirt Wrinkles&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(803, &quot;shirt_red&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(804, &quot;shirt_green&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(805, &quot;shirt_blue&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(875, &quot;jacket upper Wrinkles&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(831, &quot;upper_jacket_red&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(832, &quot;upper_jacket_green&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(833, &quot;upper_jacket_blue&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(620, &quot;bottom length upper&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;hi cut&quot;, &quot;low cut&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(622, &quot;open upper&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;closed&quot;, &quot;open&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(160, &quot;Shading&quot;, 1, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(161, &quot;Shading&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(777, &quot;freckles lower&quot;, 1, &quot;skin&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(1055, &quot;Pants Length&quot;, 1, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.3f, 0f, 1f),
+-            new VisualParam(1057, &quot;Pants Waist&quot;, 1, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(824, &quot;underpants_red&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(825, &quot;underpants_green&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(826, &quot;underpants_blue&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(818, &quot;socks_red&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(819, &quot;socks_green&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(820, &quot;socks_blue&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(812, &quot;shoes_red&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(813, &quot;shoes_green&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(817, &quot;shoes_blue&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(869, &quot;Pants Wrinkles&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(806, &quot;pants_red&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(807, &quot;pants_green&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(808, &quot;pants_blue&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(876, &quot;jacket upper Wrinkles&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(809, &quot;lower_jacket_red&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(810, &quot;lower_jacket_green&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(811, &quot;lower_jacket_blue&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(621, &quot;bottom length lower&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;hi cut&quot;, &quot;low cut&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(623, &quot;open lower&quot;, 1, &quot;jacket&quot;, &quot;&quot;, &quot;open&quot;, &quot;closed&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(921, &quot;skirt_red&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(922, &quot;skirt_green&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(923, &quot;skirt_blue&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(858, &quot;Skirt Length&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.4f, 0.01f, 1f),
+-            new VisualParam(859, &quot;Slit Front&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Front&quot;, &quot;Closed Front&quot;, 1f, 0f, 1f),
+-            new VisualParam(860, &quot;Slit Back&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Back&quot;, &quot;Closed Back&quot;, 1f, 0f, 1f),
+-            new VisualParam(861, &quot;Slit Left&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Left&quot;, &quot;Closed Left&quot;, 1f, 0f, 1f),
+-            new VisualParam(862, &quot;Slit Right&quot;, 0, &quot;skirt&quot;, &quot;&quot;, &quot;Open Right&quot;, &quot;Closed Right&quot;, 1f, 0f, 1f),
+-            new VisualParam(828, &quot;Loose Upper Clothing&quot;, 0, &quot;shirt&quot;, &quot;Shirt Fit&quot;, &quot;Tight Shirt&quot;, &quot;Loose Shirt&quot;, 0f, 0f, 1f),
+-            new VisualParam(816, &quot;Loose Lower Clothing&quot;, 0, &quot;pants&quot;, &quot;Pants Fit&quot;, &quot;Tight Pants&quot;, &quot;Loose Pants&quot;, 0f, 0f, 1f),
+-            new VisualParam(814, &quot;Waist Height&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 1f, 0f, 1f),
+-            new VisualParam(815, &quot;Pants Length&quot;, 0, &quot;pants&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(800, &quot;Sleeve Length&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.89f, 0f, 1f),
+-            new VisualParam(801, &quot;Shirt Bottom&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 1f, 0f, 1f),
+-            new VisualParam(802, &quot;Collar Front&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.78f, 0f, 1f),
+-            new VisualParam(781, &quot;Collar Back&quot;, 0, &quot;shirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.78f, 0f, 1f),
+-            new VisualParam(150, &quot;Body Definition&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(775, &quot;Body Freckles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less Freckles&quot;, &quot;More Freckles&quot;, 0f, 0f, 1f),
+-            new VisualParam(162, &quot;Facial Definition&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(163, &quot;wrinkles&quot;, 0, &quot;skin&quot;, &quot;&quot;, &quot;Less&quot;, &quot;More&quot;, 0f, 0f, 1f),
+-            new VisualParam(505, &quot;Lip Thickness&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Thin Lips&quot;, &quot;Fat Lips&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(799, &quot;Lip Ratio&quot;, 0, &quot;shape&quot;, &quot;Lip Ratio&quot;, &quot;More Upper Lip&quot;, &quot;More Lower Lip&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(155, &quot;Lip Width&quot;, 0, &quot;shape&quot;, &quot;Lip Width&quot;, &quot;Narrow Lips&quot;, &quot;Wide Lips&quot;, 0f, -0.9f, 1.3f),
+-            new VisualParam(196, &quot;Eye Spacing&quot;, 0, &quot;shape&quot;, &quot;Eye Spacing&quot;, &quot;Close Set Eyes&quot;, &quot;Far Set Eyes&quot;, 0f, -2f, 1f),
+-            new VisualParam(769, &quot;Eye Depth&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Sunken Eyes&quot;, &quot;Bugged Eyes&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(198, &quot;Heel Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Low Heels&quot;, &quot;High Heels&quot;, 0f, 0f, 1f),
+-            new VisualParam(513, &quot;Heel Shape&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Pointy Heels&quot;, &quot;Thick Heels&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(514, &quot;Toe Shape&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Pointy&quot;, &quot;Square&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(503, &quot;Platform Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Low Platforms&quot;, &quot;High Platforms&quot;, 0f, 0f, 1f),
+-            new VisualParam(193, &quot;Head Shape&quot;, 0, &quot;shape&quot;, &quot;Head Shape&quot;, &quot;More Square&quot;, &quot;More Round&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(157, &quot;Belly Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small&quot;, &quot;Big&quot;, 0f, 0f, 1f),
+-            new VisualParam(637, &quot;Body Fat&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Body Fat&quot;, &quot;More Body Fat&quot;, 0f, 0f, 1f),
+-            new VisualParam(130, &quot;Front Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.45f, 0f, 1f),
+-            new VisualParam(131, &quot;Side Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(132, &quot;Back Fringe&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.39f, 0f, 1f),
+-            new VisualParam(133, &quot;Hair Front&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.25f, 0f, 1f),
+-            new VisualParam(134, &quot;Hair Sides&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(135, &quot;Hair Back&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.55f, 0f, 1f),
+-            new VisualParam(136, &quot;Hair Sweep&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Sweep Forward&quot;, &quot;Sweep Back&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(137, &quot;Hair Tilt&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Left&quot;, &quot;Right&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(608, &quot;bottom length lower&quot;, 0, &quot;jacket&quot;, &quot;Jacket Length&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(609, &quot;open jacket&quot;, 0, &quot;jacket&quot;, &quot;Open Front&quot;, &quot;Open&quot;, &quot;Closed&quot;, 0.2f, 0f, 1f),
+-            new VisualParam(105, &quot;Breast Size&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Small&quot;, &quot;Large&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(629, &quot;Forehead Angle&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;More Vertical&quot;, &quot;More Sloped&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(646, &quot;Egg_Head&quot;, 0, &quot;shape&quot;, &quot;Egg Head&quot;, &quot;Chin Heavy&quot;, &quot;Forehead Heavy&quot;, 0f, -1.3f, 1f),
+-            new VisualParam(647, &quot;Squash_Stretch_Head&quot;, 0, &quot;shape&quot;, &quot;Head Stretch&quot;, &quot;Squash Head&quot;, &quot;Stretch Head&quot;, 0f, -0.5f, 1f),
+-            new VisualParam(649, &quot;Torso Muscles&quot;, 0, &quot;shape&quot;, &quot;Torso Muscles&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(678, &quot;Torso Muscles&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(652, &quot;Leg Muscles&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Less Muscular&quot;, &quot;More Muscular&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(80, &quot;male&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 0f, 0f, 1f),
+-            new VisualParam(659, &quot;Mouth Corner&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Corner Down&quot;, &quot;Corner Up&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(662, &quot;Face Shear&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Shear Right Up&quot;, &quot;Shear Left Up&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(773, &quot;Head Length&quot;, 0, &quot;shape&quot;, &quot;&quot;, &quot;Flat Head&quot;, &quot;Long Head&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(682, &quot;Head Size&quot;, 0, &quot;shape&quot;, &quot;Head Size&quot;, &quot;Small Head&quot;, &quot;Big Head&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(690, &quot;Eye Size&quot;, 0, &quot;shape&quot;, &quot;Eye Size&quot;, &quot;Beady Eyes&quot;, &quot;Anime Eyes&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(752, &quot;Hair Thickness&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;5 O'Clock Shadow&quot;, &quot;Bushy Hair&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(763, &quot;Hair Volume&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less Volume&quot;, &quot;More Volume&quot;, 0.55f, 0f, 1f),
+-            new VisualParam(834, &quot;jacket_red&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(835, &quot;jacket_green&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(836, &quot;jacket_blue&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;&quot;, &quot;&quot;, 1f, 0f, 1f),
+-            new VisualParam(785, &quot;Pigtails&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Pigtails&quot;, &quot;Long Pigtails&quot;, 0f, 0f, 1f),
+-            new VisualParam(789, &quot;Ponytail&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Ponytail&quot;, &quot;Long Ponytail&quot;, 0f, 0f, 1f),
+-            new VisualParam(795, &quot;Butt Size&quot;, 0, &quot;shape&quot;, &quot;Butt Size&quot;, &quot;Flat Butt&quot;, &quot;Big Butt&quot;, 0.25f, 0f, 1f),
+-            new VisualParam(841, &quot;Bowed_Legs&quot;, 0, &quot;shape&quot;, &quot;Knee Angle&quot;, &quot;Knock Kneed&quot;, &quot;Bow Legged&quot;, 0f, -1f, 1f),
+-            new VisualParam(753, &quot;Saddlebags&quot;, 0, &quot;shape&quot;, &quot;Saddle Bags&quot;, &quot;Less Saddle&quot;, &quot;More Saddle&quot;, 0f, -0.5f, 3f),
+-            new VisualParam(676, &quot;Love_Handles&quot;, 0, &quot;shape&quot;, &quot;Love Handles&quot;, &quot;Less Love&quot;, &quot;More Love&quot;, 0f, -1f, 2f),
+-            new VisualParam(863, &quot;skirt_looseness&quot;, 0, &quot;skirt&quot;, &quot;Skirt Fit&quot;, &quot;Tight Skirt&quot;, &quot;Poofy Skirt&quot;, 0.333f, 0f, 1f),
+-            new VisualParam(119, &quot;Eyebrow Size&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Thin Eyebrows&quot;, &quot;Bushy Eyebrows&quot;, 0.5f, 0f, 1f),
+-            new VisualParam(750, &quot;Eyebrow Density&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Sparse&quot;, &quot;Dense&quot;, 0.7f, 0f, 1f),
+-            new VisualParam(166, &quot;Sideburns&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Short Sideburns&quot;, &quot;Mutton Chops&quot;, 0f, 0f, 1f),
+-            new VisualParam(167, &quot;Moustache&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Chaplin&quot;, &quot;Handlebars&quot;, 0f, 0f, 1f),
+-            new VisualParam(168, &quot;Soulpatch&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less soul&quot;, &quot;More soul&quot;, 0f, 0f, 1f),
+-            new VisualParam(169, &quot;Chin Curtains&quot;, 0, &quot;hair&quot;, &quot;&quot;, &quot;Less Curtains&quot;, &quot;More Curtains&quot;, 0f, 0f, 1f),
+-            new VisualParam(606, &quot;Sleeve Length&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(607, &quot;Collar Front&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(780, &quot;Collar Back&quot;, 0, &quot;jacket&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(603, &quot;Sleeve Length&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.4f, 0.01f, 1f),
+-            new VisualParam(604, &quot;Bottom&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.85f, 0f, 1f),
+-            new VisualParam(605, &quot;Collar Front&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.84f, 0f, 1f),
+-            new VisualParam(779, &quot;Collar Back&quot;, 0, &quot;undershirt&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.84f, 0f, 1f),
+-            new VisualParam(617, &quot;Socks Length&quot;, 0, &quot;socks&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.35f, 0f, 1f),
+-            new VisualParam(616, &quot;Shoe Height&quot;, 0, &quot;shoes&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Tall&quot;, 0.1f, 0f, 1f),
+-            new VisualParam(619, &quot;Pants Length&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.3f, 0f, 1f),
+-            new VisualParam(624, &quot;Pants Waist&quot;, 0, &quot;underpants&quot;, &quot;&quot;, &quot;Low&quot;, &quot;High&quot;, 0.8f, 0f, 1f),
+-            new VisualParam(93, &quot;Glove Length&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;Short&quot;, &quot;Long&quot;, 0.8f, 0.01f, 1f),
+-            new VisualParam(844, &quot;Glove Fingers&quot;, 0, &quot;gloves&quot;, &quot;&quot;, &quot;Fingerless&quot;, &quot;Fingers&quot;, 1f, 0.01f, 1f),
+-            new VisualParam(16, &quot;Pointy_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Points&quot;, &quot;Smooth&quot;, &quot;Pointy&quot;, -0.5f, -0.5f, 3f),
+-            new VisualParam(757, &quot;Lower_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Height&quot;, &quot;Higher&quot;, &quot;Lower&quot;, -1f, -4f, 2f),
+-            new VisualParam(31, &quot;Arced_Eyebrows&quot;, 0, &quot;hair&quot;, &quot;Eyebrow Arc&quot;, &quot;Flat&quot;, &quot;Arced&quot;, 0.5f, 0f, 2f),
+-            new VisualParam(877, &quot;Jacket Wrinkles&quot;, 0, &quot;jacket&quot;, &quot;Jacket Wrinkles&quot;, &quot;No Wrinkles&quot;, &quot;Wrinkles&quot;, 0f, 0f, 1f)
+-        };
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs
+===================================================================
+--- trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs	2007-01-23 04:18:24 UTC (rev 885)
++++ trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs	2007-01-23 04:30:43 UTC (rev 886)
+@@ -724,7 +724,7 @@
+             {
+                 if (args.Length != 4)
+                 {
+-                    Console.WriteLine(&quot;Invalid arguments, need [message_template.msg] [template.cs] [unusedpackets.txt] [_Packets_.cs]&quot;);
++                    Console.WriteLine(&quot;Usage: [message_template.msg] [template.cs] [unusedpackets.txt] [_Packets_.cs]&quot;);
+                     return -1;
+                 }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000319.html">[Libsecondlife-commits] r885 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+	<LI>Next message: <A HREF="000321.html">[Libsecondlife-commits] r887 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#320">[ date ]</a>
+              <a href="thread.html#320">[ thread ]</a>
+              <a href="subject.html#320">[ subject ]</a>
+              <a href="author.html#320">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

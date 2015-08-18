@@ -1,0 +1,614 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r883 - in trunk/libsecondlife-cs: .	AssetSystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r883%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem&In-Reply-To=%3C200701230408.l0N48aAg016398%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000316.html">
+   <LINK REL="Next"  HREF="000318.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r883 - in trunk/libsecondlife-cs: .	AssetSystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r883%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem&In-Reply-To=%3C200701230408.l0N48aAg016398%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r883 - in trunk/libsecondlife-cs: .	AssetSystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 23 05:08:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000316.html">[Libsecondlife-commits] r882 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000318.html">[Libsecondlife-commits] r884 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#317">[ date ]</a>
+              <a href="thread.html#317">[ thread ]</a>
+              <a href="subject.html#317">[ subject ]</a>
+              <a href="author.html#317">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-23 05:08:28 +0100 (Tue, 23 Jan 2007)
+New Revision: 883
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Add support for asynchronous AgentSetAppearance by calling BeginAgentSendAppearance()
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-23 03:47:04 UTC (rev 882)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-23 04:08:28 UTC (rev 883)
+@@ -39,9 +39,12 @@
+ 
+         protected ManualResetEvent AgentWearablesSignal = null;
+ 
++        protected Dictionary&lt;LLUUID, AssetWearable&gt; WearableCache = new Dictionary&lt;LLUUID, AssetWearable&gt;();
++        protected List&lt;LLUUID&gt; WearableAssetQueue = new List&lt;LLUUID&gt;();
++
+         // This data defines all appearance info for an avatar
+         public AgentWearablesUpdatePacket.WearableDataBlock[] AgentWearablesData;
+-        public SerializableDictionary&lt;uint, float&gt; AgentAppearanceParams = new SerializableDictionary&lt;uint, float&gt;();
++        public SerializableDictionary&lt;int, float&gt; AgentAppearanceParams = new SerializableDictionary&lt;int, float&gt;();
+         public TextureEntry AgentTextureEntry = new TextureEntry(&quot;C228D1CF4B5D4BA884F4899A0796AA97&quot;); // if this isn't valid, blame JH ;-)
+ 
+ 
+@@ -52,10 +55,10 @@
+         public AppearanceManager(SecondLife client)
+         {
+             Client = client;
+-            AManager = client.Assets;
+-
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+ 
++            AManager = client.Assets;
++            AManager.TransferRequestCompletedEvent += new AssetManager.On_TransferRequestCompleted(AManager_TransferRequestCompletedEvent);
+         }
+ 
+         #region Wear Stuff
+@@ -245,56 +248,25 @@
+                     Client.Log(&quot;Asset retrieval failed for AssetID: &quot; + wearableAsset.AssetID, Helpers.LogLevel.Warning);
+                 }
+ 
+-                try
+-                {
+-                    foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in wearableAsset.Textures)
+-                    {
+-                        AgentTextureEntry.CreateFace(texture.Key).TextureID = texture.Value;
+-                    }
+-
+-                    foreach (KeyValuePair&lt;uint, float&gt; kvp in wearableAsset.Parameters)
+-                    {
+-                        AgentAppearanceParams[kvp.Key] = kvp.Value;
+-                    }
+-                }
+-                catch (Exception e)
+-                {
+-                    Client.Log(&quot;ItemID: &quot; + wdb.ItemID + Environment.NewLine +
+-                        &quot;WearableType: &quot; + wdb.WearableType + Environment.NewLine +
+-                        &quot;Retrieving as type: &quot; + wearableAsset.Type + Environment.NewLine +
+-                        e.ToString() + Environment.NewLine +
+-                        wearableAsset.AssetDataToString(), Helpers.LogLevel.Error);
+-                }
++                UpdateAgentTextureEntryAndAppearanceParams(wearableAsset);
+             }
+ 
+ 
++            UpdateAgentTextureEntryOrder();
++        }
++
++        protected void UpdateAgentTextureEntryOrder()
++        {
+             // Correct the order of the textures
+             foreach (uint faceid in AgentTextureEntry.FaceTextures.Keys)
+             {
+-                switch (faceid)
++                if (faceid &gt; 18)
+                 {
+-                    case 0:
+-                    case 1:
+-                    case 2:
+-                    case 3:
+-                    case 4:
+-                    case 5:
+-                    case 6:
+-                    case 7:
+-                    case 12:
+-                    case 13:
+-                    case 14:
+-                    case 15:
+-                    case 16:
+-                    case 17:
+-                    case 18:
+-                        break;
+-                    default:
+-                        Client.Log(&quot;Unknown order for FaceID: &quot; + faceid + Environment.NewLine +
+-                            &quot;Your wearables define a face that we don't know the order of.  Please &quot; +
+-                            &quot;capture a AgentSetAppearance packet for your current outfit and submit to &quot; +
+-                            &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;, Helpers.LogLevel.Info);
+-                        break;
++                    Client.Log(&quot;Unknown order for FaceID: &quot; + faceid + Environment.NewLine +
++                        &quot;Your wearables define a face that we don't know the order of.  Please &quot; +
++                        &quot;capture a AgentSetAppearance packet for your current outfit and submit to &quot; +
++                        &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;, Helpers.LogLevel.Info);
++                    break;
+                 }
+             }
+ 
+@@ -320,7 +292,40 @@
+             AgentTextureEntry = te2;
+         }
+ 
++        protected void UpdateAgentTextureEntryAndAppearanceParams(AssetWearable wearableAsset)
++        {
++            try
++            {
++                foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in wearableAsset.Textures)
++                {
++                    AgentTextureEntry.CreateFace(texture.Key).TextureID = texture.Value;
++                }
++
++                foreach (KeyValuePair&lt;int, float&gt; kvp in wearableAsset.Parameters)
++                {
++                    AgentAppearanceParams[kvp.Key] = kvp.Value;
++                }
++            }
++            catch (Exception e)
++            {
++                Client.Log(e.ToString() + Environment.NewLine + wearableAsset.AssetDataToString(), Helpers.LogLevel.Error);
++            }
++        }
++
+         /// &lt;summary&gt;
++        /// Non-blocking async request of wearables, construction and sending of AgentSetAppearance
++        /// &lt;/summary&gt;
++        public void BeginAgentSendAppearance()
++        {
++            AgentWearablesSignal = new ManualResetEvent(false);
++
++            AgentWearablesRequestPacket p = new AgentWearablesRequestPacket();
++            p.AgentData.AgentID = Client.Network.AgentID;
++            p.AgentData.SessionID = Client.Network.SessionID;
++            Client.Network.SendPacket(p);
++        }
++
++        /// &lt;summary&gt;
+         /// Send an AgentSetAppearance packet to the server to update your appearance.
+         /// &lt;/summary&gt;
+         public void SendAgentSetAppearance()
+@@ -340,9 +345,9 @@
+             p.ObjectData.TextureEntry = AgentTextureEntry.ToBytes();
+ 
+             // Add Visual Params
+-            Dictionary&lt;uint, byte&gt; VisualParams = GetAssetParamsAsVisualParams();
++            Dictionary&lt;int, byte&gt; VisualParams = GetAssetParamsAsVisualParams();
+             p.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
+-            for (uint i = 0; i &lt; 218; i++)
++            for (int i = 0; i &lt; 218; i++)
+             {
+                 p.VisualParam[i] = new AgentSetAppearancePacket.VisualParamBlock();
+ 
+@@ -352,15 +357,16 @@
+                 }
+                 else
+                 {
+-                    uint paramid = GetParamID(i + 1);
+-                    float defaultValue = BodyShapeParams.GetValueDefault(paramid);
++                    int paramid = GetParamID(i + 1);
+ 
+-                    float minVal = BodyShapeParams.GetValueMin(paramid);
++                    if (!libsecondlife.VisualParams.ParamDictionary.ContainsKey(paramid))
++                    {
++                        Client.Log(&quot;Unknown VisualParam ID encountered :: &quot; + paramid, Helpers.LogLevel.Debug);
++                    }
++                    VisualParam vp = libsecondlife.VisualParams.ParamDictionary[paramid];
+ 
+-                    float range = BodyShapeParams.GetValueMax(paramid) - minVal;
++                    float percentage = (vp.DefaultValue - vp.MinValue) / (vp.MaxValue - vp.MinValue);
+ 
+-                    float percentage = (defaultValue - minVal) / range;
+-
+                     byte packetVal = (byte)(percentage * (byte)255);
+ 
+                     p.VisualParam[i].ParamValue = packetVal;
+@@ -379,26 +385,21 @@
+         /// AgentSetAppearance packet
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;Visual Param information for AgentSetAppearance packets&lt;/returns&gt;
+-        protected Dictionary&lt;uint, byte&gt; GetAssetParamsAsVisualParams()
++        protected Dictionary&lt;int, byte&gt; GetAssetParamsAsVisualParams()
+         {
+-            Dictionary&lt;uint, byte&gt; VisualParams = new Dictionary&lt;uint, byte&gt;();
++            Dictionary&lt;int, byte&gt; VisualParams = new Dictionary&lt;int, byte&gt;();
+ 
+-            float maxVal = 0;
+-            float minVal = 0;
+-            uint packetIdx = 0;
+-            float range = 0;
++            int packetIdx = 0;
+             float percentage = 0;
+             byte packetVal = 0;
+ 
+-            foreach (KeyValuePair&lt;uint, float&gt; kvp in AgentAppearanceParams)
++            foreach (KeyValuePair&lt;int, float&gt; kvp in AgentAppearanceParams)
+             {
+                 packetIdx = AppearanceManager.GetAgentSetAppearanceIndex(kvp.Key) - 1; //TODO/FIXME: this should be zero indexed, not 1 based.
+-                maxVal = BodyShapeParams.GetValueMax(kvp.Key);
+-                minVal = BodyShapeParams.GetValueMin(kvp.Key);
+ 
+-                range = maxVal - minVal;
++                VisualParam vp = libsecondlife.VisualParams.ParamDictionary[kvp.Key];
+ 
+-                percentage = (kvp.Value - minVal) / range;
++                percentage = (kvp.Value - vp.MinValue) / (vp.MaxValue - vp.MinValue);
+ 
+                 packetVal = (byte)(percentage * (byte)255);
+ 
+@@ -414,7 +415,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;VisualParams&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        protected LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;uint, byte&gt; VisualParams)
++        protected LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;int, byte&gt; VisualParams)
+         {
+             if (VisualParams.ContainsKey(25))
+             {
+@@ -438,8 +439,94 @@
+ 
+             AgentWearablesData = wearablesPacket.WearableData;
+             AgentWearablesSignal.Set();
++
++
++            // Queue download of wearables
++            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in AgentWearablesData)
++            {
++                // Don't try to download if AssetID is zero
++                if (wdb.AssetID == LLUUID.Zero)
++                {
++                    continue;
++                }
++
++                // Don't try to download, if it's already cached.
++                if (WearableCache.ContainsKey(wdb.AssetID))
++                {
++                    AssetWearable aw = WearableCache[wdb.AssetID];
++                    if (aw._AssetData != null)
++                    {
++                        continue;
++                    }
++                }
++
++                // Don't try to download, if it's already in the download queue
++                if (WearableAssetQueue.Contains(wdb.AssetID))
++                {
++                    continue;
++                }
++
++                AssetWearable wearableAsset;
++
++                switch (wdb.WearableType)
++                {
++                    case 0:
++                    case 1:
++                    case 2:
++                    case 3:
++                        wearableAsset = new AssetWearable_Body(wdb.AssetID, null);
++                        break;
++                    default:
++                        wearableAsset = new AssetWearable_Clothing(wdb.AssetID, null);
++                        break;
++                }
++
++                WearableCache[wdb.AssetID] = wearableAsset;
++                WearableAssetQueue.Add(wdb.AssetID);
++
++                AssetRequestDownload request = Client.Assets.RequestInventoryAsset(wearableAsset.AssetID, wearableAsset.Type);
++
++            }
++
++            
+         }
+ 
++        void AManager_TransferRequestCompletedEvent(AssetRequest request)
++        {
++            if( !(request is AssetRequestDownload) )
++            {
++                return;
++            }
++
++            AssetRequestDownload dlrequest = (AssetRequestDownload)request;
++
++            // Remove from the download queue
++            if (WearableAssetQueue.Contains(dlrequest.AssetID))
++            {
++                WearableAssetQueue.Remove(dlrequest.AssetID);
++
++                AssetWearable wearableAsset = WearableCache[dlrequest.AssetID];
++
++                wearableAsset.SetAssetData(dlrequest.GetAssetData());
++
++                if ((wearableAsset.AssetData == null) || (wearableAsset.AssetData.Length == 0))
++                {
++                    Client.Log(&quot;Asset retrieval failed for AssetID: &quot; + wearableAsset.AssetID, Helpers.LogLevel.Warning);
++                }
++                else
++                {
++                    UpdateAgentTextureEntryAndAppearanceParams(wearableAsset);
++                    UpdateAgentTextureEntryOrder();
++
++                    if (WearableAssetQueue.Count == 0)
++                    {
++                        SendAgentSetAppearance();
++                    }
++                }
++            }
++        }
++
++
+         #endregion
+ 
+         #region Lookup Tables
+@@ -449,7 +536,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;AssetParamID&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        protected static uint GetAgentSetAppearanceIndex(uint AssetParamID)
++        protected static int GetAgentSetAppearanceIndex(int AssetParamID)
+         {
+             switch (AssetParamID)
+             {
+@@ -682,7 +769,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;VisualParamIdx&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        protected static uint GetParamID(uint VisualParamIdx)
++        protected static int GetParamID(int VisualParamIdx)
+         {
+             switch (VisualParamIdx)
+             {
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-23 03:47:04 UTC (rev 882)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-23 04:08:28 UTC (rev 883)
+@@ -78,7 +78,10 @@
+         protected AssetRequestUpload curUploadRequest = null;
+         protected Dictionary&lt;LLUUID, AssetRequestDownload&gt; htDownloadRequests = new Dictionary&lt;LLUUID, AssetRequestDownload&gt;();
+ 
+-        public readonly static int DefaultTimeout = 15000;
++        /// &lt;summary&gt;
++        /// Time to wait for next packet, during an asset download.
++        /// &lt;/summary&gt;
++        public readonly static int DefaultTimeout = 3000;
+ 
+         /// &lt;summary&gt;
+         /// Event singaling an asset transfer request has completed.
+@@ -183,7 +186,7 @@
+ 
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID);
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, item.AssetID);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+@@ -218,7 +221,7 @@
+ 		{
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID);
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, AssetID);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+@@ -337,6 +340,8 @@
+             int Size = reply.TransferInfo.Size;
+             int Status = reply.TransferInfo.Status;
+ 
++            //TODO: AssetID should be pulled out of the TransferInfo, if available
++
+             // Lookup the request for this packet
+             if (!htDownloadRequests.ContainsKey(TransferID))
+             {
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-23 03:47:04 UTC (rev 882)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-23 04:08:28 UTC (rev 883)
+@@ -99,21 +99,46 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Wait for this Request to be completed.
++        /// Wait for this Request to be completed
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;timeout&quot;&gt;milliseconds to wait, -1 to wait indefinitely&lt;/param&gt;
++        /// &lt;param name=&quot;timeout&quot;&gt;milliseconds to wait for next packet in download, -1 to wait indefinitely&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public RequestStatus Wait(int timeout)
+         {
+-            if (!_Completed.WaitOne(timeout, false))
++            return Wait(-1, timeout);
++        }
++
++        /// &lt;summary&gt;
++        /// Wait for this Request to be completed.
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;Hard Timeout should only be specified if you really can't wait for the download, even though it's still going and may be successful.&lt;/remarks&gt;
++        /// &lt;param name=&quot;hardTimeout&quot;&gt;Return after hardTimeout milliseconds even if download is still in progress, -1 to wait indefinitely&lt;/param&gt;
++        /// &lt;param name=&quot;softTimeout&quot;&gt;How long to wait, before deciding download is stalled, -1 to wait indefinitely&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public RequestStatus Wait(int hardTimeout, int softTimeout)
++        {
++            UpdateLastPacketTime();
++
++            uint TimeStarted = LastPacketTime;
++
++            while (!_Completed.WaitOne(900, false))
+             {
+-                _StatusMsg += &quot;Timeout Failure&quot;;
+-                return RequestStatus.Failure;
++                if (SecondsSinceLastPacket &gt; hardTimeout)
++                {
++                    _StatusMsg += &quot;Timeout Failure - Hard timeout reached &quot;;
++                    return RequestStatus.Failure;
++                }
++                else
++                {
++                    if (SecondsSinceLastPacket &gt; softTimeout)
++                    {
++                        _StatusMsg += &quot;Timeout Failure - No packets in &quot; + SecondsSinceLastPacket;
++                        return RequestStatus.Failure;
++                    }
++                }
+             }
+-            else
+-            {
+-                return _Status;
+-            }
++
++            return _Status;
+         }
+ 
+         protected void MarkCompleted(RequestStatus status, string status_msg)
+@@ -138,11 +163,17 @@
+     {
+         protected int _Received;
+         protected SortedList&lt;int, byte[]&gt; _AssetDataReceived = new SortedList&lt;int, byte[]&gt;();
++        protected LLUUID _AssetID;
++        public LLUUID AssetID
++        {
++            get { return _AssetID; }
++        }
+ 
+-        public AssetRequestDownload(AssetManager Manager, LLUUID TransID)
++        public AssetRequestDownload(AssetManager Manager, LLUUID TransID, LLUUID AssetID)
+             : base(Manager, TransID)
+         {
+             _Received = 0;
++            _AssetID = AssetID;
+         }
+ 
+         internal void AddDownloadedData(int packetNum, byte[] data)
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-23 03:47:04 UTC (rev 882)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-23 04:08:28 UTC (rev 883)
+@@ -175,8 +175,8 @@
+             }
+         }
+ 
+-        private Dictionary&lt;uint, float&gt; _Parameters = new Dictionary&lt;uint, float&gt;();
+-        public Dictionary&lt;uint, float&gt; Parameters
++        private Dictionary&lt;int, float&gt; _Parameters = new Dictionary&lt;int, float&gt;();
++        public Dictionary&lt;int, float&gt; Parameters
+         {
+             get { return _Parameters; }
+             set
+@@ -313,8 +313,8 @@
+                     // if (split_up.Length != 2) throw Corrupted;
+                     if (split_up.Length == 2)
+                     {
+-                        if (this._Parameters.ContainsKey(uint.Parse(split_up[0]))) this._Parameters.Remove(uint.Parse(split_up[0]));
+-                        this._Parameters.Add(uint.Parse(split_up[0]), float.Parse(split_up[1]));
++                        if (this._Parameters.ContainsKey(int.Parse(split_up[0]))) this._Parameters.Remove(int.Parse(split_up[0]));
++                        this._Parameters.Add(int.Parse(split_up[0]), float.Parse(split_up[1]));
+                     }
+                 }
+                 else if (state == textures_block)
+@@ -322,7 +322,7 @@
+                     string[] split_up = block.Split(' ');
+                     if (split_up.Length != 2) throw Corrupted;
+ 
+-                    if (this._Parameters.ContainsKey(uint.Parse(split_up[0]))) this._Parameters.Remove(uint.Parse(split_up[0]));
++                    if (this._Parameters.ContainsKey(int.Parse(split_up[0]))) this._Parameters.Remove(int.Parse(split_up[0]));
+                     this._Textures.Add(uint.Parse(split_up[0]), new LLUUID(split_up[1]));
+                 }
+ 
+@@ -334,11 +334,11 @@
+             string data = &quot;LLWearable version 22\n&quot;;
+             data += this._Name + &quot;\n\n&quot;;
+             data += &quot;\tpermissions 0\n\t{\n&quot;;
+-            data += &quot;\t\tbase_mask\t&quot; + intToHex(this._Permission_Base_Mask);
+-            data += &quot;\n\t\towner_mask\t&quot; + intToHex(this._Permission_Owner_Mask);
+-            data += &quot;\n\t\tgroup_mask\t&quot; + intToHex(this._Permission_Group_Mask);
+-            data += &quot;\n\t\teveryone_mask\t&quot; + intToHex(this._Permission_Everyone_Mask);
+-            data += &quot;\n\t\tnext_owner_mask\t&quot; + intToHex(this._Permission_Next_Owner_Mask);
++            data += &quot;\t\tbase_mask\t&quot; + uintToHex(this._Permission_Base_Mask);
++            data += &quot;\n\t\towner_mask\t&quot; + uintToHex(this._Permission_Owner_Mask);
++            data += &quot;\n\t\tgroup_mask\t&quot; + uintToHex(this._Permission_Group_Mask);
++            data += &quot;\n\t\teveryone_mask\t&quot; + uintToHex(this._Permission_Everyone_Mask);
++            data += &quot;\n\t\tnext_owner_mask\t&quot; + uintToHex(this._Permission_Next_Owner_Mask);
+             data += &quot;\n\t\tcreator_id\t&quot; + this._Creator_ID.ToStringHyphenated();
+             data += &quot;\n\t\towner_id\t&quot; + this._Owner_ID.ToStringHyphenated();
+             data += &quot;\n\t\tlast_owner_id\t&quot; + this._Last_Owner_ID.ToStringHyphenated();
+@@ -351,7 +351,7 @@
+             data += &quot;\n\t}&quot;;
+             data += &quot;\ntype &quot; + this._TypeFromAsset;
+             data += &quot;\nparameters &quot; + this._Parameters.Count;
+-            foreach (KeyValuePair&lt;uint, float&gt; param in this._Parameters)
++            foreach (KeyValuePair&lt;int, float&gt; param in this._Parameters)
+             {
+                 string prm = string.Format(&quot;{0:f1}&quot;, param.Value);
+                 if (prm == &quot;-1.0&quot; || prm == &quot;1.0&quot; || prm == &quot;0.0&quot;)
+@@ -380,7 +380,7 @@
+             _AssetData = System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
+         }
+ 
+-        private static string intToHex(uint i)
++        private static string uintToHex(uint i)
+         {
+             return string.Format(&quot;{0:x8}&quot;, i);
+         }
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-23 03:47:04 UTC (rev 882)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-23 04:08:28 UTC (rev 883)
+@@ -103,7 +103,6 @@
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Body.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Clothing.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequest.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;AssetSystem\_BodyShapeParams_.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImageManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImagePacketHelpers.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Avatar.cs&quot;&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000316.html">[Libsecondlife-commits] r882 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000318.html">[Libsecondlife-commits] r884 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#317">[ date ]</a>
+              <a href="thread.html#317">[ thread ]</a>
+              <a href="subject.html#317">[ subject ]</a>
+              <a href="author.html#317">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

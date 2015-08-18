@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r872 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r872%20-%0A%09trunk/libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701221207.l0MC7vi0032407%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000304.html">
+   <LINK REL="Next"  HREF="000306.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r872 -	trunk/libsecondlife-cs/libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r872%20-%0A%09trunk/libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701221207.l0MC7vi0032407%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r872 -	trunk/libsecondlife-cs/libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 13:07:57 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000304.html">[Libsecondlife-commits] r871 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000306.html">[Libsecondlife-commits] [Patch #1844] Integrating ObjectProperties	into PrimObject
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#305">[ date ]</a>
+              <a href="thread.html#305">[ thread ]</a>
+              <a href="subject.html#305">[ subject ]</a>
+              <a href="author.html#305">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 13:07:55 +0100 (Mon, 22 Jan 2007)
+New Revision: 872
+
+Modified:
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+Log:
+Added an experimental RequestInventoryAsset() to the Utilities AssetManager, completely untested
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-22 10:19:38 UTC (rev 871)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-22 12:07:55 UTC (rev 872)
+@@ -95,10 +95,10 @@
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+         Unknown = 0,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Misc,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Asset
++        /// &lt;summary&gt;Unknown&lt;/summary&gt;
++        Misc = 1,
++        /// &lt;summary&gt;Virtually all asset transfers use this channel&lt;/summary&gt;
++        Asset = 2
+     }
+ 
+     /// &lt;summary&gt;
+@@ -108,12 +108,12 @@
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+         Unknown = 0,
+-        /// &lt;summary&gt;Request arbitrary system files off the server&lt;/summary&gt;
++        /// &lt;summary&gt;Arbitrary system files off the server&lt;/summary&gt;
+         [Obsolete]
+         File = 1,
+-        /// &lt;summary&gt;Request assets from the asset server&lt;/summary&gt;
++        /// &lt;summary&gt;Asset from the asset server&lt;/summary&gt;
+         Asset = 2,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Inventory item&lt;/summary&gt;
+         SimInventoryItem = 3,
+         /// &lt;summary&gt;&lt;/summary&gt;
+         SimEstate = 4
+@@ -216,44 +216,76 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;assetID&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;type&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;channel&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;priority&quot;&gt;&lt;/param&gt;
+-        public void RequestAsset(LLUUID assetID, AssetType type, ChannelType channel, SourceType source, float priority)
++        public void RequestAsset(LLUUID assetID, AssetType type, float priority)
+         {
+             AssetTransfer transfer = new AssetTransfer();
+             transfer.ID = LLUUID.Random();
+             transfer.AssetID = assetID;
+             transfer.Priority = priority;
+-            transfer.Channel = channel;
+-            transfer.Source = source;
++            transfer.Channel = ChannelType.Asset;
++            transfer.Source = SourceType.Asset;
+ 
+             // Add this transfer to the dictionary
+             lock (Transfers) Transfers[transfer.ID] = transfer;
+ 
+             // Build the request packet and send it
+             TransferRequestPacket request = new TransferRequestPacket();
+-            request.TransferInfo.ChannelType = (int)channel;
++            request.TransferInfo.ChannelType = (int)transfer.Channel;
+             request.TransferInfo.Priority = priority;
+-            request.TransferInfo.SourceType = (int)source;
++            request.TransferInfo.SourceType = (int)transfer.Source;
+             request.TransferInfo.TransferID = transfer.ID;
+ 
+             byte[] paramField = new byte[20];
+-            Array.Copy(assetID.GetBytes(), paramField, 16);
++            Array.Copy(assetID.GetBytes(), 0, paramField, 0, 16);
+             Array.Copy(Helpers.IntToBytes((int)type), 0, paramField, 16, 4);
+             request.TransferInfo.Params = paramField;
+ 
+             Client.Network.SendPacket(request);
+         }
+ 
+-        public void RequestInventoryAsset()
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;Use LLUUID.Zero if you do not have the 
++        /// asset ID but have all the necessary permissions&lt;/param&gt;
++        /// &lt;param name=&quot;itemID&quot;&gt;The item ID of this asset in the inventory&lt;/param&gt;
++        /// &lt;param name=&quot;taskID&quot;&gt;Use LLUUID.Zero if you are not requesting an 
++        /// asset from an object inventory&lt;/param&gt;
++        /// &lt;param name=&quot;ownerID&quot;&gt;The owner of this asset&lt;/param&gt;
++        /// &lt;param name=&quot;type&quot;&gt;Asset type&lt;/param&gt;
++        /// &lt;param name=&quot;priority&quot;&gt;Try 101.0f&lt;/param&gt;
++        public void RequestInventoryAsset(LLUUID assetID, LLUUID itemID, LLUUID taskID, LLUUID ownerID, AssetType type,
++            float priority)
+         {
+-            ;
+-        }
++            AssetTransfer transfer = new AssetTransfer();
++            transfer.ID = LLUUID.Random();
++            transfer.AssetID = assetID;
++            transfer.Priority = priority;
++            transfer.Channel = ChannelType.Asset;
++            transfer.Source = SourceType.SimInventoryItem;
+ 
+-        public void RequestFileAsset()
+-        {
+-            ;
++            // Add this transfer to the dictionary
++            lock (Transfers) Transfers[transfer.ID] = transfer;
++
++            // Build the request packet and send it
++            TransferRequestPacket request = new TransferRequestPacket();
++            request.TransferInfo.ChannelType = (int)transfer.Channel;
++            request.TransferInfo.Priority = priority;
++            request.TransferInfo.SourceType = (int)transfer.Source;
++            request.TransferInfo.TransferID = transfer.ID;
++
++            byte[] paramField = new byte[100];
++            Array.Copy(Client.Network.AgentID.GetBytes(), 0, paramField, 0, 16);
++            Array.Copy(Client.Network.SessionID.GetBytes(), 0, paramField, 16, 16);
++            Array.Copy(ownerID.GetBytes(), 0, paramField, 32, 16);
++            Array.Copy(taskID.GetBytes(), 0, paramField, 48, 16);
++            Array.Copy(itemID.GetBytes(), 0, paramField, 64, 16);
++            Array.Copy(assetID.GetBytes(), 0, paramField, 80, 16);
++            Array.Copy(Helpers.IntToBytes((int)type), 0, paramField, 96, 4);
++            request.TransferInfo.Params = paramField;
++
++            Client.Network.SendPacket(request);
+         }
+ 
+         public void RequestEstateAsset()
+@@ -270,20 +302,11 @@
+                 if (Transfers.ContainsKey(info.TransferInfo.TransferID))
+                 {
+                     AssetTransfer transfer = Transfers[info.TransferInfo.TransferID];
+-                    ChannelType channel = ChannelType.Unknown;
+-                    StatusCode status = StatusCode.Unknown;
+-                    TargetType target = TargetType.Unknown;
+ 
+-                    // Attempt to recover enumeration values out of the integers
+-                    channel = (ChannelType)info.TransferInfo.ChannelType;
+-                    status = (StatusCode)info.TransferInfo.Status;
+-                    target = (TargetType)info.TransferInfo.TargetType;
+-
+-                    transfer.Channel = channel;
+-                    transfer.Status = status;
+-                    transfer.Target = target;
++                    transfer.Channel = (ChannelType)info.TransferInfo.ChannelType;
++                    transfer.Status = (StatusCode)info.TransferInfo.Status;
++                    transfer.Target = (TargetType)info.TransferInfo.TargetType;
+                     transfer.Size = info.TransferInfo.Size;
+-                    transfer.AssetData = new byte[transfer.Size];
+ 
+                     // TODO: Once we support mid-transfer status checking and aborting this
+                     // will need to become smarter
+@@ -291,10 +314,34 @@
+                     {
+                         lock (Transfers) Transfers.Remove(transfer.ID);
+ 
++                        // Better than returning null
++                        transfer.AssetData = new byte[0];
++
+                         // Fire the event with our transfer that contains Success = false;
+                         try { OnAssetReceived(transfer); }
+                         catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                     }
++                    else
++                    {
++                        transfer.AssetData = new byte[transfer.Size];
++
++                        if (transfer.Source == SourceType.Asset &amp;&amp; info.TransferInfo.Params.Length == 20)
++                        {
++                            transfer.AssetID = new LLUUID(info.TransferInfo.Params, 0);
++                            // TODO: Set the authoritative asset type here as well
++                        }
++                        else if (transfer.Source == SourceType.SimInventoryItem &amp;&amp; info.TransferInfo.Params.Length == 100)
++                        {
++                            transfer.AssetID = new LLUUID(info.TransferInfo.Params, 80);
++                            // TODO: Set the authoritative asset type here as well
++                        }
++                        else
++                        {
++                            Client.Log(&quot;Received a TransferInfo packet with a SourceType of &quot; + transfer.Source.ToString() +
++                                &quot; and a Params field length of &quot; + info.TransferInfo.Params.Length, 
++                                Helpers.LogLevel.Warning);
++                        }
++                    }
+                 }
+                 else
+                 {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000304.html">[Libsecondlife-commits] r871 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000306.html">[Libsecondlife-commits] [Patch #1844] Integrating ObjectProperties	into PrimObject
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#305">[ date ]</a>
+              <a href="thread.html#305">[ thread ]</a>
+              <a href="subject.html#305">[ subject ]</a>
+              <a href="author.html#305">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

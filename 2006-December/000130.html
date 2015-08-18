@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r761 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r761%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612221734.kBMHY7JD009940%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000129.html">
+   <LINK REL="Next"  HREF="000131.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r761 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r761%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612221734.kBMHY7JD009940%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r761 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 22 18:34:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000129.html">[Libsecondlife-commits] r760 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000131.html">[Libsecondlife-commits] r762 - in trunk/libsecondlife-cs: .	examples examples/Key2Name examples/Key2Name/Properties
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#130">[ date ]</a>
+              <a href="thread.html#130">[ thread ]</a>
+              <a href="subject.html#130">[ subject ]</a>
+              <a href="author.html#130">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-22 18:34:00 +0100 (Fri, 22 Dec 2006)
+New Revision: 761
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+Log:
+Baby Steps part deux, Allow the adding of individual items to your current outfit.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-22 17:29:30 UTC (rev 760)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-22 17:34:00 UTC (rev 761)
+@@ -41,12 +41,47 @@
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+         }
+ 
++        /// &lt;summary&gt;
++        /// Add a single wearable to your outfit, replacing if nessesary.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;wearable&quot;&gt;&lt;/param&gt;
++        public void Wear(InventoryWearable wearable)
++        {
++            List&lt;InventoryWearable&gt; x = new List&lt;InventoryWearable&gt;();
++            x.Add(wearable);
++            Wear(x);
++        }
+ 
++        /// &lt;summary&gt;
++        /// Add the specified wearables to your outfit, replace existing ones if nessesary.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;wearables&quot;&gt;&lt;/param&gt;
+         public void Wear(List&lt;InventoryWearable&gt; wearables)
+         {
++            // Make sure we have some Wearable Data to start with.
++            if ((AgentWearablesData == null) || (AgentWearablesData.Length == 0))
++            {
++                GetWearables();
++            }
++
++            // Update with specified wearables
++            foreach (InventoryWearable iw in wearables)
++            {
++                byte type = ((AssetWearable)iw.Asset).TypeFromAsset;
++                AgentWearablesData[type].ItemID = iw.ItemID;
++                AgentWearablesData[type].AssetID = iw.AssetID;
++            }
++
++            // Create AgentIsNowWearing Packet, and send it
++            SendAgentIsNowWearing();
++
++            // Update local Appearance Info
++            GetAvatarAppearanceInfoFromWearableAssets();
++
++            // Send updated AgentSetAppearance to the grid
++            SendAgentSetAppearance();
+         }
+ 
+-
+         /// &lt;summary&gt;
+         /// Equivalent to the SL &quot;Replace Outfit&quot; command.  All clothing is removed, and replaced with wearables in given folder.  Body wearables will be replaced if provided.
+         /// &lt;/summary&gt;
+@@ -65,7 +100,7 @@
+         public void WearOutfit(InventoryFolder outfitFolder, int TimeOut)
+         {
+             // Refresh download of outfit folder
+-            if (!outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(TimeOut, false))
++            if (!outfitFolder.RequestDownloadContents(false).RequestComplete.WaitOne(TimeOut, false))
+             {
+                 Console.WriteLine(&quot;An error occured while downloads the folder contents of : &quot; + outfitFolder.Name);
+             }
+@@ -96,6 +131,20 @@
+             }
+ 
+             // Create AgentIsNowWearing Packet, and send it
++            SendAgentIsNowWearing();
++
++            // Update local Appearance Info
++            GetAvatarAppearanceInfoFromWearableAssets();
++
++            // Send updated AgentSetAppearance to the grid
++            SendAgentSetAppearance();
++        }
++
++        /// &lt;summary&gt;
++        /// Creates and sends an AgentIsNowWearing packet based on the local cached AgentWearablesData array.
++        /// &lt;/summary&gt;
++        private void SendAgentIsNowWearing()
++        {
+             AgentIsNowWearingPacket nowWearing = new AgentIsNowWearingPacket();
+             nowWearing.AgentData.AgentID = Client.Network.AgentID;
+             nowWearing.AgentData.SessionID = Client.Network.SessionID;
+@@ -108,13 +157,6 @@
+             }
+ 
+             Client.Network.SendPacket(nowWearing);
+-
+-
+-            // Update local Appearance Info
+-            GetAvatarAppearanceInfoFromWearableAssets();
+-
+-            // Send updated AgentSetAppearance to the grid
+-            SendAgentSetAppearance();
+         }
+ 
+         public AgentWearablesUpdatePacket.WearableDataBlock[] GetWearables()
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-22 17:29:30 UTC (rev 760)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-22 17:34:00 UTC (rev 761)
+@@ -105,7 +105,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;Recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
+         /// &lt;returns&gt;The Request object for this download&lt;/returns&gt;
+-        public DownloadRequest_Folder BeginDownloadContents(bool recurse)
++        public DownloadRequest_Folder RequestDownloadContents(bool recurse)
+         {
+             _Contents.Clear();
+ 
+@@ -121,7 +121,7 @@
+         /// &lt;param name=&quot;Recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
+         /// &lt;param name=&quot;Items&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
+         /// &lt;returns&gt;The Request object for this download&lt;/returns&gt;
+-        public DownloadRequest_Folder BeginDownloadContents(bool recurse, bool items)
++        public DownloadRequest_Folder RequestDownloadContents(bool recurse, bool items)
+         {
+             _Contents.Clear();
+ 
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 17:29:30 UTC (rev 760)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 17:34:00 UTC (rev 761)
+@@ -73,10 +73,11 @@
+ 
+         private void doStuff()
+         {
+-            System.Threading.Thread.Sleep(1000);
++            // Setup Appearance Manager
++            aManager = new AppearanceManager(_Client);
+ 
+             // Download directory tree
+-            _Client.Inventory.getRootFolder().BeginDownloadContents(true, false);
++            _Client.Inventory.getRootFolder().RequestDownloadContents(true, false);
+ 
+             Console.WriteLine(&quot;==================================================================&quot;);
+             Console.WriteLine(&quot;The Inventory Manager program provides a simple shell for working with your Second Life[tm] Avatar.&quot;);
+@@ -270,10 +271,6 @@
+                 Console.WriteLine(&quot;Could not find directory: &quot; + targetDir);
+                 return;
+             }
+-            if (aManager == null)
+-            {
+-                aManager = new AppearanceManager(_Client);
+-            }
+ 
+             aManager.WearOutfit(iFolder);
+ 
+@@ -281,11 +278,6 @@
+ 
+         private void savewearables(string[] cmdLine)
+         {
+-            if (aManager == null)
+-            {
+-                aManager = new AppearanceManager(_Client);
+-            }
+-
+             // Get Wearable Data
+             AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
+             List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt; WearablesList = new List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;();
+@@ -352,11 +344,6 @@
+ 
+         private void saveavatar(string[] cmdLine)
+         {
+-            if (aManager == null)
+-            {
+-                aManager = new AppearanceManager(_Client);
+-            }
+-
+             AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
+             aManager.GetAvatarAppearanceInfoFromWearableAssets();
+ 
+@@ -427,20 +414,8 @@
+ 
+         private void setlook()
+         {
+-            if (aManager == null)
+-            {
+-                aManager = new AppearanceManager(_Client);
+-            }
++            aManager.SendAgentSetAppearance();
+ 
+-            AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
+-
+-            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in wdbs)
+-            {
+-                Console.WriteLine(wdb.WearableType + &quot; : &quot; + wdb.ItemID);
+-            }
+-
+-            // aManager.SendAgentSetAppearance();
+-
+         }
+ 
+         private void xml(string[] cmdLine)
+@@ -465,7 +440,7 @@
+ 
+             InventoryBase itemOfInterest = null;
+ 
+-            iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000,false);
++            iFolder.RequestDownloadContents(false).RequestComplete.WaitOne(15000,false);
+             foreach (InventoryBase ib in iFolder.GetContents())
+             {
+                 if (ib is InventoryFolder)
+@@ -474,7 +449,7 @@
+                     if (folder.Name.Equals(cmdLine[1]) || folder.FolderID.Equals(uuid))
+                     {
+                         // Refresh the folder tree for this folder before outputing it.
+-                        folder.BeginDownloadContents(true).RequestComplete.WaitOne(30000, false);
++                        folder.RequestDownloadContents(true).RequestComplete.WaitOne(30000, false);
+                         itemOfInterest = folder;
+                         break;
+                     }
+@@ -620,7 +595,7 @@
+                 // Asset for an item in inventory
+                 InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
+ 
+-                iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000, false);
++                iFolder.RequestDownloadContents(false).RequestComplete.WaitOne(15000, false);
+                 foreach (InventoryBase ib in iFolder.GetContents())
+                 {
+                     if (ib is InventoryItem)
+@@ -773,7 +748,7 @@
+             }
+ 
+             InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
+-            iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000, false);
++            iFolder.RequestDownloadContents(false).RequestComplete.WaitOne(15000, false);
+             foreach (InventoryBase ib in iFolder.GetContents())
+             {
+                 if (ib is InventoryFolder)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000129.html">[Libsecondlife-commits] r760 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000131.html">[Libsecondlife-commits] r762 - in trunk/libsecondlife-cs: .	examples examples/Key2Name examples/Key2Name/Properties
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#130">[ date ]</a>
+              <a href="thread.html#130">[ thread ]</a>
+              <a href="subject.html#130">[ subject ]</a>
+              <a href="author.html#130">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

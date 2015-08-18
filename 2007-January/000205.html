@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r807 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r807%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701061035.l06AZhfV024648%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000204.html">
+   <LINK REL="Next"  HREF="000206.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r807 - trunk/libsecondlife-cs</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r807%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701061035.l06AZhfV024648%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r807 - trunk/libsecondlife-cs">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  6 11:35:43 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000204.html">[Libsecondlife-commits] r806 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000206.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-06 11:35:36 +0100 (Sat, 06 Jan 2007)
+New Revision: 807
+
+Modified:
+   trunk/libsecondlife-cs/Types.cs
+Log:
+Added a copy constructor to promote a LLVector3 to a LLVector3d, and added GetDistanceTo() methods.
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2007-01-06 10:33:43 UTC (rev 806)
++++ trunk/libsecondlife-cs/Types.cs	2007-01-06 10:35:36 UTC (rev 807)
+@@ -396,6 +396,16 @@
+ 		}
+ 
+         /// &lt;summary&gt;
++        /// Get the distance to point
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Pt&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public double GetDistanceTo(LLVector3 Pt)
++        {
++            return Math.Sqrt(((X - Pt.X) * (X - Pt.X)) + ((Y - Pt.Y) * (Y - Pt.Y)) + ((Z - Pt.Z) * (Z - Pt.Z)));
++        }
++
++        /// &lt;summary&gt;
+         /// Get a formatted string representation of the vector
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;A string representation of the vector, similar to the LSL
+@@ -521,6 +531,17 @@
+ 		}
+ 
+         /// &lt;summary&gt;
++        /// Create a double precision vector from a float vector
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;llv3&quot;&gt;&lt;/param&gt;
++        public LLVector3d(LLVector3 llv3)
++        {
++            X = llv3.X;
++            Y = llv3.Y;
++            Z = llv3.Z;
++        }
++
++        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;byteArray&quot;&gt;&lt;/param&gt;
+@@ -549,9 +570,76 @@
+ 		}
+ 
+         /// &lt;summary&gt;
++        /// A hash of the vector, used by .NET for hash tables
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;The hashes of the individual components XORed together&lt;/returns&gt;
++        public override int GetHashCode()
++        {
++            return (X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode());
++        }
++
++        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;o&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
++        public override bool Equals(object o)
++        {
++            if (!(o is LLVector3d)) return false;
++
++            LLVector3d vector = (LLVector3d)o;
++
++            return (X == vector.X &amp;&amp; Y == vector.Y &amp;&amp; Z == vector.Z);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static bool operator ==(LLVector3d lhs, LLVector3d rhs)
++        {
++            // If both are null, or both are same instance, return true
++            if (System.Object.ReferenceEquals(lhs, rhs))
++            {
++                return true;
++            }
++
++            // If one is null, but not both, return false.
++            if (((object)lhs == null) || ((object)rhs == null))
++            {
++                return false;
++            }
++
++            return (lhs.X == rhs.X &amp;&amp; lhs.Y == rhs.Y &amp;&amp; lhs.Z == rhs.Z);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static bool operator !=(LLVector3d lhs, LLVector3d rhs)
++        {
++            return !(lhs == rhs);
++        }
++
++        /// &lt;summary&gt;
++        /// Get the distance to point
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Pt&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public double GetDistanceTo(LLVector3d Pt)
++        {
++            return Math.Sqrt(((X - Pt.X) * (X - Pt.X)) + ((Y - Pt.Y) * (Y - Pt.Y)) + ((Z - Pt.Z) * (Z - Pt.Z)));
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+ 		public byte[] GetBytes()
+ 		{
+ 			byte[] byteArray = new byte[24];
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000204.html">[Libsecondlife-commits] r806 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000206.html">[Libsecondlife-commits] [Patch #1798] Experimental caps support for	libsl (ADITI ONLY)
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

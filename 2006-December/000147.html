@@ -1,0 +1,449 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r771 - trunk/applications/SLProxy
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r771%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200612282136.kBSLaEq6019589%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000146.html">
+   <LINK REL="Next"  HREF="000148.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r771 - trunk/applications/SLProxy</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r771%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200612282136.kBSLaEq6019589%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r771 - trunk/applications/SLProxy">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 28 22:36:14 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000146.html">[Libsecondlife-commits] [Patch #1770] Initial MonoDevelop Support	(.mdp/.mds)
+</A></li>
+        <LI>Next message: <A HREF="000148.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#147">[ date ]</a>
+              <a href="thread.html#147">[ thread ]</a>
+              <a href="subject.html#147">[ subject ]</a>
+              <a href="author.html#147">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-28 22:36:10 +0100 (Thu, 28 Dec 2006)
+New Revision: 771
+
+Modified:
+   trunk/applications/SLProxy/Analyst.cs
+   trunk/applications/SLProxy/SLProxy.cs
+Log:
+Applied patch #1759 - SLProxy bugfixes / improvements
+
+Modified: trunk/applications/SLProxy/Analyst.cs
+===================================================================
+--- trunk/applications/SLProxy/Analyst.cs	2006-12-28 21:21:58 UTC (rev 770)
++++ trunk/applications/SLProxy/Analyst.cs	2006-12-28 21:36:10 UTC (rev 771)
+@@ -70,7 +70,6 @@
+         proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(LoginResponse));
+ 
+         // add a delegate for outgoing chat
+-        proxy.AddDelegate(PacketType.ChatFromViewer, Direction.Incoming, new PacketDelegate(ChatFromViewerIn));
+         proxy.AddDelegate(PacketType.ChatFromViewer, Direction.Outgoing, new PacketDelegate(ChatFromViewerOut));
+ 
+         //  handle command line arguments
+@@ -110,17 +109,6 @@
+         }
+     }
+ 
+-    // ChatFromViewerIn: incoming ChatFromViewer delegate; shouldn't be possible, but just in case...
+-    private static Packet ChatFromViewerIn(Packet packet, IPEndPoint sim)
+-    {
+-        if (loggedPackets.Contains(PacketType.ChatFromViewer) || modifiedPackets.Contains(PacketType.ChatFromViewer))
+-            // user has asked to log or modify this packet
+-            return Analyze(packet, sim, Direction.Incoming);
+-        else
+-            // return the packet unmodified
+-            return packet;
+-    }
+-
+     // ChatFromViewerOut: outgoing ChatFromViewer delegate; check for Analyst commands
+     private static Packet ChatFromViewerOut(Packet packet, IPEndPoint sim)
+     {
+@@ -138,13 +126,8 @@
+                 return null;
+             }
+         }
+-
+-        if (loggedPackets.Contains(PacketType.ChatFromViewer) || modifiedPackets.Contains(PacketType.ChatFromViewer))
+-            // user has asked to log or modify this packet
+-            return Analyze(packet, sim, Direction.Outgoing);
+-        else
+-            // return the packet unmodified
+-            return packet;
++	
++	return packet;
+     }
+ 
+     // CommandDelegate: specifies a callback delegate for a /command
+@@ -193,11 +176,8 @@
+                 return;
+             }
+             loggedPackets[pType] = null;
+-            if (words[1] != &quot;ChatFromViewer&quot;)
+-            {
+-                proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
+-                proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
+-            }
++            proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(LogPacketIn));
++            proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(LogPacketOut));
+             SayToUser(&quot;logging &quot; + words[1]);
+         }
+     }
+@@ -217,15 +197,8 @@
+             PacketType pType = packetTypeFromName(words[1]);
+             loggedPackets.Remove(pType);
+ 
+-            if (!modifiedPackets.Contains(words[1]))
+-            {
+-                if (words[1] != &quot;ChatFromViewer&quot;)
+-                {
+-                    proxy.RemoveDelegate(pType, Direction.Incoming);
+-                    proxy.RemoveDelegate(pType, Direction.Outgoing);
+-                }
+-            }
+-
++	    proxy.RemoveDelegate(pType, Direction.Incoming, new PacketDelegate(LogPacketIn));
++            proxy.RemoveDelegate(pType, Direction.Outgoing, new PacketDelegate(LogPacketOut));
+             SayToUser(&quot;stopped logging &quot; + words[1]);
+         }
+     }
+@@ -284,11 +257,8 @@
+             fields[new BlockField(words[2], words[3])] = value;
+             modifiedPackets[pType] = fields;
+ 
+-            if (words[1] != &quot;ChatFromViewer&quot;)
+-            {
+-                proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
+-                proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
+-            }
++            proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(ModifyIn));
++            proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(ModifyOut));
+ 
+             SayToUser(&quot;setting &quot; + words[1] + &quot;.&quot; + words[2] + &quot;.&quot; + words[3] + &quot; = &quot; + valueString);
+         }
+@@ -300,10 +270,9 @@
+         if (words.Length == 2 &amp;&amp; words[1] == &quot;*&quot;)
+         {
+             foreach (PacketType pType in modifiedPackets.Keys)
+-                if (!loggedPackets.Contains(pType) &amp;&amp; pType != PacketType.ChatFromViewer)
+                 {
+-                    proxy.RemoveDelegate(pType, Direction.Incoming);
+-                    proxy.RemoveDelegate(pType, Direction.Outgoing);
++                    proxy.RemoveDelegate(pType, Direction.Incoming, new PacketDelegate(ModifyIn));
++                    proxy.RemoveDelegate(pType, Direction.Outgoing, new PacketDelegate(ModifyOut));
+                 }
+             modifiedPackets = new Hashtable();
+ 
+@@ -332,14 +301,8 @@
+                 {
+                     modifiedPackets.Remove(pType);
+ 
+-                    if (!loggedPackets.Contains(pType))
+-                    {
+-                        if (words[1] != &quot;ChatFromViewer&quot;)
+-                        {
+-                            proxy.RemoveDelegate(pType, Direction.Incoming);
+-                            proxy.RemoveDelegate(pType, Direction.Outgoing);
+-                        }
+-                    }
++                    proxy.RemoveDelegate(pType, Direction.Incoming, new PacketDelegate(ModifyIn));
++                    proxy.RemoveDelegate(pType, Direction.Outgoing, new PacketDelegate(ModifyOut));
+                 }
+             }
+ 
+@@ -410,21 +373,36 @@
+                         ConstructorInfo ctr = packetClass.GetConstructor(new Type[] { });
+                         if (ctr == null) throw new Exception(&quot;Couldn't get suitable constructor for &quot; + name + &quot;Packet&quot;);
+                         packet = (Packet)ctr.Invoke(new object[] { });
+-                        Console.WriteLine(&quot;Created new &quot; + name + &quot;Packet&quot;);
++                        //Console.WriteLine(&quot;Created new &quot; + name + &quot;Packet&quot;);
+                     }
+                     else
+                     {
+                         match = (new Regex(@&quot;^\s*\[(\w+)\]\s*$&quot;)).Match(line);
+                         if (match.Success)
+                         {
+-                            //FIXME: support variable blocks
+-
+                             block = match.Groups[1].Captures[0].ToString();
+                             FieldInfo blockField = packetClass.GetField(block);
+                             if (blockField == null) throw new Exception(&quot;Couldn't get &quot; + name + &quot;Packet.&quot; + block);
+-                            blockObj = blockField.GetValue(packet);
++			    Type blockClass = blockField.FieldType;
++			    if (blockClass.IsArray)
++			    {
++				blockClass = blockClass.GetElementType();
++				ConstructorInfo ctr = blockClass.GetConstructor(new Type[] { });
++				if (ctr == null) throw new Exception(&quot;Couldn't get suitable constructor for &quot; + blockClass.Name);
++				blockObj = ctr.Invoke(new object[] { });
++				object[] arr = (object[])blockField.GetValue(packet);
++				object[] narr = (object[])Array.CreateInstance(blockClass, arr.Length + 1);
++				Array.Copy(arr,narr,arr.Length);
++				narr[arr.Length] = blockObj;
++				blockField.SetValue(packet,narr);
++				//Console.WriteLine(&quot;Added block &quot;+block);
++			    } 
++			    else
++			    {
++				blockObj = blockField.GetValue(packet);
++			    }
+                             if (blockObj == null) throw new Exception(&quot;Got &quot; + name + &quot;Packet.&quot; + block + &quot; == null&quot;);
+-                            Console.WriteLine(&quot;Got block &quot; + name + &quot;Packet.&quot; + block);
++                            //Console.WriteLine(&quot;Got block &quot; + name + &quot;Packet.&quot; + block);
+ 
+                             continue;
+                         }
+@@ -543,20 +521,12 @@
+     {
+         Type packetClass = libslAssembly.GetType(&quot;libsecondlife.Packets.&quot; + name + &quot;Packet&quot;);
+         if (packetClass == null) throw new Exception(&quot;Couldn't get class &quot; + name + &quot;Packet&quot;);
+-        /*		try {
+-                    packetMap = protocolManager.Command(name);
+-                } catch {
+-                    throw new Exception(&quot;unkown packet &quot; + name);
+-                } */
+ 
+-
+-        //FIXME: support variable blocks
+-
+         FieldInfo blockField = packetClass.GetField(block);
+         if (blockField == null) throw new Exception(&quot;Couldn't get &quot; + name + &quot;Packet.&quot; + block);
+         Type blockClass = blockField.FieldType;
+         if (blockClass.IsArray) blockClass = blockClass.GetElementType();
+-        Console.WriteLine(&quot;DEBUG: &quot; + blockClass.Name);
++        // Console.WriteLine(&quot;DEBUG: &quot; + blockClass.Name);
+ 
+         FieldInfo fieldField = blockClass.GetField(field); PropertyInfo fieldProp = null;
+         Type fieldClass = null;
+@@ -719,20 +689,20 @@
+                 throw new Exception(&quot;unknown block &quot; + name + &quot;.&quot; + block); */
+     }
+ 
+-    // AnalyzeIn: analyze an incoming packet
+-    private static Packet AnalyzeIn(Packet packet, IPEndPoint endPoint)
++    // ModifyIn: modify an incoming packet
++    private static Packet ModifyIn(Packet packet, IPEndPoint endPoint)
+     {
+-        return Analyze(packet, endPoint, Direction.Incoming);
++        return Modify(packet, endPoint, Direction.Incoming);
+     }
+ 
+-    // AnalyzeOut: analyze an outgoing packet
+-    private static Packet AnalyzeOut(Packet packet, IPEndPoint endPoint)
++    // ModifyOut: modify an outgoing packet
++    private static Packet ModifyOut(Packet packet, IPEndPoint endPoint)
+     {
+-        return Analyze(packet, endPoint, Direction.Outgoing);
++        return Modify(packet, endPoint, Direction.Outgoing);
+     }
+ 
+-    // Analyze: modify and/or log a packet
+-    private static Packet Analyze(Packet packet, IPEndPoint endPoint, Direction direction)
++    // Modify: modify a packet
++    private static Packet Modify(Packet packet, IPEndPoint endPoint, Direction direction)
+     {
+         if (modifiedPackets.Contains(packet.Type))
+         {
+@@ -758,12 +728,23 @@
+             }
+         }
+ 
+-        if (loggedPackets.Contains(packet.Type))
+-            LogPacket(packet, endPoint, direction);
++        return packet;
++    }
+ 
++    // LogPacketIn: log an incoming packet
++    private static Packet LogPacketIn(Packet packet, IPEndPoint endPoint)
++    {
++	LogPacket(packet, endPoint, Direction.Incoming);
+         return packet;
+     }
+ 
++    // LogPacketOut: log an outgoing packet
++    private static Packet LogPacketOut(Packet packet, IPEndPoint endPoint)
++    {
++	LogPacket(packet, endPoint, Direction.Outgoing);
++        return packet;
++    }
++
+     // LogAll: register logging delegates for all packets
+     private static void LogAll()
+     {
+@@ -788,11 +769,8 @@
+ 
+                 loggedPackets[pType] = null;
+ 
+-                if (pType != PacketType.ChatFromViewer)
+-                {
+-                    proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
+-                    proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
+-                }
++                proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(LogPacketIn));
++                proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(LogPacketOut));
+             }
+         }
+     }
+@@ -821,11 +799,8 @@
+ 
+                 loggedPackets.Remove(pType);
+ 
+-                if (pType != PacketType.ChatFromViewer)
+-                {
+-                    proxy.RemoveDelegate(pType, Direction.Incoming);
+-                    proxy.RemoveDelegate(pType, Direction.Outgoing);
+-                }
++                proxy.RemoveDelegate(pType, Direction.Incoming, new PacketDelegate(LogPacketIn));
++                proxy.RemoveDelegate(pType, Direction.Outgoing, new PacketDelegate(LogPacketOut));
+             }
+         }
+     }
+
+Modified: trunk/applications/SLProxy/SLProxy.cs
+===================================================================
+--- trunk/applications/SLProxy/SLProxy.cs	2006-12-28 21:21:58 UTC (rev 770)
++++ trunk/applications/SLProxy/SLProxy.cs	2006-12-28 21:36:10 UTC (rev 771)
+@@ -208,14 +208,39 @@
+ 
+ 		// AddDelegate: add callback packetDelegate for packets of type packetName going direction
+ 		public void AddDelegate(PacketType packetType, Direction direction, PacketDelegate packetDelegate) { lock(this) {
+-			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates)[packetType] = packetDelegate;
++			Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt; delegates = (direction == Direction.Incoming ? incomingDelegates : outgoingDelegates);
++			if (!delegates.ContainsKey(packetType)) {
++				delegates[packetType] = new List&lt;PacketDelegate&gt;();
++			}
++			List&lt;PacketDelegate&gt; delegateArray = delegates[packetType];
++			if(!delegateArray.Contains(packetDelegate)) {
++				delegateArray.Add(packetDelegate);
++			}
+ 		}}
+ 
+ 		// RemoveDelegate: remove callback for packets of type packetName going direction
+-		public void RemoveDelegate(PacketType packetType, Direction direction) { lock(this) {
+-			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates).Remove(packetType);
++		public void RemoveDelegate(PacketType packetType, Direction direction, PacketDelegate packetDelegate) { lock(this) {
++			Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt; delegates = (direction == Direction.Incoming ? incomingDelegates : outgoingDelegates);
++			if (!delegates.ContainsKey(packetType)) {
++				return;
++			}
++			List&lt;PacketDelegate&gt; delegateArray = delegates[packetType];
++			if(delegateArray.Contains(packetDelegate)) {
++				delegateArray.Remove(packetDelegate);
++			}
+ 		}}
+ 
++		private Packet callDelegates(Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt; delegates, Packet packet, IPEndPoint remoteEndPoint) {
++			PacketType origType = packet.Type;
++			foreach (PacketDelegate del in delegates[origType]) {
++				packet = del(packet, remoteEndPoint);
++
++				// FIXME: how should we handle the packet type changing?
++				if(packet == null || packet.Type != origType) break;
++			}
++			return packet;
++		}
++
+ 		// InjectPacket: send packet to the client or server when direction is Incoming or Outgoing, respectively
+ 		public void InjectPacket(Packet packet, Direction direction) { lock(this) {
+ 			if (activeCircuit == null) {
+@@ -376,8 +401,8 @@
+ 		private Hashtable proxyHandlers = new Hashtable();
+ 		private XmlRpcRequestDelegate loginRequestDelegate = null;
+ 		private XmlRpcResponseDelegate loginResponseDelegate = null;
+-		private Hashtable incomingDelegates = new Hashtable();
+-		private Hashtable outgoingDelegates = new Hashtable();
++		private Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt; incomingDelegates = new Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt;();
++		private Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt; outgoingDelegates = new Dictionary&lt;PacketType, List&lt;PacketDelegate&gt;&gt;();
+ 		private ArrayList queuedIncomingInjections = new ArrayList();
+ 		private ArrayList queuedOutgoingInjections = new ArrayList();
+ 
+@@ -452,7 +477,7 @@
+ 				}
+ 
+ 				// pass the packet to any callback delegates
+-				if (incomingDelegates.Contains(packet.Type)) {
++				if (incomingDelegates.ContainsKey(packet.Type)) {
+ 					/* if (needsZero) {
+ 						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
+ 						packet.Header.Data = zeroBuffer;
+@@ -466,7 +491,7 @@
+ 					}
+ 
+ 					try {
+-						Packet newPacket = ((PacketDelegate)incomingDelegates[packet.Type])(packet, (IPEndPoint)remoteEndPoint);
++						Packet newPacket = callDelegates(incomingDelegates, packet, (IPEndPoint)remoteEndPoint);
+ 						if (newPacket == null) {
+ 							if ((packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0)
+ 								simProxy.Inject(SpoofAck(oldSequence), Direction.Outgoing);
+@@ -766,7 +791,7 @@
+ 				}
+ 
+ 				// pass the packet to any callback delegates
+-				if (proxy.outgoingDelegates.Contains(packet.Type)) {
++				if (proxy.outgoingDelegates.ContainsKey(packet.Type)) {
+ 					/* if (packet.Header.Zerocoded) {
+ 						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
+ 						packet.Header.Data = zeroBuffer;
+@@ -780,7 +805,7 @@
+ 					}
+ 
+ 					try {
+-						Packet newPacket = ((PacketDelegate)proxy.outgoingDelegates[packet.Type])(packet, remoteEndPoint);
++						Packet newPacket = proxy.callDelegates(proxy.outgoingDelegates, packet, remoteEndPoint);
+ 						if (newPacket == null) {
+ 							if ((packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0)
+ 								Inject(proxy.SpoofAck(oldSequence), Direction.Incoming);
+@@ -952,10 +977,8 @@
+ #endif
+ 					}
+ 					if (ackCount == 0) {
+-						byte[] newData = new byte[length -= 1];
+-						Array.Copy(packet.Header.Data, 0, newData, 0, length);
+-						newData[0] ^= Helpers.MSG_APPENDED_ACKS;
+-						packet.Header.Data = newData;
++						packet.Header.Flags ^= Helpers.MSG_APPENDED_ACKS;
++						packet.Header.AckList = new uint[0];
+ 					}
+ 				}
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000146.html">[Libsecondlife-commits] [Patch #1770] Initial MonoDevelop Support	(.mdp/.mds)
+</A></li>
+	<LI>Next message: <A HREF="000148.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#147">[ date ]</a>
+              <a href="thread.html#147">[ thread ]</a>
+              <a href="subject.html#147">[ subject ]</a>
+              <a href="author.html#147">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

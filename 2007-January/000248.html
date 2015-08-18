@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r844 - in trunk/libsecondlife-cs/examples:	IA_ImageTool IA_NotecardTool
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r844%20-%20in%20trunk/libsecondlife-cs/examples%3A%0A%09IA_ImageTool%20IA_NotecardTool&In-Reply-To=%3C200701140713.l0E7DB1S015543%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000247.html">
+   <LINK REL="Next"  HREF="000249.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r844 - in trunk/libsecondlife-cs/examples:	IA_ImageTool IA_NotecardTool</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r844%20-%20in%20trunk/libsecondlife-cs/examples%3A%0A%09IA_ImageTool%20IA_NotecardTool&In-Reply-To=%3C200701140713.l0E7DB1S015543%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r844 - in trunk/libsecondlife-cs/examples:	IA_ImageTool IA_NotecardTool">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 14 08:13:11 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000247.html">[Libsecondlife-commits] r843 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+        <LI>Next message: <A HREF="000249.html">[Libsecondlife-commits] r845 - in trunk/libsecondlife-cs: .	examples/IA_ImageTool examples/Teleport examples/TestClient	examples/slaccountant examples/sldump
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#248">[ date ]</a>
+              <a href="thread.html#248">[ thread ]</a>
+              <a href="subject.html#248">[ subject ]</a>
+              <a href="author.html#248">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-14 08:13:05 +0100 (Sun, 14 Jan 2007)
+New Revision: 844
+
+Modified:
+   trunk/libsecondlife-cs/examples/IA_ImageTool/IA_ImageTool.csproj
+   trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs
+   trunk/libsecondlife-cs/examples/IA_NotecardTool/IA_NotecardTool.csproj
+   trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs
+Log:
+Remove unnecessary dependencies on IA_SimpleInventory, and listen to the Obsolete warning about using DownloadInventory()
+
+Modified: trunk/libsecondlife-cs/examples/IA_ImageTool/IA_ImageTool.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_ImageTool/IA_ImageTool.csproj	2007-01-14 05:36:34 UTC (rev 843)
++++ trunk/libsecondlife-cs/examples/IA_ImageTool/IA_ImageTool.csproj	2007-01-14 07:13:05 UTC (rev 844)
+@@ -43,10 +43,6 @@
+       &lt;Project&gt;{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}&lt;/Project&gt;
+       &lt;Name&gt;libjaspernet&lt;/Name&gt;
+     &lt;/ProjectReference&gt;
+-    &lt;ProjectReference Include=&quot;..\IA_SimpleInventory\IA_SimpleInventory.csproj&quot;&gt;
+-      &lt;Project&gt;{E464B963-46E3-4E1A-A36F-9C640C880E68}&lt;/Project&gt;
+-      &lt;Name&gt;IA_SimpleInventory&lt;/Name&gt;
+-    &lt;/ProjectReference&gt;
+     &lt;ProjectReference Include=&quot;..\..\libsecondlife.csproj&quot;&gt;
+       &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
+       &lt;Name&gt;libsecondlife&lt;/Name&gt;
+
+Modified: trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs	2007-01-14 05:36:34 UTC (rev 843)
++++ trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs	2007-01-14 07:13:05 UTC (rev 844)
+@@ -3,8 +3,6 @@
+ using System.IO;
+ using System.Threading;
+ 
+-using IA_SimpleInventory;
+-
+ using libsecondlife;
+ using libsecondlife.InventorySystem;
+ using libsecondlife.AssetSystem;
+@@ -187,9 +185,13 @@
+                     j2cdata = KakaduWrap.ReadJ2CData(_FileName);
+                 }
+ 
++                if (!_Client.Inventory.GetRootFolder().RequestDownloadContents(true, false, false, false).RequestComplete.WaitOne(5000, false))
++                {
++                    Console.WriteLine(&quot;timeout while downloading root folders, aborting.&quot;);
++                    return;
++                }
++                
+ 
+-                _Client.Inventory.DownloadInventory();
+-
+                 Console.WriteLine(&quot;Connecting to your Texture folder...&quot;);
+                 InventoryFolder iFolder = _Client.Inventory.getFolder(&quot;Textures&quot;);
+ 
+
+Modified: trunk/libsecondlife-cs/examples/IA_NotecardTool/IA_NotecardTool.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_NotecardTool/IA_NotecardTool.csproj	2007-01-14 05:36:34 UTC (rev 843)
++++ trunk/libsecondlife-cs/examples/IA_NotecardTool/IA_NotecardTool.csproj	2007-01-14 07:13:05 UTC (rev 844)
+@@ -42,10 +42,6 @@
+       &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
+       &lt;Name&gt;libsecondlife&lt;/Name&gt;
+     &lt;/ProjectReference&gt;
+-    &lt;ProjectReference Include=&quot;..\IA_SimpleInventory\IA_SimpleInventory.csproj&quot;&gt;
+-      &lt;Project&gt;{E464B963-46E3-4E1A-A36F-9C640C880E68}&lt;/Project&gt;
+-      &lt;Name&gt;IA_SimpleInventory&lt;/Name&gt;
+-    &lt;/ProjectReference&gt;
+   &lt;/ItemGroup&gt;
+   &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
+   &lt;!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+
+Modified: trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs	2007-01-14 05:36:34 UTC (rev 843)
++++ trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs	2007-01-14 07:13:05 UTC (rev 844)
+@@ -30,7 +30,6 @@
+ using System.Text;
+ using System.Threading;
+ 
+-using IA_SimpleInventory;
+ using libsecondlife;
+ using libsecondlife.InventorySystem;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000247.html">[Libsecondlife-commits] r843 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+	<LI>Next message: <A HREF="000249.html">[Libsecondlife-commits] r845 - in trunk/libsecondlife-cs: .	examples/IA_ImageTool examples/Teleport examples/TestClient	examples/slaccountant examples/sldump
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#248">[ date ]</a>
+              <a href="thread.html#248">[ thread ]</a>
+              <a href="subject.html#248">[ subject ]</a>
+              <a href="author.html#248">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

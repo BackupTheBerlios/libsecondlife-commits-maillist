@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r870 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r870%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701220637.l0M6bC9A015175%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000297.html">
+   <LINK REL="Next"  HREF="000299.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r870 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r870%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701220637.l0M6bC9A015175%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r870 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 07:37:12 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000297.html">[Libsecondlife-commits] r869 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000299.html">[Libsecondlife-commits] [Patch #1842] Fix for libsecondlife.build	to include *.cs in /Utilities/
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 07:37:10 +0100 (Mon, 22 Jan 2007)
+New Revision: 870
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/libsecondlife.build
+Log:
+Fixed the libsecondlife.Utilities build on NAnt and added another sanity check in the teleport handling
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-22 05:49:28 UTC (rev 869)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-22 06:37:10 UTC (rev 870)
+@@ -1646,7 +1646,7 @@
+                 string seedcaps = Helpers.FieldToUTF8String(finish.Info.SeedCapability);
+                 IPAddress simIP = new IPAddress(finish.Info.SimIP);
+ 
+-                Client.Network.CurrentCaps.Dead = true;
++                if (Client.Network.CurrentCaps != null) Client.Network.CurrentCaps.Dead = true;
+ 				
+                 Simulator sim = Client.Network.Connect(simIP, finish.Info.SimPort,
+                     simulator.CircuitCode, true, seedcaps);
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-22 05:49:28 UTC (rev 869)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-22 06:37:10 UTC (rev 870)
+@@ -178,14 +178,15 @@
+                 WebRequest wreq = WebRequest.Create(uri);
+                 wreq.Method = &quot;POST&quot;;
+                 wreq.ContentLength = data.Length;
++                //wreq.ContentType = &quot;text/xml&quot;;
+ 
+                 Stream reqStream = wreq.GetRequestStream();
+                 reqStream.Write(data, 0, data.Length);
+-                reqStream.Close();
+-
++                
+                 HttpWebResponse wresp = (HttpWebResponse)wreq.GetResponse();
+                 BinaryReader reader = new BinaryReader(wresp.GetResponseStream());
+                 respBuf = reader.ReadBytes((int)wresp.ContentLength);
++                reqStream.Close();
+                 wresp.Close();
+             }
+             catch (Exception e)
+
+Modified: trunk/libsecondlife-cs/libsecondlife.build
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.build	2007-01-22 05:49:28 UTC (rev 869)
++++ trunk/libsecondlife-cs/libsecondlife.build	2007-01-22 06:37:10 UTC (rev 870)
+@@ -99,7 +99,7 @@
+ 				&lt;include name=&quot;InventorySystem/*.cs&quot; /&gt;
+ 				&lt;include name=&quot;JSON/*.cs&quot; /&gt;
+ 				&lt;include name=&quot;XmlRpcCS/*.cs&quot; /&gt;
+-				&lt;include name=&quot;libsecondlife.Utilities/Utilities.cs&quot; /&gt;
++				&lt;include name=&quot;libsecondlife.Utilities/*.cs&quot; /&gt;
+ 			&lt;/sources&gt;
+ 		&lt;/csc&gt;
+ 	&lt;/target&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000297.html">[Libsecondlife-commits] r869 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000299.html">[Libsecondlife-commits] [Patch #1842] Fix for libsecondlife.build	to include *.cs in /Utilities/
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

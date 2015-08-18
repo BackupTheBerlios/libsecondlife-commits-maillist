@@ -1,0 +1,1217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r694%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612080906.kB896LX5003807%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000051.html">
+   <LINK REL="Next"  HREF="000053.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator</H1>
+    <B>lonecoder at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r694%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612080906.kB896LX5003807%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r694 - in trunk/libsecondlife-cs: .	mapgenerator">lonecoder at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  8 10:06:21 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000051.html">[Libsecondlife-commits] r693 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000053.html">[Libsecondlife-commits] r695 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lonecoder
+Date: 2006-12-08 10:06:13 +0100 (Fri, 08 Dec 2006)
+New Revision: 694
+
+Modified:
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/_Packets_.cs
+   trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs
+Log:
+Fixed Prim Deserialization.  The problem was with LLUUID.ReadXml not moving the reader position up, so anything read after that would be corrupt.
+Changed vector types to structs.  LLUUID should probably be changed to a struct as well.
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -1020,9 +1020,9 @@
+                 new System.Text.RegularExpressions.Regex(@&quot;('|r([0-9])|r(\-))&quot;);
+             string json;
+             Dictionary&lt;string, object&gt; jsonObject = null;
+-            LLVector3 vector = null;
+-            LLVector3 posVector = null;
+-            LLVector3 lookatVector = null;
++            LLVector3 vector = LLVector3.Zero;
++            LLVector3 posVector = LLVector3.Zero;
++            LLVector3 lookatVector = LLVector3.Zero;
+             ulong regionHandle = 0;
+ 
+             try
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -906,7 +906,7 @@
+         {
+             float x, y, z, w;
+             uint localid;
+-            LLVector4 CollisionPlane = null;
++            LLVector4 CollisionPlane = LLVector4.Zero;
+             LLVector3 Position;
+             LLVector3 Velocity;
+             LLVector3 Acceleration;
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/Prims.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -25,6 +25,7 @@
+  */
+ 
+ using System;
++using System.ComponentModel;
+ using System.Xml;
+ using System.Xml.Serialization;
+ 
+@@ -99,81 +100,81 @@
+     public class PrimObject
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathtwistbegin&quot;)] public int PathTwistBegin = 0;
++        [XmlAttribute(&quot;pathtwistbegin&quot;), DefaultValue(0)] public int PathTwistBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathend&quot;)] public float PathEnd = 0;
++        [XmlAttribute(&quot;pathend&quot;), DefaultValue(0)] public float PathEnd;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;profilebegin&quot;)] public float ProfileBegin = 0;
++        [XmlAttribute(&quot;profilebegin&quot;), DefaultValue(0)] public float ProfileBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathradiusoffset&quot;)] public float PathRadiusOffset = 0;
++        [XmlAttribute(&quot;pathradiusoffset&quot;), DefaultValue(0)] public float PathRadiusOffset;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathskew&quot;)] public float PathSkew = 0;
++        [XmlAttribute(&quot;pathskew&quot;), DefaultValue(0)] public float PathSkew;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;profilecurve&quot;)] public uint ProfileCurve = 0;
++        [XmlAttribute(&quot;profilecurve&quot;), DefaultValue(0)] public uint ProfileCurve;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathscalex&quot;)] public float PathScaleX = 0;
++        [XmlAttribute(&quot;pathscalex&quot;), DefaultValue(0)] public float PathScaleX;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathscaley&quot;)] public float PathScaleY = 0;
++        [XmlAttribute(&quot;pathscaley&quot;), DefaultValue(0)] public float PathScaleY;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;localid&quot;)] public uint LocalID = 0;
++        [XmlAttribute(&quot;localid&quot;), DefaultValue(0)] public uint LocalID;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;parentid&quot;)] public uint ParentID = 0;
++        [XmlAttribute(&quot;parentid&quot;), DefaultValue(0)] public uint ParentID;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;material&quot;)] public uint Material = 0;
++        [XmlAttribute(&quot;material&quot;), DefaultValue(0)] public uint Material;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;name&quot;)] public string Name = &quot;&quot;;
++        [XmlAttribute(&quot;name&quot;), DefaultValue(&quot;&quot;)] public string Name = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;description&quot;)] public string Description = &quot;&quot;;
++        [XmlAttribute(&quot;description&quot;), DefaultValue(&quot;&quot;)] public string Description = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathshearx&quot;)] public float PathShearX = 0;
++        [XmlAttribute(&quot;pathshearx&quot;), DefaultValue(0)] public float PathShearX;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathsheary&quot;)] public float PathShearY = 0;
++        [XmlAttribute(&quot;pathsheary&quot;), DefaultValue(0)] public float PathShearY;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathtaperx&quot;)] public float PathTaperX = 0;
++        [XmlAttribute(&quot;pathtaperx&quot;), DefaultValue(0)] public float PathTaperX;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathtapery&quot;)] public float PathTaperY = 0;
++        [XmlAttribute(&quot;pathtapery&quot;), DefaultValue(0)] public float PathTaperY;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;profileend&quot;)] public float ProfileEnd = 0;
++        [XmlAttribute(&quot;profileend&quot;), DefaultValue(0)] public float ProfileEnd;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathbegin&quot;)] public float PathBegin = 0;
++        [XmlAttribute(&quot;pathbegin&quot;), DefaultValue(0)] public float PathBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathcurve&quot;)] public uint PathCurve = 0;
++        [XmlAttribute(&quot;pathcurve&quot;), DefaultValue(0)] public uint PathCurve;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathtwist&quot;)] public int PathTwist = 0;
++        [XmlAttribute(&quot;pathtwist&quot;), DefaultValue(0)] public int PathTwist;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;profilehollow&quot;)] public uint ProfileHollow = 0;
++        [XmlAttribute(&quot;profilehollow&quot;), DefaultValue(0)] public uint ProfileHollow;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;pathrevolutions&quot;)] public float PathRevolutions = 0;
++        [XmlAttribute(&quot;pathrevolutions&quot;), DefaultValue(0)] public float PathRevolutions;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;state&quot;)] public uint State;
++        [XmlAttribute(&quot;state&quot;), DefaultValue(0)] public uint State;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;text&quot;)] public string Text;
++        [XmlAttribute(&quot;text&quot;), DefaultValue(&quot;&quot;)] public string Text = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;regionhandle&quot;)] public ulong RegionHandle;
++        [XmlAttribute(&quot;regionhandle&quot;), DefaultValue(0)] public ulong RegionHandle;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;flags&quot;)] public ObjectFlags Flags;
++        [XmlAttribute(&quot;flags&quot;), DefaultValue(ObjectFlags.None)] public ObjectFlags Flags;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         [XmlIgnore] public ObjectManager.PCode PCode = ObjectManager.PCode.Prim;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         [XmlElement(&quot;id&quot;)] public LLUUID ID = LLUUID.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         [XmlElement(&quot;groupid&quot;)] public LLUUID GroupID = LLUUID.Zero;
++		/// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 Position = LLVector3.Zero;
++		/// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 Scale = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;position&quot;)] public LLVector3 Position = LLVector3.Zero;
++        public LLQuaternion Rotation = LLQuaternion.Identity;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;scale&quot;)]*/ public LLVector3 Scale = LLVector3.Zero;
++        public TextureEntry Textures = new TextureEntry();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;rotation&quot;)]*/ public LLQuaternion Rotation = LLQuaternion.Identity;
++        public TextureAnimation TextureAnim = new TextureAnimation();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;textures&quot;)]*/ public TextureEntry Textures = new TextureEntry();
++        public PrimFlexibleData Flexible = new PrimFlexibleData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;textureanimation&quot;)]*/ public TextureAnimation TextureAnim = new TextureAnimation();
++        public PrimLightData Light = new PrimLightData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;flexible&quot;)]*/ public PrimFlexibleData Flexible = new PrimFlexibleData();
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;light&quot;)]*/ public PrimLightData Light = new PrimLightData();
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        /*[XmlElement(&quot;particles&quot;)]*/ public ParticleSystem ParticleSys = new ParticleSystem();
++        public ParticleSystem ParticleSys = new ParticleSystem();
+ 
+         /// &lt;summary&gt;
+         /// Default constructor, zeroes out or sets default prim parameters
+@@ -491,17 +492,17 @@
+     public class PrimFlexibleData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;softness&quot;)] public int Softness;
++        [XmlAttribute(&quot;softness&quot;), DefaultValue(0)] public int Softness;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;gravity&quot;)] public float Gravity;
++        [XmlAttribute(&quot;gravity&quot;), DefaultValue(0)] public float Gravity;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;drag&quot;)] public float Drag;
++        [XmlAttribute(&quot;drag&quot;), DefaultValue(0)] public float Drag;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;wind&quot;)] public float Wind;
++        [XmlAttribute(&quot;wind&quot;), DefaultValue(0)] public float Wind;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;tension&quot;)] public float Tension;
++        [XmlAttribute(&quot;tension&quot;), DefaultValue(0)] public float Tension;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlElement(&quot;force&quot;)] public LLVector3 Force = LLVector3.Zero;
++        public LLVector3 Force = LLVector3.Zero;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -563,17 +564,17 @@
+     public class PrimLightData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;red&quot;)] public byte R;
++        [XmlAttribute(&quot;red&quot;), DefaultValue(0)] public byte R;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;green&quot;)] public byte G;
++        [XmlAttribute(&quot;green&quot;), DefaultValue(0)] public byte G;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;blue&quot;)] public byte B;
++        [XmlAttribute(&quot;blue&quot;), DefaultValue(0)] public byte B;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;intensity&quot;)] public float Intensity;
++        [XmlAttribute(&quot;intensity&quot;), DefaultValue(0)] public float Intensity;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;radius&quot;)] public float Radius;
++        [XmlAttribute(&quot;radius&quot;), DefaultValue(0)] public float Radius;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;falloff&quot;)] public float Falloff;
++        [XmlAttribute(&quot;falloff&quot;), DefaultValue(0)] public float Falloff;
+ 
+         /// &lt;summary&gt;
+         /// 
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/Types.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -25,6 +25,7 @@
+  */
+ 
+ using System;
++using System.ComponentModel;
+ using System.Net;
+ using System.Xml.Serialization;
+ 
+@@ -132,16 +133,19 @@
+         {
+             string val = reader.ReadString();
+ 
+-            if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
++			if (val.Length &gt; 0)
++			{
++				if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
+ 
+-            if (val.Length != 32) throw new Exception(&quot;Malformed data passed to LLUUID constructor: &quot; + val);
++				if (val.Length != 32) throw new Exception(&quot;Malformed data passed to LLUUID constructor: &quot; + val);
+ 
+-            for (int i = 0; i &lt; 16; ++i)
+-            {
+-                data[i] = Convert.ToByte(val.Substring(i * 2, 2), 16);
+-            }
++				for (int i = 0; i &lt; 16; ++i)
++				{
++					data[i] = Convert.ToByte(val.Substring(i * 2, 2), 16);
++				}
++			}
+ 
+-            //reader.MoveToContent();
++            reader.Skip();
+         }
+ 
+         /// &lt;summary&gt;
+@@ -150,7 +154,8 @@
+         /// &lt;param name=&quot;writer&quot;&gt;XmlWriter to serialize to&lt;/param&gt;
+         public void WriteXml(System.Xml.XmlWriter writer)
+         {
+-            writer.WriteString(this.ToString());
++			if (this != LLUUID.Zero)
++				writer.WriteString(this.ToString());
+         }
+ 
+         /// &lt;summary&gt;
+@@ -307,24 +312,16 @@
+     /// A three-dimensional vector with floating-point values
+     /// &lt;/summary&gt;
+     [Serializable]
+-	public class LLVector3
++	public struct LLVector3
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+-		[XmlAttribute(&quot;x&quot;)] public float X;
+-        /// &lt;summary&gt;Y value&lt;/summary&gt;
+-        [XmlAttribute(&quot;y&quot;)] public float Y;
++        [XmlAttribute(&quot;x&quot;), DefaultValue(0)] public float X;
++		/// &lt;summary&gt;Y value&lt;/summary&gt;
++        [XmlAttribute(&quot;y&quot;), DefaultValue(0)] public float Y;
+         /// &lt;summary&gt;Z value&lt;/summary&gt;
+-        [XmlAttribute(&quot;z&quot;)] public float Z;
++        [XmlAttribute(&quot;z&quot;), DefaultValue(0)] public float Z;
+ 
+         /// &lt;summary&gt;
+-        /// Default constructor, all values are set to 0.0
+-        /// &lt;/summary&gt;
+-		public LLVector3()
+-		{
+-			X = Y = Z = 0.0f;
+-		}
+-		
+-        /// &lt;summary&gt;
+         /// Constructor, builds a single-precision vector from a 
+         /// double-precision one
+         /// &lt;/summary&gt;
+@@ -352,7 +349,7 @@
+                 Array.Reverse(newArray, 4, 4);
+                 Array.Reverse(newArray, 8, 4);
+ 
+-                X = BitConverter.ToSingle(newArray, 0);
++				X = BitConverter.ToSingle(newArray, 0);
+                 Y = BitConverter.ToSingle(newArray, 4);
+                 Z = BitConverter.ToSingle(newArray, 8);
+             }
+@@ -501,24 +498,16 @@
+     /// A double-precision three-dimensional vector
+     /// &lt;/summary&gt;
+     [Serializable]
+-	public class LLVector3d
++	public struct LLVector3d
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+-        [XmlAttribute(&quot;x&quot;)] public double X;
++        [XmlAttribute(&quot;x&quot;), DefaultValue(0)] public double X;
+         /// &lt;summary&gt;Y value&lt;/summary&gt;
+-        [XmlAttribute(&quot;y&quot;)] public double Y;
++        [XmlAttribute(&quot;y&quot;), DefaultValue(0)] public double Y;
+         /// &lt;summary&gt;Z value&lt;/summary&gt;
+-        [XmlAttribute(&quot;z&quot;)] public double Z;
++        [XmlAttribute(&quot;z&quot;), DefaultValue(0)] public double Z;
+ 
+         /// &lt;summary&gt;
+-        /// Default constructor, sets all the values to 0.0
+-        /// &lt;/summary&gt;
+-		public LLVector3d()
+-		{
+-			X = Y = Z = 0.0d;
+-		}
+-
+-        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;x&quot;&gt;&lt;/param&gt;
+@@ -600,28 +589,20 @@
+     /// A four-dimensional vector
+     /// &lt;/summary&gt;
+     [Serializable]
+-	public class LLVector4
++	public struct LLVector4
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;x&quot;)] public float X;
++        [XmlAttribute(&quot;x&quot;), DefaultValue(0)] public float X;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;y&quot;)] public float Y;
++        [XmlAttribute(&quot;y&quot;), DefaultValue(0)] public float Y;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;z&quot;)] public float Z;
++        [XmlAttribute(&quot;z&quot;), DefaultValue(0)] public float Z;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        [XmlAttribute(&quot;s&quot;)] public float S;
++        [XmlAttribute(&quot;s&quot;), DefaultValue(0)] public float S;
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-		public LLVector4()
+-		{
+-			X = Y = Z = S = 0.0f;
+-		}
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;byteArray&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
+ 		public LLVector4(byte[] byteArray, int pos)
+@@ -692,25 +673,25 @@
+     /// A quaternion, used for rotations
+     /// &lt;/summary&gt;
+     [Serializable]
+-	public class LLQuaternion
++	public struct LLQuaternion
+ 	{
+         /// &lt;summary&gt;X value&lt;/summary&gt;
+-        [XmlAttribute(&quot;x&quot;)] public float X;
++        [XmlAttribute(&quot;x&quot;), DefaultValue(0)] public float X;
+         /// &lt;summary&gt;Y value&lt;/summary&gt;
+-        [XmlAttribute(&quot;y&quot;)] public float Y;
++        [XmlAttribute(&quot;y&quot;), DefaultValue(0)] public float Y;
+         /// &lt;summary&gt;Z value&lt;/summary&gt;
+-        [XmlAttribute(&quot;z&quot;)] public float Z;
++        [XmlAttribute(&quot;z&quot;), DefaultValue(0)] public float Z;
+         /// &lt;summary&gt;W value&lt;/summary&gt;
+-        [XmlAttribute(&quot;w&quot;)] public float W;
++        [XmlAttribute(&quot;w&quot;), DefaultValue(1)] public float W;
+ 
+-        /// &lt;summary&gt;
+-        /// Default constructor, initializes to no rotation (0,0,0,1)
+-        /// &lt;/summary&gt;
+-		public LLQuaternion()
+-		{
+-			X = Y = Z = 0.0f;
+-            W = 1.0f;
+-		}
++		///// &lt;summary&gt;
++		///// Default constructor, initializes to no rotation (0,0,0,1)
++		///// &lt;/summary&gt;
++		//public LLQuaternion()
++		//{
++		//    X = Y = Z = 0.0f;
++		//    W = 1.0f;
++		//}
+ 
+         /// &lt;summary&gt;
+         /// Build a quaternion object from a byte array
+@@ -925,6 +906,6 @@
+         /// &lt;summary&gt;
+         /// An LLQuaternion with a value of 0,0,0,1
+         /// &lt;/summary&gt;
+-        public readonly static LLQuaternion Identity = new LLQuaternion();
++        public readonly static LLQuaternion Identity = new LLQuaternion(0, 0, 0, 1);
+ 	}
+ }
+
+Modified: trunk/libsecondlife-cs/_Packets_.cs
+===================================================================
+--- trunk/libsecondlife-cs/_Packets_.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/_Packets_.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -3429,9 +3429,7 @@
+                 bytes[i++] = (byte)((Handle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((Handle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((Handle &gt;&gt; 56) % 256);
+-                if(SunAngVelocity == null) { Console.WriteLine(&quot;Warning: SunAngVelocity is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunAngVelocity.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(SunDirection == null) { Console.WriteLine(&quot;Warning: SunDirection is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunDirection.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -3664,12 +3662,10 @@
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 24) % 256);
+-                if(SunAngVelocity == null) { Console.WriteLine(&quot;Warning: SunAngVelocity is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunAngVelocity.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(SunPhase);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+                 Array.Copy(ba, 0, bytes, i, 4); i += 4;
+-                if(SunDirection == null) { Console.WriteLine(&quot;Warning: SunDirection is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunDirection.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -4483,7 +4479,6 @@
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+                 bytes[i++] = (byte)((HasTelehub) ? 1 : 0);
+-                if(TelehubPos == null) { Console.WriteLine(&quot;Warning: TelehubPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(TelehubPos.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -4700,9 +4695,7 @@
+                 Array.Copy(ObjectName, 0, bytes, i, ObjectName.Length); i += ObjectName.Length;
+                 if(ObjectID == null) { Console.WriteLine(&quot;Warning: ObjectID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ObjectID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(TelehubPos == null) { Console.WriteLine(&quot;Warning: TelehubPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(TelehubPos.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(TelehubRot == null) { Console.WriteLine(&quot;Warning: TelehubRot is null, in &quot; + this.GetType()); }
+                 Array.Copy(TelehubRot.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -4748,7 +4741,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(SpawnPointPos == null) { Console.WriteLine(&quot;Warning: SpawnPointPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(SpawnPointPos.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -4863,7 +4855,6 @@
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+                 bytes[i++] = (byte)((HasTelehub) ? 1 : 0);
+-                if(TelehubPos == null) { Console.WriteLine(&quot;Warning: TelehubPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(TelehubPos.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -7375,7 +7366,6 @@
+                 if(VersionString == null) { Console.WriteLine(&quot;Warning: VersionString is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)VersionString.Length;
+                 Array.Copy(VersionString, 0, bytes, i, VersionString.Length); i += VersionString.Length;
+-                if(AgentPosition == null) { Console.WriteLine(&quot;Warning: AgentPosition is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentPosition.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = Category;
+                 if(OwnerID == null) { Console.WriteLine(&quot;Warning: OwnerID is null, in &quot; + this.GetType()); }
+@@ -7392,7 +7382,6 @@
+                 Array.Copy(ScreenshotID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(LastOwnerID == null) { Console.WriteLine(&quot;Warning: LastOwnerID is null, in &quot; + this.GetType()); }
+                 Array.Copy(LastOwnerID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(ViewerPosition == null) { Console.WriteLine(&quot;Warning: ViewerPosition is null, in &quot; + this.GetType()); }
+                 Array.Copy(ViewerPosition.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -12114,7 +12103,6 @@
+                 Array.Copy(SimName, 0, bytes, i, SimName.Length); i += SimName.Length;
+                 if(ClassifiedID == null) { Console.WriteLine(&quot;Warning: ClassifiedID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ClassifiedID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(PosGlobal == null) { Console.WriteLine(&quot;Warning: PosGlobal is null, in &quot; + this.GetType()); }
+                 Array.Copy(PosGlobal.GetBytes(), 0, bytes, i, 24); i += 24;
+                 if(ParcelID == null) { Console.WriteLine(&quot;Warning: ParcelID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ParcelID.GetBytes(), 0, bytes, i, 16); i += 16;
+@@ -12352,7 +12340,6 @@
+                 bytes[i++] = ClassifiedFlags;
+                 if(ClassifiedID == null) { Console.WriteLine(&quot;Warning: ClassifiedID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ClassifiedID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(PosGlobal == null) { Console.WriteLine(&quot;Warning: PosGlobal is null, in &quot; + this.GetType()); }
+                 Array.Copy(PosGlobal.GetBytes(), 0, bytes, i, 24); i += 24;
+                 if(ParcelID == null) { Console.WriteLine(&quot;Warning: ParcelID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ParcelID.GetBytes(), 0, bytes, i, 16); i += 16;
+@@ -16445,9 +16432,7 @@
+             {
+                 if(RegionID == null) { Console.WriteLine(&quot;Warning: RegionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(RegionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -16609,9 +16594,7 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -16775,13 +16758,11 @@
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 24) % 256);
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(TeleportFlags % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 24) % 256);
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -17268,9 +17249,7 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -17400,7 +17379,6 @@
+                 bytes[i++] = (byte)((CircuitCode &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((CircuitCode &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((CircuitCode &gt;&gt; 24) % 256);
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(ParentEstateID % 256);
+                 bytes[i++] = (byte)((ParentEstateID &gt;&gt; 8) % 256);
+@@ -17410,7 +17388,6 @@
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 24) % 256);
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -17565,7 +17542,6 @@
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 24) % 256);
+                 bytes[i++] = SimAccess;
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(SimIP % 256);
+                 bytes[i++] = (byte)((SimIP &gt;&gt; 8) % 256);
+@@ -17575,7 +17551,6 @@
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((TeleportFlags &gt;&gt; 24) % 256);
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -20523,7 +20498,6 @@
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Size == null) { Console.WriteLine(&quot;Warning: Size is null, in &quot; + this.GetType()); }
+                 Array.Copy(Size.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -21421,7 +21395,6 @@
+                 bytes[i++] = (byte)((DuplicateFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((DuplicateFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((DuplicateFlags &gt;&gt; 24) % 256);
+-                if(Offset == null) { Console.WriteLine(&quot;Warning: Offset is null, in &quot; + this.GetType()); }
+                 Array.Copy(Offset.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -21668,12 +21641,10 @@
+                 bytes[i++] = (byte)((CopyRotates) ? 1 : 0);
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(RayStart == null) { Console.WriteLine(&quot;Warning: RayStart is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayStart.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(GroupID == null) { Console.WriteLine(&quot;Warning: GroupID is null, in &quot; + this.GetType()); }
+                 Array.Copy(GroupID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = (byte)((RayEndIsIntersection) ? 1 : 0);
+-                if(RayEnd == null) { Console.WriteLine(&quot;Warning: RayEnd is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayEnd.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)((BypassRaycast) ? 1 : 0);
+                 bytes[i++] = (byte)((CopyCenters) ? 1 : 0);
+@@ -21806,7 +21777,6 @@
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 24) % 256);
+-                if(Scale == null) { Console.WriteLine(&quot;Warning: Scale is null, in &quot; + this.GetType()); }
+                 Array.Copy(Scale.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -21974,7 +21944,6 @@
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 24) % 256);
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -25333,7 +25302,6 @@
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 24) % 256);
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -26521,7 +26489,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(GrabOffset == null) { Console.WriteLine(&quot;Warning: GrabOffset is null, in &quot; + this.GetType()); }
+                 Array.Copy(GrabOffset.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(LocalID % 256);
+                 bytes[i++] = (byte)((LocalID &gt;&gt; 8) % 256);
+@@ -26687,9 +26654,7 @@
+                 bytes[i++] = (byte)((TimeSinceLast &gt;&gt; 24) % 256);
+                 if(ObjectID == null) { Console.WriteLine(&quot;Warning: ObjectID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ObjectID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(GrabOffsetInitial == null) { Console.WriteLine(&quot;Warning: GrabOffsetInitial is null, in &quot; + this.GetType()); }
+                 Array.Copy(GrabOffsetInitial.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(GrabPosition == null) { Console.WriteLine(&quot;Warning: GrabPosition is null, in &quot; + this.GetType()); }
+                 Array.Copy(GrabPosition.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -27144,7 +27109,6 @@
+             {
+                 if(ObjectID == null) { Console.WriteLine(&quot;Warning: ObjectID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ObjectID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -29650,7 +29614,6 @@
+                 bytes[i++] = ReportType;
+                 if(ScreenshotID == null) { Console.WriteLine(&quot;Warning: ScreenshotID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ScreenshotID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -30476,7 +30439,6 @@
+                 bytes[i++] = SourceType;
+                 if(SourceID == null) { Console.WriteLine(&quot;Warning: SourceID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SourceID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -32167,12 +32129,10 @@
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((SecPerYear &gt;&gt; 24) % 256);
+-                if(SunAngVelocity == null) { Console.WriteLine(&quot;Warning: SunAngVelocity is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunAngVelocity.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(SunPhase);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+                 Array.Copy(ba, 0, bytes, i, 4); i += 4;
+-                if(SunDirection == null) { Console.WriteLine(&quot;Warning: SunDirection is null, in &quot; + this.GetType()); }
+                 Array.Copy(SunDirection.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -37193,7 +37153,6 @@
+                 if(SimName == null) { Console.WriteLine(&quot;Warning: SimName is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)SimName.Length;
+                 Array.Copy(SimName, 0, bytes, i, SimName.Length); i += SimName.Length;
+-                if(GlobalPos == null) { Console.WriteLine(&quot;Warning: GlobalPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(GlobalPos.GetBytes(), 0, bytes, i, 24); i += 24;
+                 if(Creator == null) { Console.WriteLine(&quot;Warning: Creator is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)Creator.Length;
+@@ -38161,7 +38120,6 @@
+                 bytes[i++] = (byte)SimName.Length;
+                 Array.Copy(SimName, 0, bytes, i, SimName.Length); i += SimName.Length;
+                 bytes[i++] = (byte)((Enabled) ? 1 : 0);
+-                if(PosGlobal == null) { Console.WriteLine(&quot;Warning: PosGlobal is null, in &quot; + this.GetType()); }
+                 Array.Copy(PosGlobal.GetBytes(), 0, bytes, i, 24); i += 24;
+                 bytes[i++] = (byte)((TopPick) ? 1 : 0);
+                 if(ParcelID == null) { Console.WriteLine(&quot;Warning: ParcelID is null, in &quot; + this.GetType()); }
+@@ -38386,7 +38344,6 @@
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+                 bytes[i++] = (byte)((Enabled) ? 1 : 0);
+-                if(PosGlobal == null) { Console.WriteLine(&quot;Warning: PosGlobal is null, in &quot; + this.GetType()); }
+                 Array.Copy(PosGlobal.GetBytes(), 0, bytes, i, 24); i += 24;
+                 bytes[i++] = (byte)((TopPick) ? 1 : 0);
+                 if(ParcelID == null) { Console.WriteLine(&quot;Warning: ParcelID is null, in &quot; + this.GetType()); }
+@@ -40029,9 +39986,7 @@
+                 if(SimName == null) { Console.WriteLine(&quot;Warning: SimName is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)SimName.Length;
+                 Array.Copy(SimName, 0, bytes, i, SimName.Length); i += SimName.Length;
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(SimPosition == null) { Console.WriteLine(&quot;Warning: SimPosition is null, in &quot; + this.GetType()); }
+                 Array.Copy(SimPosition.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -40499,7 +40454,6 @@
+                 byte[] ba;
+                 if(MediaID == null) { Console.WriteLine(&quot;Warning: MediaID is null, in &quot; + this.GetType()); }
+                 Array.Copy(MediaID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(UserLookAt == null) { Console.WriteLine(&quot;Warning: UserLookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(UserLookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(MediaURL == null) { Console.WriteLine(&quot;Warning: MediaURL is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)MediaURL.Length;
+@@ -40508,7 +40462,6 @@
+                 bytes[i++] = (byte)((LocalID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((LocalID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((LocalID &gt;&gt; 24) % 256);
+-                if(UserLocation == null) { Console.WriteLine(&quot;Warning: UserLocation is null, in &quot; + this.GetType()); }
+                 Array.Copy(UserLocation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(Name == null) { Console.WriteLine(&quot;Warning: Name is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)Name.Length;
+@@ -44730,7 +44683,6 @@
+                 bytes[i++] = (byte)((ActualArea &gt;&gt; 24) % 256);
+                 if(ParcelID == null) { Console.WriteLine(&quot;Warning: ParcelID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ParcelID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(UserLocation == null) { Console.WriteLine(&quot;Warning: UserLocation is null, in &quot; + this.GetType()); }
+                 Array.Copy(UserLocation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(Name == null) { Console.WriteLine(&quot;Warning: Name is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)Name.Length;
+@@ -47316,7 +47268,6 @@
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+                 Array.Copy(ba, 0, bytes, i, 4); i += 4;
+                 bytes[i++] = SourceType;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -48285,10 +48236,8 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+-                if(SearchDir == null) { Console.WriteLine(&quot;Warning: SearchDir is null, in &quot; + this.GetType()); }
+                 Array.Copy(SearchDir.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = SearchRegions;
+-                if(SearchPos == null) { Console.WriteLine(&quot;Warning: SearchPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(SearchPos.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(Range);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+@@ -48444,14 +48393,11 @@
+                 Array.Copy(GroupID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(OwnerID == null) { Console.WriteLine(&quot;Warning: OwnerID is null, in &quot; + this.GetType()); }
+                 Array.Copy(OwnerID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Velocity == null) { Console.WriteLine(&quot;Warning: Velocity is null, in &quot; + this.GetType()); }
+                 Array.Copy(Velocity.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(Range);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+                 Array.Copy(ba, 0, bytes, i, 4); i += 4;
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -48739,9 +48685,7 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -49854,7 +49798,6 @@
+                 if(FromAgentName == null) { Console.WriteLine(&quot;Warning: FromAgentName is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)FromAgentName.Length;
+                 Array.Copy(FromAgentName, 0, bytes, i, FromAgentName.Length); i += FromAgentName.Length;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -57748,7 +57691,6 @@
+             {
+                 bytes[i++] = (byte)((RezSelected) ? 1 : 0);
+                 bytes[i++] = (byte)((RemoveItem) ? 1 : 0);
+-                if(RayStart == null) { Console.WriteLine(&quot;Warning: RayStart is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayStart.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(ItemFlags % 256);
+                 bytes[i++] = (byte)((ItemFlags &gt;&gt; 8) % 256);
+@@ -57757,7 +57699,6 @@
+                 if(FromTaskID == null) { Console.WriteLine(&quot;Warning: FromTaskID is null, in &quot; + this.GetType()); }
+                 Array.Copy(FromTaskID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = (byte)((RayEndIsIntersection) ? 1 : 0);
+-                if(RayEnd == null) { Console.WriteLine(&quot;Warning: RayEnd is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayEnd.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = BypassRaycast;
+                 bytes[i++] = (byte)(EveryoneMask % 256);
+@@ -58010,7 +57951,6 @@
+             {
+                 bytes[i++] = (byte)((RezSelected) ? 1 : 0);
+                 bytes[i++] = (byte)((RemoveItem) ? 1 : 0);
+-                if(RayStart == null) { Console.WriteLine(&quot;Warning: RayStart is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayStart.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(ItemFlags % 256);
+                 bytes[i++] = (byte)((ItemFlags &gt;&gt; 8) % 256);
+@@ -58019,7 +57959,6 @@
+                 if(FromTaskID == null) { Console.WriteLine(&quot;Warning: FromTaskID is null, in &quot; + this.GetType()); }
+                 Array.Copy(FromTaskID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = (byte)((RayEndIsIntersection) ? 1 : 0);
+-                if(RayEnd == null) { Console.WriteLine(&quot;Warning: RayEnd is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayEnd.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = BypassRaycast;
+                 bytes[i++] = (byte)(EveryoneMask % 256);
+@@ -60854,7 +60793,6 @@
+                 if(RegionID == null) { Console.WriteLine(&quot;Warning: RegionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(RegionID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = (byte)((Success) ? 1 : 0);
+-                if(RegionPos == null) { Console.WriteLine(&quot;Warning: RegionPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(RegionPos.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -65367,7 +65305,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(LocationPos == null) { Console.WriteLine(&quot;Warning: LocationPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(LocationPos.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(SimName == null) { Console.WriteLine(&quot;Warning: SimName is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)SimName.Length;
+@@ -65376,7 +65313,6 @@
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 24) % 256);
+-                if(LocationLookAt == null) { Console.WriteLine(&quot;Warning: LocationLookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LocationLookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -65538,7 +65474,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(LocationPos == null) { Console.WriteLine(&quot;Warning: LocationPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(LocationPos.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(AgentID == null) { Console.WriteLine(&quot;Warning: AgentID is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+@@ -65556,7 +65491,6 @@
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((LocationID &gt;&gt; 24) % 256);
+-                if(LocationLookAt == null) { Console.WriteLine(&quot;Warning: LocationLookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LocationLookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -82410,7 +82344,6 @@
+                 bytes[i++] = (byte)((Msg.Length &gt;&gt; 8) % 256);
+                 Array.Copy(Msg, 0, bytes, i, Msg.Length); i += Msg.Length;
+                 bytes[i++] = (byte)((AllowPublish) ? 1 : 0);
+-                if(PosGlobal == null) { Console.WriteLine(&quot;Warning: PosGlobal is null, in &quot; + this.GetType()); }
+                 Array.Copy(PosGlobal.GetBytes(), 0, bytes, i, 24); i += 24;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+@@ -85048,7 +84981,6 @@
+                 bytes[i++] = ProfileBegin;
+                 bytes[i++] = (byte)PathRadiusOffset;
+                 bytes[i++] = (byte)PathSkew;
+-                if(RayStart == null) { Console.WriteLine(&quot;Warning: RayStart is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayStart.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = ProfileCurve;
+                 bytes[i++] = PathScaleX;
+@@ -85059,20 +84991,17 @@
+                 bytes[i++] = (byte)PathTaperX;
+                 bytes[i++] = (byte)PathTaperY;
+                 bytes[i++] = RayEndIsIntersection;
+-                if(RayEnd == null) { Console.WriteLine(&quot;Warning: RayEnd is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayEnd.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = ProfileEnd;
+                 bytes[i++] = PathBegin;
+                 bytes[i++] = BypassRaycast;
+                 bytes[i++] = PCode;
+                 bytes[i++] = PathCurve;
+-                if(Scale == null) { Console.WriteLine(&quot;Warning: Scale is null, in &quot; + this.GetType()); }
+                 Array.Copy(Scale.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = State;
+                 bytes[i++] = (byte)PathTwist;
+                 bytes[i++] = ProfileHollow;
+                 bytes[i++] = PathRevolutions;
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(RayTargetID == null) { Console.WriteLine(&quot;Warning: RayTargetID is null, in &quot; + this.GetType()); }
+                 Array.Copy(RayTargetID.GetBytes(), 0, bytes, i, 16); i += 16;
+@@ -85617,7 +85546,6 @@
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((ObjectLocalID &gt;&gt; 24) % 256);
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -86104,9 +86032,7 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(LookAt == null) { Console.WriteLine(&quot;Warning: LookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(LookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -88634,24 +88560,18 @@
+                 bytes[i++] = (byte)((ControlFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ControlFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((ControlFlags &gt;&gt; 24) % 256);
+-                if(CameraAtAxis == null) { Console.WriteLine(&quot;Warning: CameraAtAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraAtAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(Far);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+                 Array.Copy(ba, 0, bytes, i, 4); i += 4;
+                 if(AgentID == null) { Console.WriteLine(&quot;Warning: AgentID is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(CameraCenter == null) { Console.WriteLine(&quot;Warning: CameraCenter is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraCenter.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(CameraLeftAxis == null) { Console.WriteLine(&quot;Warning: CameraLeftAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraLeftAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(HeadRotation == null) { Console.WriteLine(&quot;Warning: HeadRotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(HeadRotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(CameraUpAxis == null) { Console.WriteLine(&quot;Warning: CameraUpAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraUpAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(BodyRotation == null) { Console.WriteLine(&quot;Warning: BodyRotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(BodyRotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = Flags;
+                 bytes[i++] = State;
+@@ -88927,7 +88847,6 @@
+             {
+                 if(TargetID == null) { Console.WriteLine(&quot;Warning: TargetID is null, in &quot; + this.GetType()); }
+                 Array.Copy(TargetID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(Offset == null) { Console.WriteLine(&quot;Warning: Offset is null, in &quot; + this.GetType()); }
+                 Array.Copy(Offset.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -90088,7 +90007,6 @@
+                 bytes[i++] = (byte)((CRC &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((CRC &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((CRC &gt;&gt; 24) % 256);
+-                if(JointPivot == null) { Console.WriteLine(&quot;Warning: JointPivot is null, in &quot; + this.GetType()); }
+                 Array.Copy(JointPivot.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = PathEnd;
+                 if(MediaURL == null) { Console.WriteLine(&quot;Warning: MediaURL is null, in &quot; + this.GetType()); }
+@@ -90146,9 +90064,7 @@
+                 if(FullID == null) { Console.WriteLine(&quot;Warning: FullID is null, in &quot; + this.GetType()); }
+                 Array.Copy(FullID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = PathCurve;
+-                if(Scale == null) { Console.WriteLine(&quot;Warning: Scale is null, in &quot; + this.GetType()); }
+                 Array.Copy(Scale.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(JointAxisOrAnchor == null) { Console.WriteLine(&quot;Warning: JointAxisOrAnchor is null, in &quot; + this.GetType()); }
+                 Array.Copy(JointAxisOrAnchor.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = Flags;
+                 bytes[i++] = State;
+@@ -91822,13 +91738,9 @@
+             {
+                 bytes[i++] = (byte)((AutoPilot) ? 1 : 0);
+                 bytes[i++] = (byte)((ForceMouselook) ? 1 : 0);
+-                if(CameraEyeOffset == null) { Console.WriteLine(&quot;Warning: CameraEyeOffset is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraEyeOffset.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(CameraAtOffset == null) { Console.WriteLine(&quot;Warning: CameraAtOffset is null, in &quot; + this.GetType()); }
+                 Array.Copy(CameraAtOffset.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(SitPosition == null) { Console.WriteLine(&quot;Warning: SitPosition is null, in &quot; + this.GetType()); }
+                 Array.Copy(SitPosition.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(SitRotation == null) { Console.WriteLine(&quot;Warning: SitRotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(SitRotation.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -91977,7 +91889,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(Plane == null) { Console.WriteLine(&quot;Warning: Plane is null, in &quot; + this.GetType()); }
+                 Array.Copy(Plane.GetBytes(), 0, bytes, i, 16); i += 16;
+             }
+ 
+@@ -92251,11 +92162,8 @@
+                 bytes[i++] = (byte)((SelectedPrims &gt;&gt; 24) % 256);
+                 if(MediaID == null) { Console.WriteLine(&quot;Warning: MediaID is null, in &quot; + this.GetType()); }
+                 Array.Copy(MediaID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(UserLookAt == null) { Console.WriteLine(&quot;Warning: UserLookAt is null, in &quot; + this.GetType()); }
+                 Array.Copy(UserLookAt.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(AABBMax == null) { Console.WriteLine(&quot;Warning: AABBMax is null, in &quot; + this.GetType()); }
+                 Array.Copy(AABBMax.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(AABBMin == null) { Console.WriteLine(&quot;Warning: AABBMin is null, in &quot; + this.GetType()); }
+                 Array.Copy(AABBMin.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(RequestResult % 256);
+                 bytes[i++] = (byte)((RequestResult &gt;&gt; 8) % 256);
+@@ -92287,7 +92195,6 @@
+                 bytes[i++] = (byte)((OtherCount &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((OtherCount &gt;&gt; 24) % 256);
+                 bytes[i++] = (byte)((IsGroupOwned) ? 1 : 0);
+-                if(UserLocation == null) { Console.WriteLine(&quot;Warning: UserLocation is null, in &quot; + this.GetType()); }
+                 Array.Copy(UserLocation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(MaxPrims % 256);
+                 bytes[i++] = (byte)((MaxPrims &gt;&gt; 8) % 256);
+@@ -92874,13 +92781,10 @@
+                 if(AgentID == null) { Console.WriteLine(&quot;Warning: AgentID is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = (byte)((ChangedGrid) ? 1 : 0);
+-                if(HeadRotation == null) { Console.WriteLine(&quot;Warning: HeadRotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(HeadRotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(LeftAxis == null) { Console.WriteLine(&quot;Warning: LeftAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(LeftAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Size == null) { Console.WriteLine(&quot;Warning: Size is null, in &quot; + this.GetType()); }
+                 Array.Copy(Size.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = GodLevel;
+                 bytes[i++] = (byte)(RegionHandle % 256);
+@@ -92892,26 +92796,20 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+                 bytes[i++] = AgentAccess;
+-                if(AgentVel == null) { Console.WriteLine(&quot;Warning: AgentVel is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentVel.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(AgentPos == null) { Console.WriteLine(&quot;Warning: AgentPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentPos.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(PreyAgent == null) { Console.WriteLine(&quot;Warning: PreyAgent is null, in &quot; + this.GetType()); }
+                 Array.Copy(PreyAgent.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(Throttles == null) { Console.WriteLine(&quot;Warning: Throttles is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)Throttles.Length;
+                 Array.Copy(Throttles, 0, bytes, i, Throttles.Length); i += Throttles.Length;
+-                if(UpAxis == null) { Console.WriteLine(&quot;Warning: UpAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(UpAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+                 if(AgentTextures == null) { Console.WriteLine(&quot;Warning: AgentTextures is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)(AgentTextures.Length % 256);
+                 bytes[i++] = (byte)((AgentTextures.Length &gt;&gt; 8) % 256);
+                 Array.Copy(AgentTextures, 0, bytes, i, AgentTextures.Length); i += AgentTextures.Length;
+-                if(AtAxis == null) { Console.WriteLine(&quot;Warning: AtAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(AtAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Center == null) { Console.WriteLine(&quot;Warning: Center is null, in &quot; + this.GetType()); }
+                 Array.Copy(Center.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(BodyRotation == null) { Console.WriteLine(&quot;Warning: BodyRotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(BodyRotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 ba = BitConverter.GetBytes(Aspect);
+                 if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+@@ -93400,9 +93298,7 @@
+                 bytes[i++] = (byte)((ChangedGrid) ? 1 : 0);
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                if(LeftAxis == null) { Console.WriteLine(&quot;Warning: LeftAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(LeftAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Size == null) { Console.WriteLine(&quot;Warning: Size is null, in &quot; + this.GetType()); }
+                 Array.Copy(Size.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(RegionHandle % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 8) % 256);
+@@ -93412,15 +93308,10 @@
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((RegionHandle &gt;&gt; 56) % 256);
+-                if(AgentVel == null) { Console.WriteLine(&quot;Warning: AgentVel is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentVel.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(AgentPos == null) { Console.WriteLine(&quot;Warning: AgentPos is null, in &quot; + this.GetType()); }
+                 Array.Copy(AgentPos.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(UpAxis == null) { Console.WriteLine(&quot;Warning: UpAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(UpAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(AtAxis == null) { Console.WriteLine(&quot;Warning: AtAxis is null, in &quot; + this.GetType()); }
+                 Array.Copy(AtAxis.GetBytes(), 0, bytes, i, 12); i += 12;
+-                if(Center == null) { Console.WriteLine(&quot;Warning: Center is null, in &quot; + this.GetType()); }
+                 Array.Copy(Center.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+@@ -93709,7 +93600,6 @@
+                 bytes[i++] = (byte)((EveryoneMask &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((EveryoneMask &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((EveryoneMask &gt;&gt; 24) % 256);
+-                if(Scale == null) { Console.WriteLine(&quot;Warning: Scale is null, in &quot; + this.GetType()); }
+                 Array.Copy(Scale.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = State;
+                 bytes[i++] = (byte)PathTwist;
+@@ -93719,7 +93609,6 @@
+                 Array.Copy(TextureEntry, 0, bytes, i, TextureEntry.Length); i += TextureEntry.Length;
+                 bytes[i++] = ProfileHollow;
+                 bytes[i++] = PathRevolutions;
+-                if(Rotation == null) { Console.WriteLine(&quot;Warning: Rotation is null, in &quot; + this.GetType()); }
+                 Array.Copy(Rotation.GetBytes(), 0, bytes, i, 12); i += 12;
+                 bytes[i++] = (byte)(NextOwnerMask % 256);
+                 bytes[i++] = (byte)((NextOwnerMask &gt;&gt; 8) % 256);
+@@ -94082,7 +93971,6 @@
+                 bytes[i++] = (byte)((Handle &gt;&gt; 40) % 256);
+                 bytes[i++] = (byte)((Handle &gt;&gt; 48) % 256);
+                 bytes[i++] = (byte)((Handle &gt;&gt; 56) % 256);
+-                if(Position == null) { Console.WriteLine(&quot;Warning: Position is null, in &quot; + this.GetType()); }
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+             }
+ 
+
+Modified: trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs
+===================================================================
+--- trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs	2006-12-07 22:04:27 UTC (rev 693)
++++ trunk/libsecondlife-cs/mapgenerator/mapgenerator.cs	2006-12-08 09:06:13 UTC (rev 694)
+@@ -224,22 +224,19 @@
+                     writer.WriteLine(&quot;bytes[i++] = (byte)(&quot; + field.Name + &quot; % 256);&quot;);
+                     writer.WriteLine(&quot;                bytes[i++] = (byte)((&quot; + field.Name + &quot; &gt;&gt; 8) % 256);&quot;);
+                     break;
+-                //case FieldType.LLQuaternion:
+                 case FieldType.LLUUID:
+-                case FieldType.LLVector4:
+                     writer.WriteLine(&quot;if(&quot; + field.Name + &quot; == null) { Console.WriteLine(\&quot;Warning: &quot; + field.Name + &quot; is null, in \&quot; + this.GetType()); }&quot;);
+                     writer.Write(&quot;                &quot;);
+                     writer.WriteLine(&quot;Array.Copy(&quot; + field.Name + &quot;.GetBytes(), 0, bytes, i, 16); i += 16;&quot;);
+                     break;
++                case FieldType.LLVector4:
++                    writer.WriteLine(&quot;Array.Copy(&quot; + field.Name + &quot;.GetBytes(), 0, bytes, i, 16); i += 16;&quot;);
++                    break;
+                 case FieldType.LLQuaternion:
+                 case FieldType.LLVector3:
+-                    writer.WriteLine(&quot;if(&quot; + field.Name + &quot; == null) { Console.WriteLine(\&quot;Warning: &quot; + field.Name + &quot; is null, in \&quot; + this.GetType()); }&quot;);
+-                    writer.Write(&quot;                &quot;);
+                     writer.WriteLine(&quot;Array.Copy(&quot; + field.Name + &quot;.GetBytes(), 0, bytes, i, 12); i += 12;&quot;);
+                     break;
+                 case FieldType.LLVector3d:
+-                    writer.WriteLine(&quot;if(&quot; + field.Name + &quot; == null) { Console.WriteLine(\&quot;Warning: &quot; + field.Name + &quot; is null, in \&quot; + this.GetType()); }&quot;);
+-                    writer.Write(&quot;                &quot;);
+                     writer.WriteLine(&quot;Array.Copy(&quot; + field.Name + &quot;.GetBytes(), 0, bytes, i, 24); i += 24;&quot;);
+                     break;
+                 case FieldType.U8:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000051.html">[Libsecondlife-commits] r693 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000053.html">[Libsecondlife-commits] r695 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

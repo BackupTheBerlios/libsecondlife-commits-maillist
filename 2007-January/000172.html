@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r787 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r787%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701031755.l03Hteih028684%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000171.html">
+   <LINK REL="Next"  HREF="000173.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r787 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r787%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701031755.l03Hteih028684%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r787 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  3 18:55:40 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000171.html">[Libsecondlife-commits] [Patch #1796] Robustness++,	accounting for permissions in GetInventoryAsse
+</A></li>
+        <LI>Next message: <A HREF="000173.html">[Libsecondlife-commits] [Patch #1796] Robustness++,	accounting for permissions in GetInventoryAsse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-03 18:55:31 +0100 (Wed, 03 Jan 2007)
+New Revision: 787
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/Asset.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Merged in patches 1796 &amp; 1795. Who likes scripts? I don't think I need to change the nant process.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/Asset.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/Asset.cs	2007-01-02 02:12:37 UTC (rev 786)
++++ trunk/libsecondlife-cs/AssetSystem/Asset.cs	2007-01-03 17:55:31 UTC (rev 787)
+@@ -39,6 +39,7 @@
+         public const sbyte ASSET_TYPE_IMAGE    = 0;
+         public const sbyte ASSET_TYPE_WEARABLE_BODY = 13;
+         public const sbyte ASSET_TYPE_WEARABLE_CLOTHING = 5;
++        public const sbyte ASSET_TYPE_SCRIPT = 10;
+ 
+ 		public LLUUID AssetID;
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-02 02:12:37 UTC (rev 786)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-03 17:55:31 UTC (rev 787)
+@@ -38,6 +38,36 @@
+ 
+ namespace libsecondlife.AssetSystem
+ {
++    public enum AssetPermission : uint
++    {
++        All = 0x7FFFFFFF,
++        Copy = 0x00008000,
++        Modify = 0x00004000,
++        Transfer = 0x00002000,
++        Move = 0x00080000
++    }
++
++    public class AssetPermissionException : Exception 
++    {
++        private InventoryItem _Item;
++        public InventoryItem Item 
++        {
++            get { return _Item; }
++        }
++        private SecondLife _Client;
++        public SecondLife Client
++        {
++            get { return _Client; }
++        }
++
++        public AssetPermissionException(InventoryItem item, SecondLife client, string message)
++            : base (message)
++        {
++            _Item = item;
++            _Client = client;
++        }
++    }
++
+ 	/// &lt;summary&gt;
+ 	/// Summary description for AssetManager.
+ 	/// &lt;/summary&gt;
+@@ -138,6 +168,11 @@
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+ 		public void GetInventoryAsset( InventoryItem item )
+ 		{
++            if ( (item.OwnerMask &amp; (uint)AssetPermission.Copy) == 0 )
++                throw new AssetPermissionException(item, slClient, &quot;Asset data refused, Copy permission needed.&quot;);
++            if ( (item.OwnerMask &amp; (uint)AssetPermission.Modify) == 0 &amp;&amp; (item.Type == 10) )
++                throw new AssetPermissionException(item, slClient, &quot;Asset data refused, Modify permission needed for scripts.&quot;);
++
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+             AssetRequestDownload request = new AssetRequestDownload(TransferID);
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2007-01-02 02:12:37 UTC (rev 786)
++++ trunk/libsecondlife-cs/AssetSystem/AssetPacketHelpers.cs	2007-01-03 17:55:31 UTC (rev 787)
+@@ -113,9 +113,9 @@
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+         public static Packet TransferRequest(LLUUID SessionID, LLUUID AgentID, LLUUID TransferID, InventoryItem item)
+ 		{
+-            if (item.Type != 7)
++            if (item.Type != 7 &amp;&amp; item.Type != 10)
+             {
+-                Console.WriteLine(&quot;Warning: TransferRequest may not work for items other then notecards of type 7&quot;);
++                Console.WriteLine(&quot;Warning: TransferRequest may not work for items other then notecards of type 7 and scripts of type 10&quot;);
+             }
+ 
+ 			byte[] param = new byte[100];
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-02 02:12:37 UTC (rev 786)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-03 17:55:31 UTC (rev 787)
+@@ -544,6 +544,12 @@
+                                 invItem = temp;
+                             }
+ 
++                            if ( (invItem.InvType == 10) &amp;&amp; (invItem.Type == Asset.ASSET_TYPE_SCRIPT) )
++                            {
++                                InventoryItem temp = new InventoryScript(this, invItem);
++                                invItem = temp;
++                            }
++
+                             if ((invItem.InvType == 18) &amp;&amp; 
+                                 (
+                                     (invItem.Type == Asset.ASSET_TYPE_WEARABLE_BODY)
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-02 02:12:37 UTC (rev 786)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-03 17:55:31 UTC (rev 787)
+@@ -99,6 +99,7 @@
+     &lt;Compile Include=&quot;AssetSystem\AssetPacketHelpers.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequestDownload.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequestUpload.cs&quot; /&gt;
++    &lt;Compile Include=&quot;AssetSystem\AssetScript.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Body.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Clothing.cs&quot; /&gt;
+@@ -110,6 +111,7 @@
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;AvatarManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\DownloadRequest_Folder.cs&quot; /&gt;
++    &lt;Compile Include=&quot;InventorySystem\InventoryScript.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\InventoryWearable.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatarStatus.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatar.cs&quot; /&gt;
+@@ -222,4 +224,4 @@
+     &lt;PostBuildEvent&gt;
+     &lt;/PostBuildEvent&gt;
+   &lt;/PropertyGroup&gt;
+-&lt;/Project&gt;
+\ No newline at end of file
++&lt;/Project&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000171.html">[Libsecondlife-commits] [Patch #1796] Robustness++,	accounting for permissions in GetInventoryAsse
+</A></li>
+	<LI>Next message: <A HREF="000173.html">[Libsecondlife-commits] [Patch #1796] Robustness++,	accounting for permissions in GetInventoryAsse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

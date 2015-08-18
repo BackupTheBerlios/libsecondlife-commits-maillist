@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r647 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r647%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611281758.kASHwuWs019549%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000003.html">
+   <LINK REL="Next"  HREF="000007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r647 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r647%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611281758.kASHwuWs019549%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r647 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 28 18:58:56 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000003.html">[Libsecondlife-commits] r646 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000007.html">[Libsecondlife-commits] r648 - in branches/aditi: data	libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-28 18:58:48 +0100 (Tue, 28 Nov 2006)
+New Revision: 647
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+TestClient can load a list of accounts from a file at the command line now, and a slew of bugfixes
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-11-28 07:55:15 UTC (rev 646)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-11-28 17:58:48 UTC (rev 647)
+@@ -16,7 +16,7 @@
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+-			if (args.Length &lt; 1)
++			if (args.Length != 1)
+                 return &quot;usage: jump 1000&quot;;
+ 
+ 			float height = 0;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-28 07:55:15 UTC (rev 646)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-28 17:58:48 UTC (rev 647)
+@@ -1,34 +1,74 @@
+ using System;
+ using System.Collections.Generic;
+-using System.Text;
++using System.IO;
+ 
+-
+ namespace libsecondlife.TestClient
+ {
+     public class Program
+     {
++        private static void Usage()
++        {
++            Console.WriteLine(&quot;Usage: &quot; + Environment.NewLine +
++                    &quot;TestClient.exe firstname lastname password [master name]&quot; + Environment.NewLine +
++                    &quot;TestClient.exe --file filename [master name]&quot;);
++        }
++
+         static void Main(string[] args)
+         {
+-            if (args.Length &lt; 1 || args.Length &gt; 5)
++            if (args.Length &lt; 2 || args.Length &gt; 5)
+             {
+-                Console.WriteLine(&quot;Usage: &quot; + Environment.NewLine +
+-                    &quot;TestClient.exe firstname lastname password [master name]&quot; + Environment.NewLine +
+-                    &quot;TestClient.exe filename [master name]&quot;);
++                Usage();
++                return;
+             }
+ 
+             TestClient tester;
+             List&lt;LoginDetails&gt; accounts = new List&lt;LoginDetails&gt;();
+             LoginDetails account;
+ 
+-            if (args.Length &lt;= 2)
++            if (args[0] == &quot;--file&quot;)
+             {
+                 // Loading names from a file
+-                // FIXME:
++                try
++                {
++                    using (StreamReader reader = new StreamReader(args[1]))
++                    {
++                        string line;
++                        int lineNumber = 0;
+ 
+-                Console.WriteLine(&quot;FIXME!&quot;);
+-                return;
++                        while ((line = reader.ReadLine()) != null)
++                        {
++                            lineNumber++;
++                            string[] tokens = line.Trim().Split(new char[] { ' ', ',' });
++
++                            if (tokens.Length == 3)
++                            {
++                                account = new LoginDetails();
++                                account.FirstName = tokens[0];
++                                account.LastName = tokens[1];
++                                account.Password = tokens[2];
++
++                                if (args.Length == 4)
++                                {
++                                    account.Master = args[2] + &quot; &quot; + args[3];
++                                }
++
++                                accounts.Add(account);
++                            }
++                            else
++                            {
++                                Console.WriteLine(&quot;Invalid data on line &quot; + lineNumber +
++                                    &quot;, must be in the format of: FirstName LastName Password&quot;);
++                            }
++                        }
++                    }
++                }
++                catch (Exception)
++                {
++                    Console.WriteLine(&quot;Error reading from &quot; + args[1]);
++                    return;
++                }
+             }
+-            else
++            else if (args.Length == 3 || args.Length == 5)
+             {
+                 // Taking a single login off the command-line
+                 account = new LoginDetails();
+@@ -43,7 +83,13 @@
+ 
+                 accounts.Add(account);
+             }
++            else
++            {
++                Usage();
++                return;
++            }
+ 
++            // Login the accounts and run the input loop
+             tester = new TestClient(accounts);
+             tester.Run();
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-28 07:55:15 UTC (rev 646)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-28 17:58:48 UTC (rev 647)
+@@ -322,18 +322,27 @@
+             LLUUID regionID, LLVector3 position, byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, 
+             string message, byte offline, byte[] binaryBucket)
+         {
+-            if (GroupMembers != null &amp;&amp; !GroupMembers.ContainsKey(fromAgentID) &amp;&amp; fromAgentName.ToLower().TrimEnd() != Master.ToLower().TrimEnd())
++            if (Master.Length &gt; 0)
+             {
+-                // Not a member of my group and not master, ignore the IM
+-                Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot; (ignored): &quot; + message);
+-
+-                return;
++                if (fromAgentName.ToLower().Trim() != Master.ToLower().Trim())
++                {
++                    // Received an IM from someone that is not the bot's master, ignore
++                    Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot; (not master): &quot; + message);
++                    return;
++                }
+             }
+             else
+             {
+-                Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message);
++                if (GroupMembers != null &amp;&amp; !GroupMembers.ContainsKey(fromAgentID))
++                {
++                    // Received an IM from someone outside the bot's group, ignore
++                    Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot; (not in group): &quot; + message);
++                    return;
++                }
+             }
+ 
++            Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message);
++
+             if (Clients.ContainsKey(toAgentID))
+             {
+                 if (dialog == 22)
+@@ -348,6 +357,7 @@
+             }
+             else
+             {
++                // This shouldn't happen
+                 Console.WriteLine(&quot;A bot that we aren't tracking received an IM?&quot;);
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-28 07:55:15 UTC (rev 646)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-28 17:58:48 UTC (rev 647)
+@@ -14,7 +14,7 @@
+     &lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
+     &lt;DebugType&gt;full&lt;/DebugType&gt;
+     &lt;Optimize&gt;false&lt;/Optimize&gt;
+-    &lt;OutputPath&gt;..\..\bin\&lt;/OutputPath&gt;
++    &lt;OutputPath&gt;..\..\..\bin\&lt;/OutputPath&gt;
+     &lt;DefineConstants&gt;DEBUG;TRACE&lt;/DefineConstants&gt;
+     &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
+     &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
+@@ -35,6 +35,7 @@
+   &lt;ItemGroup&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\TeleportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000003.html">[Libsecondlife-commits] r646 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000007.html">[Libsecondlife-commits] r648 - in branches/aditi: data	libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

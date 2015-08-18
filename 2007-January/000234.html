@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r830 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r830%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090957.l099vpME015100%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000233.html">
+   <LINK REL="Next"  HREF="000235.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r830 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r830%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090957.l099vpME015100%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r830 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 10:57:51 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000233.html">[Libsecondlife-commits] r829 - in trunk/libsecondlife-cs: .	AssetSystem
+</A></li>
+        <LI>Next message: <A HREF="000235.html">[Libsecondlife-commits] r831 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-09 10:57:39 +0100 (Tue, 09 Jan 2007)
+New Revision: 830
+
+Modified:
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/libsecondlife.mdp
+   trunk/libsecondlife-cs/libsecondlife.mds
+Log:
+Fixed the ObjectFlags enum to inherit from a uint, and attempting to bring the monodevelop project files up to speed
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2007-01-09 09:47:45 UTC (rev 829)
++++ trunk/libsecondlife-cs/Prims.cs	2007-01-09 09:57:39 UTC (rev 830)
+@@ -35,7 +35,7 @@
+     /// Primary parameters for primitives such as Physics Enabled or Phantom
+     /// &lt;/summary&gt;
+     [Flags]
+-    public enum ObjectFlags
++    public enum ObjectFlags : uint
+     {
+         /// &lt;summary&gt;None of the primary flags are enabled&lt;/summary&gt;
+         None = 0,
+
+Modified: trunk/libsecondlife-cs/libsecondlife.mdp
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.mdp	2007-01-09 09:47:45 UTC (rev 829)
++++ trunk/libsecondlife-cs/libsecondlife.mdp	2007-01-09 09:57:39 UTC (rev 830)
+@@ -1,92 +1,95 @@
+-&lt;Project name=&quot;libsecondlife&quot; fileversion=&quot;2.0&quot; language=&quot;C#&quot; clr-version=&quot;Net_2_0&quot; ctype=&quot;DotNetProject&quot;&gt;
+-  &lt;Configurations active=&quot;Debug&quot;&gt;
+-    &lt;Configuration name=&quot;Debug&quot; ctype=&quot;DotNetProjectConfiguration&quot;&gt;
+-      &lt;Output directory=&quot;./bin/Debug&quot; assembly=&quot;libsecondlife&quot; /&gt;
+-      &lt;Build debugmode=&quot;True&quot; target=&quot;Library&quot; /&gt;
+-      &lt;Execution runwithwarnings=&quot;True&quot; consolepause=&quot;True&quot; runtime=&quot;MsNet&quot; clr-version=&quot;Net_2_0&quot; /&gt;
+-      &lt;CodeGeneration compiler=&quot;Csc&quot; warninglevel=&quot;4&quot; optimize=&quot;True&quot; unsafecodeallowed=&quot;False&quot; generateoverflowchecks=&quot;True&quot; mainclass=&quot;&quot; generatexmldocumentation=&quot;False&quot; ctype=&quot;CSharpCompilerParameters&quot; /&gt;
+-    &lt;/Configuration&gt;
+-    &lt;Configuration name=&quot;Release&quot; ctype=&quot;DotNetProjectConfiguration&quot;&gt;
+-      &lt;Output directory=&quot;./bin/Release&quot; assembly=&quot;libsecondlife&quot; /&gt;
+-      &lt;Build debugmode=&quot;False&quot; target=&quot;Library&quot; /&gt;
+-      &lt;Execution runwithwarnings=&quot;True&quot; consolepause=&quot;True&quot; runtime=&quot;MsNet&quot; clr-version=&quot;Net_2_0&quot; /&gt;
+-      &lt;CodeGeneration compiler=&quot;Csc&quot; warninglevel=&quot;4&quot; optimize=&quot;True&quot; unsafecodeallowed=&quot;False&quot; generateoverflowchecks=&quot;True&quot; mainclass=&quot;&quot; generatexmldocumentation=&quot;False&quot; ctype=&quot;CSharpCompilerParameters&quot; /&gt;
+-    &lt;/Configuration&gt;
+-  &lt;/Configurations&gt;
+-  &lt;DeployTargets /&gt;
+-  &lt;Contents&gt;
+-    &lt;File name=&quot;./AssemblyInfo.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Avatar.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AvatarManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./EstateTools.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./GridManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./GroupManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Helpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./MainAvatar.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./MainAvatarStatus.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./NetworkManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./ObjectManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./_Packets_.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Parcel.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./ParticleSystem.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Prims.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./ProtocolManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Region.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./SecondLife.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./SerializableDictionary.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Settings.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Textures.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./Types.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./JSON/JSONArray.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./JSON/JSONFacade.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./JSON/JSONObject.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./JSON/JSONTokener.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/Logger.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/SimpleHttpRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcBoxcarRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcClientProxy.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcErrorCodes.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcException.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcExposedAttribute.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequestDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequestSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponse.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponseDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponseSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcServer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcSystemObject.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./XmlRpcCS/XmlRpcXmlTokens.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AppearanceManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/Asset.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetImage.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetNotecard.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetPacketHelpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetRequestDownload.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetRequestUpload.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetWearable.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetWearable_Body.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/AssetWearable_Clothing.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/BodyPart_Depricated.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/_BodyShapeParams_.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/ImageManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./AssetSystem/ImagePacketHelpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/DownloadRequest_Folder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryBase.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryFolder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryImage.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryItem.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryNotecard.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryPacketHelper.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-    &lt;File name=&quot;./InventorySystem/InventoryWearable.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
+-  &lt;/Contents&gt;
+-  &lt;References&gt;
+-    &lt;ProjectReference type=&quot;Gac&quot; localcopy=&quot;True&quot; refto=&quot;System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&quot; /&gt;
+-    &lt;ProjectReference type=&quot;Gac&quot; localcopy=&quot;True&quot; refto=&quot;System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&quot; /&gt;
+-  &lt;/References&gt;
++&lt;Project name=&quot;libsecondlife&quot; fileversion=&quot;2.0&quot; language=&quot;C#&quot; clr-version=&quot;Net_2_0&quot; ctype=&quot;DotNetProject&quot;&gt;
++  &lt;Configurations active=&quot;Debug&quot;&gt;
++    &lt;Configuration name=&quot;Debug&quot; ctype=&quot;DotNetProjectConfiguration&quot;&gt;
++      &lt;Output directory=&quot;./bin/Debug&quot; assembly=&quot;libsecondlife&quot; /&gt;
++      &lt;Build debugmode=&quot;True&quot; target=&quot;Library&quot; /&gt;
++      &lt;Execution runwithwarnings=&quot;True&quot; consolepause=&quot;True&quot; runtime=&quot;MsNet&quot; clr-version=&quot;Net_2_0&quot; /&gt;
++      &lt;CodeGeneration compiler=&quot;Csc&quot; warninglevel=&quot;4&quot; optimize=&quot;True&quot; unsafecodeallowed=&quot;False&quot; generateoverflowchecks=&quot;True&quot; mainclass=&quot;&quot; generatexmldocumentation=&quot;False&quot; ctype=&quot;CSharpCompilerParameters&quot; /&gt;
++    &lt;/Configuration&gt;
++    &lt;Configuration name=&quot;Release&quot; ctype=&quot;DotNetProjectConfiguration&quot;&gt;
++      &lt;Output directory=&quot;./bin/Release&quot; assembly=&quot;libsecondlife&quot; /&gt;
++      &lt;Build debugmode=&quot;False&quot; target=&quot;Library&quot; /&gt;
++      &lt;Execution runwithwarnings=&quot;True&quot; consolepause=&quot;True&quot; runtime=&quot;MsNet&quot; clr-version=&quot;Net_2_0&quot; /&gt;
++      &lt;CodeGeneration compiler=&quot;Csc&quot; warninglevel=&quot;4&quot; optimize=&quot;True&quot; unsafecodeallowed=&quot;False&quot; generateoverflowchecks=&quot;True&quot; mainclass=&quot;&quot; generatexmldocumentation=&quot;False&quot; ctype=&quot;CSharpCompilerParameters&quot; /&gt;
++    &lt;/Configuration&gt;
++  &lt;/Configurations&gt;
++  &lt;DeployTargets /&gt;
++  &lt;Contents&gt;
++    &lt;File name=&quot;./AssemblyInfo.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Avatar.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AvatarManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./EstateTools.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./GridManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./GroupManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Helpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./MainAvatar.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./MainAvatarStatus.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./NetworkManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./ObjectManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./_Packets_.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Parcel.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./ParticleSystem.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Prims.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./ProtocolManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Region.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./SecondLife.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./SerializableDictionary.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Settings.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Textures.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./Types.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./JSON/JSONArray.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./JSON/JSONFacade.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./JSON/JSONObject.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./JSON/JSONTokener.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/Logger.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/SimpleHttpRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcBoxcarRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcClientProxy.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcErrorCodes.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcException.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcExposedAttribute.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequest.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequestDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcRequestSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponse.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponseDeserializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcResponseSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcSerializer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcServer.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcSystemObject.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./XmlRpcCS/XmlRpcXmlTokens.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AppearanceManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/Asset.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetImage.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetNotecard.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetPacketHelpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetRequestDownload.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetRequestUpload.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetWearable.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetWearable_Body.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetWearable_Clothing.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/BodyPart_Depricated.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/_BodyShapeParams_.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/ImageManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/ImagePacketHelpers.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/DownloadRequest_Folder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryBase.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryFolder.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryImage.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryItem.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryNotecard.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryPacketHelper.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryWearable.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./DirectoryManager.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./InventorySystem/InventoryScript.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++    &lt;File name=&quot;./AssetSystem/AssetScript.cs&quot; subtype=&quot;Code&quot; buildaction=&quot;Compile&quot; /&gt;
++  &lt;/Contents&gt;
++  &lt;References&gt;
++    &lt;ProjectReference type=&quot;Gac&quot; localcopy=&quot;True&quot; refto=&quot;System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&quot; /&gt;
++    &lt;ProjectReference type=&quot;Gac&quot; localcopy=&quot;True&quot; refto=&quot;System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&quot; /&gt;
++  &lt;/References&gt;
+ &lt;/Project&gt;
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/libsecondlife.mds
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.mds	2007-01-09 09:47:45 UTC (rev 829)
++++ trunk/libsecondlife-cs/libsecondlife.mds	2007-01-09 09:57:39 UTC (rev 830)
+@@ -1,25 +1,25 @@
+-&lt;Combine name=&quot;libsecondlife&quot; fileversion=&quot;2.0&quot; outputpath=&quot;./build/bin/&quot; MakePkgConfig=&quot;False&quot; MakeLibPC=&quot;False&quot;&gt;
+-  &lt;Configurations active=&quot;Debug&quot;&gt;
+-    &lt;Configuration name=&quot;Debug&quot; ctype=&quot;CombineConfiguration&quot;&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife&quot; configuration=&quot;Debug&quot; /&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Tests&quot; configuration=&quot;Debug&quot; /&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Utilities&quot; configuration=&quot;Debug&quot; /&gt;
+-    &lt;/Configuration&gt;
+-    &lt;Configuration name=&quot;Release&quot; ctype=&quot;CombineConfiguration&quot;&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife&quot; configuration=&quot;Release&quot; /&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Tests&quot; configuration=&quot;Release&quot; /&gt;
+-      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Utilities&quot; configuration=&quot;Release&quot; /&gt;
+-    &lt;/Configuration&gt;
+-  &lt;/Configurations&gt;
+-  &lt;DeployTargets /&gt;
+-  &lt;StartMode startupentry=&quot;libsecondlife&quot; single=&quot;True&quot;&gt;
+-    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife&quot; /&gt;
+-    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife.Tests&quot; /&gt;
+-    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife.Utilities&quot; /&gt;
+-  &lt;/StartMode&gt;
+-  &lt;Entries&gt;
+-    &lt;Entry filename=&quot;./libsecondlife.mdp&quot; /&gt;
+-    &lt;Entry filename=&quot;./libsecondlife.Tests/libsecondlife.Tests.mdp&quot; /&gt;
+-    &lt;Entry filename=&quot;./libsecondlife.Utilities/libsecondlife.Utilities.mdp&quot; /&gt;
+-  &lt;/Entries&gt;
++&lt;Combine name=&quot;libsecondlife&quot; fileversion=&quot;2.0&quot; outputpath=&quot;./build/bin/&quot; MakePkgConfig=&quot;False&quot; MakeLibPC=&quot;False&quot;&gt;
++  &lt;Configurations active=&quot;Debug&quot;&gt;
++    &lt;Configuration name=&quot;Debug&quot; ctype=&quot;CombineConfiguration&quot;&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife&quot; configuration=&quot;Debug&quot; /&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Tests&quot; configuration=&quot;Debug&quot; /&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Utilities&quot; configuration=&quot;Debug&quot; /&gt;
++    &lt;/Configuration&gt;
++    &lt;Configuration name=&quot;Release&quot; ctype=&quot;CombineConfiguration&quot;&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife&quot; configuration=&quot;Release&quot; /&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Tests&quot; configuration=&quot;Release&quot; /&gt;
++      &lt;Entry build=&quot;True&quot; name=&quot;libsecondlife.Utilities&quot; configuration=&quot;Release&quot; /&gt;
++    &lt;/Configuration&gt;
++  &lt;/Configurations&gt;
++  &lt;DeployTargets /&gt;
++  &lt;StartMode startupentry=&quot;libsecondlife&quot; single=&quot;True&quot;&gt;
++    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife&quot; /&gt;
++    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife.Tests&quot; /&gt;
++    &lt;Execute type=&quot;None&quot; entry=&quot;libsecondlife.Utilities&quot; /&gt;
++  &lt;/StartMode&gt;
++  &lt;Entries&gt;
++    &lt;Entry filename=&quot;./libsecondlife.mdp&quot; /&gt;
++    &lt;Entry filename=&quot;./libsecondlife.Tests/libsecondlife.Tests.mdp&quot; /&gt;
++    &lt;Entry filename=&quot;./libsecondlife.Utilities/libsecondlife.Utilities.mdp&quot; /&gt;
++  &lt;/Entries&gt;
+ &lt;/Combine&gt;
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000233.html">[Libsecondlife-commits] r829 - in trunk/libsecondlife-cs: .	AssetSystem
+</A></li>
+	<LI>Next message: <A HREF="000235.html">[Libsecondlife-commits] r831 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

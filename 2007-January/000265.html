@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r850 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r850%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701181810.l0IIAaOF029468%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000264.html">
+   <LINK REL="Next"  HREF="000266.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r850 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r850%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701181810.l0IIAaOF029468%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r850 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 18 19:10:36 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000264.html">[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+        <LI>Next message: <A HREF="000266.html">[Libsecondlife-commits] r851 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-18 19:10:35 +0100 (Thu, 18 Jan 2007)
+New Revision: 850
+
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+Log:
+Added BeamEffect and a helper function to convert an integer to bytes
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-18 01:03:32 UTC (rev 849)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-18 18:10:35 UTC (rev 850)
+@@ -124,6 +124,23 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Convert an integer to a byte array in little endian format
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;x&quot;&gt;The integer to convert&lt;/param&gt;
++        /// &lt;returns&gt;A four byte little endian array&lt;/returns&gt;
++        public static byte[] IntToBytes(int x)
++        {
++            byte[] bytes = new byte[4];
++
++            bytes[0]= (byte)(x % 256);
++            bytes[1] = (byte)((x &gt;&gt; 8) % 256);
++            bytes[2] = (byte)((x &gt;&gt; 16) % 256);
++            bytes[3] = (byte)((x &gt;&gt; 24) % 256);
++
++            return bytes;
++        }
++
++        /// &lt;summary&gt;
+         /// Convert a variable length field (byte array) to a string.
+         /// &lt;/summary&gt;
+         /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-18 01:03:32 UTC (rev 849)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-18 18:10:35 UTC (rev 850)
+@@ -210,28 +210,28 @@
+         /// ViewerEffect packets for the LookAt effect
+         /// &lt;/summary&gt;
+         public enum LookAtTarget : byte
+-        {
+-            /// &lt;summary&gt;&lt;/summary&gt;
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
+ 	        None,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Idle,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             AutoListen,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             FreeLook,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Respond,
+-            /// &lt;summary&gt;&lt;/summary&gt;
+-            Hover,
+-            /// &lt;summary&gt;Deprecated&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Hover,
++            /// &lt;summary&gt;Deprecated&lt;/summary&gt;
+             Conversation,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Select,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Focus,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Mouselook,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Clear
+         }
+ 
+@@ -605,7 +605,7 @@
+             if (targetObject != null)
+                 Array.Copy(targetObject.GetBytes(), 0, typeData, 16, 16);
+             Array.Copy(globalOffset.GetBytes(), 0, typeData, 32, 24);
+-            typeData[56] = 7; //(byte)type;
++            typeData[56] = (byte)type;
+ 
+             effect.Effect[0].TypeData = typeData;
+ 
+@@ -615,6 +615,37 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;sourceAvatar&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;targetObject&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;globalOffset&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;color&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;duration&quot;&gt;&lt;/param&gt;
++        public void BeamEffect(LLUUID sourceAvatar, LLUUID targetObject, LLVector3d globalOffset, LLColor color, 
++            float duration)
++        {
++            ViewerEffectPacket effect = new ViewerEffectPacket();
++            effect.Effect = new ViewerEffectPacket.EffectBlock[1];
++            effect.Effect[0] = new ViewerEffectPacket.EffectBlock();
++            effect.Effect[0].Color = color.GetBytes();
++            effect.Effect[0].Duration = duration;
++            effect.Effect[0].ID = LLUUID.Random();
++            effect.Effect[0].Type = (byte)EffectType.Beam;
++
++            byte[] typeData = new byte[56];
++            if (sourceAvatar != null)
++                Array.Copy(sourceAvatar.GetBytes(), 0, typeData, 0, 16);
++            if (targetObject != null)
++                Array.Copy(targetObject.GetBytes(), 0, typeData, 16, 16);
++            Array.Copy(globalOffset.GetBytes(), 0, typeData, 32, 24);
++
++            effect.Effect[0].TypeData = typeData;
++
++            Client.Network.SendPacket(effect);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
+         public void LookAtEffect()
+         {
+         }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000264.html">[Libsecondlife-commits] r849 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+	<LI>Next message: <A HREF="000266.html">[Libsecondlife-commits] r851 -	trunk/libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#265">[ date ]</a>
+              <a href="thread.html#265">[ thread ]</a>
+              <a href="subject.html#265">[ subject ]</a>
+              <a href="author.html#265">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

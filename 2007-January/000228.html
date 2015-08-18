@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r824%20-%0A%09trunk/libsecondlife-cs/examples/TestClient&In-Reply-To=%3C200701090710.l097A4J4029918%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000227.html">
+   <LINK REL="Next"  HREF="000229.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r824%20-%0A%09trunk/libsecondlife-cs/examples/TestClient&In-Reply-To=%3C200701090710.l097A4J4029918%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 08:10:04 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000227.html">[Libsecondlife-commits] r823 - in	trunk/libsecondlife-cs/examples/TestClient/Commands: .	Communication Movement
+</A></li>
+        <LI>Next message: <A HREF="000229.html">[Libsecondlife-commits] r825 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#228">[ date ]</a>
+              <a href="thread.html#228">[ thread ]</a>
+              <a href="subject.html#228">[ subject ]</a>
+              <a href="author.html#228">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-09 08:10:02 +0100 (Tue, 09 Jan 2007)
+New Revision: 824
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+Fixed ?
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-09 07:02:22 UTC (rev 823)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-09 07:10:02 UTC (rev 824)
+@@ -283,7 +283,7 @@
+ 
+             if (Self.ID == toAgentID)
+             {				
+-                if (dialog == (byte)MainAvatar.InstantMessageDialog.LureUser)
++                if (dialog == (byte)MainAvatar.InstantMessageDialog.RequestTeleport)
+                 {
+                     Console.WriteLine(&quot;Accepting teleport lure.&quot;);
+                     Self.TeleportLureRespond(fromAgentID, true);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-09 07:02:22 UTC (rev 823)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-09 07:10:02 UTC (rev 824)
+@@ -37,21 +37,14 @@
+     &lt;Compile Include=&quot;Arguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\AppearanceCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\CloneProfileCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Inventory\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\DeleteFolderCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Inventory\GiveAllCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\WearCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\InventoryCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\TtsCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FindSimCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot;&gt;
+-      &lt;SubType&gt;Code&lt;/SubType&gt;
+-    &lt;/Compile&gt;
+-    &lt;Compile Include=&quot;Commands\IMCommand.cs&quot;&gt;
+-      &lt;SubType&gt;Code&lt;/SubType&gt;
+-    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\ImportOutfitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+@@ -59,6 +52,16 @@
+     &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;Commands\Communication\EchoMasterCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Communication\IMCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Communication\SayCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Communication\ShoutCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Communication\WhisperCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Movement\FollowCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Movement\GotoCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Movement\JumpCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Movement\LocationCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\Movement\SitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\PacketLogCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+@@ -66,21 +69,13 @@
+     &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+-    &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\WhisperCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ImportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoadCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\SayCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\JumpCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\GotoCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\GiveAllCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\PrimCountCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\SitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\TreeCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\UptimeCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\HelpCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\LocationCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;ClientManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000227.html">[Libsecondlife-commits] r823 - in	trunk/libsecondlife-cs/examples/TestClient/Commands: .	Communication Movement
+</A></li>
+	<LI>Next message: <A HREF="000229.html">[Libsecondlife-commits] r825 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#228">[ date ]</a>
+              <a href="thread.html#228">[ thread ]</a>
+              <a href="subject.html#228">[ subject ]</a>
+              <a href="author.html#228">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

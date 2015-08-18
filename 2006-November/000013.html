@@ -1,0 +1,1342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r662 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r662%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611300335.kAU3Zc7N020405%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000040.html">
+   <LINK REL="Next"  HREF="000014.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r662 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r662%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200611300335.kAU3Zc7N020405%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r662 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 30 04:35:38 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000040.html">[Libsecondlife-commits] r661 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000014.html">[Libsecondlife-commits] r663 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-11-30 04:35:36 +0100 (Thu, 30 Nov 2006)
+New Revision: 662
+
+Added:
+   trunk/libsecondlife-cs/SerializableDictionary.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+Modified:
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/ParticleSystem.cs
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+libsecondlife:
+* Added a SerializableDictionary class, implements a generic Dictionary&lt;,&gt; that can be serialized to xml
+* Added all possible values for ObjectFlags to allow serializing
+* Added a few initial xml serialization attributes to prim-related classes and structures
+* Created ToXml() and FromXml() functions for PrimObject
+TestClient:
+* ExportCommand exports a single prim to an xml file
+* quit and login commands now work when no avatars are logged in
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/Avatar.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -78,21 +78,32 @@
+     public delegate void TeleportCallback(string message, TeleportStatus status);
+ 
+     /// &lt;summary&gt;
+-    /// Name Conversion for Teleport Status flag/bit
++    /// Current teleport status
+     /// &lt;/summary&gt;
+     public enum TeleportStatus
+     {
++        /// &lt;summary&gt;&lt;/summary&gt;
+         None,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         Start,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         Progress,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         Failed,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         Finished
+     }
+ 
++    /// &lt;summary&gt;
++    /// Special commands used in Instant Messages
++    /// &lt;/summary&gt;
+     public enum InstantMessageDialog
+     {
++        /// &lt;summary&gt;&lt;/summary&gt;
+         RequestTeleport = 22,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         AcceptTeleport = 23,
++        /// &lt;summary&gt;&lt;/summary&gt;
+         DenyTeleport = 24
+     }
+ 
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -26,6 +26,7 @@
+ 
+ using System;
+ using System.Collections.Generic;
++using System.Xml.Serialization;
+ using System.Text;
+ using libsecondlife.Packets;
+ 
+@@ -151,19 +152,26 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        [Serializable]
+         public enum PCode
+         {
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Prim&quot;)]
+             Prim = 9,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Avatar&quot;)]
+             Avatar = 47,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Grass&quot;)]
+             Grass = 95,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;NewTree&quot;)]
+             NewTree = 111,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;ParticleSystem&quot;)]
+             ParticleSystem = 143,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Tree&quot;)]
+             Tree = 255
+         }
+ 
+@@ -774,7 +782,7 @@
+                             string name = Helpers.FieldToString(block.NameValue);
+ 
+                             // New prim spotted
+-                            PrimObject prim = new PrimObject(Client);
++                            PrimObject prim = new PrimObject();
+ 
+                             prim.Name = name;
+ 
+@@ -1035,7 +1043,7 @@
+                 foreach (ObjectUpdateCompressedPacket.ObjectDataBlock block in update.ObjectData)
+                 {
+                     int i = 0;
+-                    prim = new PrimObject(Client);
++                    prim = new PrimObject();
+ 
+                     prim.Flags = (ObjectFlags)block.UpdateFlags;
+ 
+
+Modified: trunk/libsecondlife-cs/ParticleSystem.cs
+===================================================================
+--- trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/ParticleSystem.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -1,37 +1,45 @@
+ using System;
+ using System.Collections.Generic;
+-using System.Text;
++using System.Xml.Serialization;
+ 
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class ParticleSystem
+     {
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        [Serializable]
+         public enum SourcePattern : byte
+         {
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;None&quot;)]
+             None = 0,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Drop&quot;)]
+             Drop = 0x01,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Explode&quot;)]
+             Explode = 0x02,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;Angle&quot;)]
+             Angle = 0x04,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;AngleCone&quot;)]
+             AngleCone = 0x08,
+             /// &lt;summary&gt;&lt;/summary&gt;
++            [XmlEnum(&quot;AngleConeEmpty&quot;)]
+             AngleConeEmpty = 0x10
+         }
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        [Flags]
++        [Flags, Serializable]
+         public enum ParticleFlags : ushort
+         {
+             /// &lt;summary&gt;&lt;/summary&gt;
+@@ -57,48 +65,63 @@
+         }
+ 
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public uint PartStartRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public uint PartEndRGBA;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 PartStartScale = LLVector3.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 PartEndScale = LLVector3.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float PartMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcMaxAge;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 SrcAccel = LLVector3.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcAngleBegin;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcAngleEnd;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public int SrcBurstPartCount;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcBurstRadius;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcBurstRate;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcBurstSpeedMin;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float SrcBurstSpeedMax;
++        /// &lt;summary&gt;Unknown&lt;/summary&gt;
++        [XmlAttribute]
++        public uint Version;
++        /// &lt;summary&gt;Unknown&lt;/summary&gt;
++        [XmlAttribute]
++        public uint StartTick;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
++        public SourcePattern SrcPattern;
++        /// &lt;summary&gt;Various options that describe the behavior of this system&lt;/summary&gt;
++        [XmlAttribute]
++        public ParticleFlags PartFlags;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 PartStartScale = LLVector3.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 PartEndScale = LLVector3.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 SrcAccel = LLVector3.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 SrcOmega = LLVector3.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID SrcTargetKey = LLUUID.Zero;
+         /// &lt;summary&gt;Texture that will be applied to the particles&lt;/summary&gt;
+         public LLUUID SrcTexture = LLUUID.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public SourcePattern SrcPattern;
+-        /// &lt;summary&gt;Various options that describe the behavior of this system&lt;/summary&gt;
+-        public ParticleFlags PartFlags;
+-        /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        public uint Version;
+-        /// &lt;summary&gt;Unknown&lt;/summary&gt;
+-        public uint StartTick;
+-
++        
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+@@ -116,6 +139,10 @@
+             FromBytes(data, pos);
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public byte[] GetBytes()
+         {
+             byte[] bytes = new byte[0];
+@@ -145,7 +172,7 @@
+ 
+             SrcMaxAge = (data[i++] + (data[i++] &lt;&lt; 8)) / 256.0f;
+ 
+-            //Unknown
++            // TODO: Unknown
+             i += 2;
+ 
+             SrcAngleBegin = (data[i++] / 100.0f) * (float)Math.PI;
+@@ -176,7 +203,7 @@
+ 
+             PartMaxAge = (data[i++] + (data[i++] &lt;&lt; 8)) / 256.0f;
+ 
+-            //Unknown
++            // TODO: Unknown
+             i += 2;
+ 
+             PartStartRGBA = (uint)(data[i++] + (data[i++] &lt;&lt; 8) +
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/Prims.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -26,13 +26,14 @@
+ 
+ using System;
+ using System.Xml;
++using System.Xml.Serialization;
+ 
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+     /// Primary parameters for primitives such as Physics Enabled or Phantom
+     /// &lt;/summary&gt;
+-    [Flags]
++    [Flags, Serializable]
+     public enum ObjectFlags
+     {
+         /// &lt;summary&gt;None of the primary flags are enabled&lt;/summary&gt;
+@@ -41,16 +42,41 @@
+         Physics = 1 &lt;&lt; 0,
+         /// &lt;summary&gt;&lt;/summary&gt;
+         CreateSelected = 1 &lt;&lt; 1,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        Unknown1 = 1 &lt;&lt; 2,
++        Unknown2 = 1 &lt;&lt; 3,
++        Unknown3 = 1 &lt;&lt; 4,
++        Unknown4 = 1 &lt;&lt; 5,
+         Script = 1 &lt;&lt; 6,
+         /// &lt;summary&gt;Whether this object contains an active touch script&lt;/summary&gt;
+         Touch = 1 &lt;&lt; 7,
++        Unknown5 = 1 &lt;&lt; 8,
+         /// &lt;summary&gt;Whether this object can receive payments&lt;/summary&gt;
+         Money = 1 &lt;&lt; 9,
+         /// &lt;summary&gt;Whether this object is phantom (no collisions)&lt;/summary&gt;
+         Phantom = 1 &lt;&lt; 10,
++        Unknown6 = 1 &lt;&lt; 11,
++        Unknown7 = 1 &lt;&lt; 12,
++        Unknown8 = 1 &lt;&lt; 13,
++        Unknown9 = 1 &lt;&lt; 14,
++        Unknown10 = 1 &lt;&lt; 15,
++        Unknown11 = 1 &lt;&lt; 16,
++        Unknown12 = 1 &lt;&lt; 17,
++        Unknown13 = 1 &lt;&lt; 18,
++        Unknown14 = 1 &lt;&lt; 19,
++        Unknown15 = 1 &lt;&lt; 20,
++        Unknown16 = 1 &lt;&lt; 21,
++        Unknown17 = 1 &lt;&lt; 22,
++        Unknown18 = 1 &lt;&lt; 23,
++        Unknown19 = 1 &lt;&lt; 24,
++        Unknown20 = 1 &lt;&lt; 25,
++        Unknown21 = 1 &lt;&lt; 26,
++        Unknown22 = 1 &lt;&lt; 27,
++        Unknown23 = 1 &lt;&lt; 28,
++        Unknown24 = 1 &lt;&lt; 29,
+         /// &lt;summary&gt;Whether this object is temporary&lt;/summary&gt;
+-        Temp = 1 &lt;&lt; 30
++        Temp = 1 &lt;&lt; 30,
++        Unknown25 = 1 &lt;&lt; 31,
++        Unknown26 = 1 &lt;&lt; 32
+     }
+ 
+     /// &lt;summary&gt;
+@@ -58,135 +84,137 @@
+     /// been added after the original ObjectFlags that has all eight bits 
+     /// reserved already
+     /// &lt;/summary&gt;
++    [Serializable]
+     public enum ExtraParamType : ushort
+     {
+         /// &lt;summary&gt;Whether this object has flexible parameters&lt;/summary&gt;
++        [XmlEnum(&quot;Flexible&quot;)]
+         Flexible = 0x10,
+         /// &lt;summary&gt;Whether this object has light parameters&lt;/summary&gt;
++        [XmlEnum(&quot;Light&quot;)]
+         Light = 0x20
+     }
+ 
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
+-	public class PrimObject
++    [Serializable]
++    public class PrimObject
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+ 		public int PathTwistBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+ 		public float PathEnd = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float ProfileBegin = 0;
++        [XmlAttribute]
++        public float ProfileBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathRadiusOffset = 0;
++        [XmlAttribute]
++        public float PathRadiusOffset = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathSkew = 0;
++        [XmlAttribute]
++        public float PathSkew = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 Position = LLVector3.Zero;
+-		/// &lt;summary&gt; &lt;/summary&gt;
+-		public ulong RegionHandle;
++        [XmlAttribute]
++        public uint ProfileCurve = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public uint ProfileCurve = 0;
++        [XmlAttribute]
++        public float PathScaleX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathScaleX = 0;
++        [XmlAttribute]
++        public float PathScaleY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathScaleY = 0;
++        [XmlAttribute]
++        public uint LocalID = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID ID = LLUUID.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-		public uint LocalID = 0;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public uint ParentID = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID GroupID = LLUUID.Zero;
++        [XmlAttribute]
++        public uint Material = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public uint Material = 0;
++        [XmlAttribute]
++        public string Name = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public string Name = &quot;&quot;;
++        [XmlAttribute]
++        public string Description = &quot;&quot;;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public string Description = &quot;&quot;;
++        [XmlAttribute]
++        public float PathShearX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathShearX = 0;
++        [XmlAttribute]
++        public float PathShearY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathShearY = 0;
++        [XmlAttribute]
++        public float PathTaperX = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathTaperX = 0;
++        [XmlAttribute]
++        public float PathTaperY = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathTaperY = 0;
++        [XmlAttribute]
++        public float ProfileEnd = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float ProfileEnd = 0;
++        [XmlAttribute]
++        public float PathBegin = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public float PathBegin = 0;
++        [XmlAttribute]
++        public uint PathCurve = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-		public uint PathCurve = 0;
++        [XmlAttribute]
++        public int PathTwist = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 Scale = LLVector3.Zero;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-		public int PathTwist = 0;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public uint ProfileHollow = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public float PathRevolutions = 0;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLQuaternion Rotation = LLQuaternion.Identity;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public uint State;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
+         public string Text;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public ObjectManager.PCode PCode;
++        [XmlAttribute]
++        public ObjectManager.PCode PCode = ObjectManager.PCode.Prim;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlAttribute]
++        public ulong RegionHandle;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLUUID ID = LLUUID.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLUUID GroupID = LLUUID.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 Position = LLVector3.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 Scale = LLVector3.Zero;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLQuaternion Rotation = LLQuaternion.Identity;
++        /// &lt;summary&gt;&lt;/summary&gt;
+         public ObjectFlags Flags;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public TextureEntry Textures;
++        public TextureEntry Textures = new TextureEntry();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public TextureAnimation TextureAnim;
++        public TextureAnimation TextureAnim = new TextureAnimation();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public PrimFlexibleData Flexible;
++        public PrimFlexibleData Flexible = new PrimFlexibleData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public PrimLightData Light;
++        public PrimLightData Light = new PrimLightData();
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public ParticleSystem ParticleSys;
++        public ParticleSystem ParticleSys = new ParticleSystem();
+ 
+-        private SecondLife Client;
+-
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor
+         /// &lt;/summary&gt;
+-        public PrimObject(SecondLife client)
++        public PrimObject()
+         {
+-            Client = client;
+-            PCode = ObjectManager.PCode.Prim;
+-            Flexible = new PrimFlexibleData();
+-            Light = new PrimLightData();
+-            ParticleSys = new ParticleSystem();
+-            Textures = new TextureEntry();
+-            TextureAnim = new TextureAnimation();
+-            Flexible = new PrimFlexibleData();
+-            Light = new PrimLightData();
+-            ParticleSys = new ParticleSystem();
+         }
+ 		
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;texture&quot;&gt;&lt;/param&gt;
+-		public PrimObject(SecondLife client, LLUUID texture)
+-		{
+-            Client = client;
+-            PCode = ObjectManager.PCode.Prim;
+-            Textures = new TextureEntry();
+-            Textures.DefaultTexture.TextureID = texture;
+-		}
+-
+-		public GridRegion GridRegion
+-		{
+-			get { return Client.Grid.RegionsByHandle[RegionHandle]; }
+-		}
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;pathScale&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+ 		public static byte PathScaleByte(float pathScale)
+@@ -470,11 +498,24 @@
+ 
+             return output;
+         }
++
++        public void ToXml(XmlWriter xmlWriter)
++        {
++            XmlSerializer serializer = new XmlSerializer(typeof(PrimObject));
++            serializer.Serialize(xmlWriter, this);
++        }
++
++        public static PrimObject FromXml(XmlReader xmlReader)
++        {
++            XmlSerializer serializer = new XmlSerializer(typeof(PrimObject));
++            return (PrimObject)serializer.Deserialize(xmlReader);
++        }
+ 	}
+ 
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class PrimFlexibleData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -546,6 +587,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class PrimLightData
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+
+Added: trunk/libsecondlife-cs/SerializableDictionary.cs
+===================================================================
+--- trunk/libsecondlife-cs/SerializableDictionary.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/SerializableDictionary.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -0,0 +1,101 @@
++/*
++ * Adapted from code by Paul Welter at 
++ * <A HREF="http://weblogs.asp.net/pwelter34/archive/2006/05/03/444961.aspx">http://weblogs.asp.net/pwelter34/archive/2006/05/03/444961.aspx</A>
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++using System.Text;
++using System.Xml.Serialization;
++
++/// &lt;summary&gt;
++/// 
++/// &lt;/summary&gt;
++/// &lt;typeparam name=&quot;TKey&quot;&gt;&lt;/typeparam&gt;
++/// &lt;typeparam name=&quot;TValue&quot;&gt;&lt;/typeparam&gt;
++[XmlRoot(&quot;dictionary&quot;)]
++public class SerializableDictionary&lt;TKey, TValue&gt; : Dictionary&lt;TKey, TValue&gt;, IXmlSerializable
++{
++    #region IXmlSerializable Members
++
++    public System.Xml.Schema.XmlSchema GetSchema()
++    {
++        return null;
++    }
++
++    public void ReadXml(System.Xml.XmlReader reader)
++    {
++        XmlSerializer keySerializer = new XmlSerializer(typeof(TKey));
++        XmlSerializer valueSerializer = new XmlSerializer(typeof(TValue));
++
++        bool wasEmpty = reader.IsEmptyElement;
++        reader.Read();
++
++        if (wasEmpty)
++            return;
++
++        while (reader.NodeType != System.Xml.XmlNodeType.EndElement)
++        {
++            reader.ReadStartElement(&quot;item&quot;);
++
++            reader.ReadStartElement(&quot;key&quot;);
++            TKey key = (TKey)keySerializer.Deserialize(reader);
++            reader.ReadEndElement();
++
++            reader.ReadStartElement(&quot;value&quot;);
++            TValue value = (TValue)valueSerializer.Deserialize(reader);
++            reader.ReadEndElement();
++
++            this.Add(key, value);
++
++            reader.ReadEndElement();
++            reader.MoveToContent();
++        }
++
++        reader.ReadEndElement();
++    }
++
++    public void WriteXml(System.Xml.XmlWriter writer)
++    {
++        XmlSerializer keySerializer = new XmlSerializer(typeof(TKey));
++        XmlSerializer valueSerializer = new XmlSerializer(typeof(TValue));
++
++        foreach (TKey key in this.Keys)
++        {
++            writer.WriteStartElement(&quot;item&quot;);
++
++            writer.WriteStartElement(&quot;key&quot;);
++            keySerializer.Serialize(writer, key);
++            writer.WriteEndElement();
++
++            writer.WriteStartElement(&quot;value&quot;);
++            TValue value = this[key];
++            valueSerializer.Serialize(writer, value);
++            writer.WriteEndElement();
++            writer.WriteEndElement();
++        }
++    }
++
++    #endregion
++}
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/Textures.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -26,7 +26,7 @@
+ 
+ using System;
+ using System.Collections.Generic;
+-using System.Text;
++using System.Xml.Serialization;
+ using System.IO;
+ 
+ namespace libsecondlife
+@@ -36,23 +36,59 @@
+     /// &lt;/summary&gt;
+     public enum Bumpiness
+     {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;None&quot;)]
+         None = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Brightness&quot;)]
+         Brightness = 1,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Darkness&quot;)]
+         Darkness = 2,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Woodgrain&quot;)]
+         Woodgrain = 3,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Bark&quot;)]
+         Bark = 4,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Bricks&quot;)]
+         Bricks = 5,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Checker&quot;)]
+         Checker = 6,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Concrete&quot;)]
+         Concrete = 7,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Crustytile&quot;)]
+         Crustytile = 8,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Cutstone&quot;)]
+         Cutstone = 9,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Discs&quot;)]
+         Discs = 10,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Gravel&quot;)]
+         Gravel = 11,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Petridish&quot;)]
+         Petridish = 12,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Siding&quot;)]
+         Siding = 13,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Stonetile&quot;)]
+         Stonetile = 14,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Stucco&quot;)]
+         Stucco = 15,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Suction&quot;)]
+         Suction = 16,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Weave&quot;)]
+         Weave = 17
+     }
+ 
+@@ -61,9 +97,17 @@
+     /// &lt;/summary&gt;
+     public enum Shininess
+     {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;None&quot;)]
+         None = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Low&quot;)]
+         Low = 0x40,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Medium&quot;)]
+         Medium = 0x80,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;High&quot;)]
+         High = 0xC0
+     }
+ 
+@@ -72,33 +116,35 @@
+     /// &lt;/summary&gt;
+     public enum Mapping
+     {
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Default&quot;)]
+         Default = 0,
++        /// &lt;summary&gt;&lt;/summary&gt;
++        [XmlEnum(&quot;Planar&quot;)]
+         Planar = 2
+     }
+ 
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class TextureEntry
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public TextureEntryFace DefaultTexture;
++        public TextureEntryFace DefaultTexture = null;
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public Dictionary&lt;uint, TextureEntryFace&gt; FaceTextures;
++        public SerializableDictionary&lt;uint, TextureEntryFace&gt; FaceTextures = 
++            new SerializableDictionary&lt;uint,TextureEntryFace&gt;();
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         public TextureEntry()
+         {
+-            FaceTextures = new Dictionary&lt;uint, TextureEntryFace&gt;();
+-            //DefaultTexture = new TextureEntryFace(null);
+-            DefaultTexture = null;
+         }
+ 
+         public TextureEntry(LLUUID textureID)
+         {
+-            FaceTextures = new Dictionary&lt;uint, TextureEntryFace&gt;();
+             DefaultTexture = new TextureEntryFace(null);
+             DefaultTexture.TextureID = textureID;
+         }
+@@ -367,7 +413,7 @@
+         {
+             short value = (short)(byteArray[pos] | (byteArray[pos + 1] &lt;&lt; 8));
+             float QV = (float)value;
+-            float QF = upper / 32767.0F;
++            float QF = upper / 32767.0f;
+             return (float)(QV * QF);
+         }
+ 
+@@ -379,37 +425,37 @@
+ 
+         private short RepeatShort(float value)
+         {
+-            return QuantizeSigned(value - 1.0F, 101.0F);
++            return QuantizeSigned(value - 1.0f, 101.0f);
+         }
+ 
+         private short OffsetShort(float value)
+         {
+-            return QuantizeSigned(value, 1.0F);
++            return QuantizeSigned(value, 1.0f);
+         }
+ 
+         private short RotationShort(float value)
+         {
+-            return QuantizeSigned(value, 359.995F);
++            return QuantizeSigned(value, 359.995f);
+         }
+ 
+         private float RepeatFloat(byte[] data, int pos)
+         {
+-            return DequantizeSigned(data, pos, 101.0F) + 1.0F;
++            return DequantizeSigned(data, pos, 101.0f) + 1.0f;
+         }
+ 
+         private float OffsetFloat(byte[] data, int pos)
+         {
+-            return DequantizeSigned(data, pos, 1.0F);
++            return DequantizeSigned(data, pos, 1.0f);
+         }
+ 
+         private float RotationFloat(byte[] data, int pos)
+         {
+-            return DequantizeSigned(data, pos, 359.995F);
++            return DequantizeSigned(data, pos, 359.995f);
+         }
+ 
+         private void FromBytes(byte[] data, int pos, int length)
+         {
+-            FaceTextures = new Dictionary&lt;uint, TextureEntryFace&gt;();
++            FaceTextures = new SerializableDictionary&lt;uint, TextureEntryFace&gt;();
+             DefaultTexture = new TextureEntryFace(null);
+ 
+             if (length &lt;= 0) 
+@@ -542,6 +588,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class TextureEntryFace
+     {
+         [Flags]
+@@ -563,6 +610,13 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
++        public TextureEntryFace()
++        {
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;defaultTexture&quot;&gt;&lt;/param&gt;
+         public TextureEntryFace(TextureEntryFace defaultTexture)
+         {
+@@ -757,10 +811,10 @@
+         private byte _Flags2;
+     }
+ 
+-
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [Serializable]
+     public class TextureAnimation
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -830,4 +884,138 @@
+             Rate = BitConverter.ToSingle(data, i + 8);
+         }
+     }
++
++    /// &lt;summary&gt;
++    /// A serializable dictionary of TextureEntryFace objects, indexed by 
++    /// the prim face they are mapped to
++    /// &lt;/summary&gt;
++    [Serializable]
++    public class Faces : System.Collections.DictionaryBase, System.Xml.Serialization.IXmlSerializable
++    {
++        private const string NS = &quot;<A HREF="http://www.libsecondlife.org/">http://www.libsecondlife.org/</A>&quot;;
++
++        /// &lt;summary&gt;
++        /// Default constructor
++        /// &lt;/summary&gt;
++        public Faces()
++        {
++        }
++
++        public virtual TextureEntryFace this[uint key]
++        {
++            get
++            {
++                return (TextureEntryFace)this.Dictionary[key];
++            }
++            set
++            {
++                this.Dictionary[key] = value;
++            }
++        }
++
++        public virtual void Add(uint key, TextureEntryFace value)
++        {
++            this.Dictionary.Add(key, value);
++        }
++
++        public virtual bool Contains(uint key)
++        {
++            return this.Dictionary.Contains(key);
++        }
++
++        public virtual bool ContainsKey(uint key)
++        {
++            return this.Dictionary.Contains(key);
++        }
++
++        public virtual bool ContainsValue(TextureEntryFace value)
++        {
++            foreach (TextureEntryFace item in this.Dictionary.Values)
++            {
++                if (item == value)
++                    return true;
++            }
++            return false;
++        }
++
++        public virtual void Remove(uint key)
++        {
++            this.Dictionary.Remove(key);
++        }
++
++        public virtual System.Collections.ICollection Keys
++        {
++            get
++            {
++                return this.Dictionary.Keys;
++            }
++        }
++
++        public virtual System.Collections.ICollection Values
++        {
++            get
++            {
++                return this.Dictionary.Values;
++            }
++        }
++
++        void System.Xml.Serialization.IXmlSerializable.WriteXml(System.Xml.XmlWriter w)
++        {
++            System.Xml.Serialization.XmlSerializer keySer =
++                new System.Xml.Serialization.XmlSerializer(typeof(uint));
++            System.Xml.Serialization.XmlSerializer valueSer =
++                new System.Xml.Serialization.XmlSerializer(typeof(TextureEntryFace));
++            w.WriteStartElement(&quot;dictionary&quot;, NS);
++            foreach (object key in Dictionary.Keys)
++            {
++                w.WriteStartElement(&quot;item&quot;, NS);
++
++                w.WriteStartElement(&quot;key&quot;, NS);
++                keySer.Serialize(w, key);
++                w.WriteEndElement();
++
++                w.WriteStartElement(&quot;value&quot;, NS);
++                object value = Dictionary[key];
++                valueSer.Serialize(w, value);
++                w.WriteEndElement();
++
++                w.WriteEndElement();
++            }
++            w.WriteEndElement();
++        }
++
++        void System.Xml.Serialization.IXmlSerializable.ReadXml(System.Xml.XmlReader r)
++        {
++            System.Xml.Serialization.XmlSerializer keySer =
++                new System.Xml.Serialization.XmlSerializer(typeof(string));
++            System.Xml.Serialization.XmlSerializer valueSer =
++                new System.Xml.Serialization.XmlSerializer(typeof(TextureEntryFace));
++
++            r.Read();
++            r.ReadStartElement(&quot;dictionary&quot;, NS);
++            while (r.NodeType != System.Xml.XmlNodeType.EndElement)
++            {
++                r.ReadStartElement(&quot;item&quot;, NS);
++
++                r.ReadStartElement(&quot;key&quot;, NS);
++                object key = keySer.Deserialize(r);
++                r.ReadEndElement();
++
++                r.ReadStartElement(&quot;value&quot;, NS);
++                object value = valueSer.Deserialize(r);
++                r.ReadEndElement();
++
++                Dictionary.Add(key, value);
++
++                r.ReadEndElement();
++                r.MoveToContent();
++            }
++            r.ReadEndElement();
++        }
++
++        System.Xml.Schema.XmlSchema System.Xml.Serialization.IXmlSerializable.GetSchema()
++        {
++            return null;
++        }
++    }
+ }
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/Types.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -26,6 +26,7 @@
+ 
+ using System;
+ using System.Net;
++using System.Xml.Serialization;
+ 
+ namespace libsecondlife
+ {
+@@ -33,6 +34,7 @@
+     /// A 128-bit Universally Unique Identifier, used throughout the Second
+     /// Life networking protocol
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;uuid&quot;)]
+ 	public class LLUUID
+ 	{
+         /// &lt;summary&gt;Get a byte array of the 16 raw bytes making up the UUID&lt;/summary&gt;
+@@ -265,6 +267,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;vector3&quot;)]
+ 	public class LLVector3
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -451,6 +454,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;vector3d&quot;)]
+ 	public class LLVector3d
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -538,6 +542,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;vector4&quot;)]
+ 	public class LLVector4
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -618,6 +623,7 @@
+     /// &lt;summary&gt;
+     /// 
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;quaternion&quot;)]
+ 	public class LLQuaternion
+ 	{
+         /// &lt;summary&gt;&lt;/summary&gt;
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -0,0 +1,63 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Xml;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ExportCommand : Command
++    {
++        public ExportCommand()
++        {
++            Name = &quot;export&quot;;
++            Description = &quot;Exports an object to an xml file. Usage: export uuid outputfile.xml&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 2)
++                return &quot;Usage: export uuid outputfile.xml&quot;;
++
++            LLUUID id;
++            string file = args[1];
++
++            try
++            {
++                id = new LLUUID(args[0]);
++            }
++            catch (Exception)
++            {
++                return &quot;Usage: export uuid outputfile.xml&quot;;
++            }
++
++            foreach (PrimObject prim in TestClient.Prims.Values)
++            {
++                if (prim.ID == id)
++                {
++                    try
++                    {
++                        XmlWriter writer = XmlWriter.Create(file);
++                        prim.ToXml(writer);
++                        writer.Close();
++                    }
++                    catch (Exception e)
++                    {
++                        string ret = &quot;Failed to write to &quot; + file + &quot;:&quot; + e.ToString();
++                        if (ret.Length &gt; 1000)
++                        {
++                            ret = ret.Remove(1000);
++                        }
++                        return ret;
++                    }
++
++                    return &quot;&quot;;
++                }
++            }
++
++            return &quot;Couldn't find UUID &quot; + id.ToString() + &quot; in the &quot; + TestClient.Prims.Count + 
++                &quot;objects currently indexed&quot;;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-11-30 03:35:36 UTC (rev 662)
+@@ -186,34 +186,50 @@
+ 
+             if (Commands.ContainsKey(firstToken))
+             {
+-                foreach (SecondLife client in Clients.Values)
++                if (firstToken == &quot;login&quot;)
+                 {
+-                    if (client.Network.Connected)
++                    // Special login case: Only call it once, and allow it with
++                    // no logged in avatars
++                    string[] args = new string[tokens.Length - 1];
++                    Array.Copy(tokens, 1, args, 0, args.Length);
++                    string response = Commands[&quot;login&quot;].Execute(null, args, null);
++
++                    if (response.Length &gt; 0)
+                     {
+-                        string[] args = new string[tokens.Length - 1];
+-                        Array.Copy(tokens, 1, args, 0, args.Length);
+-                        string response = Commands[firstToken].Execute(client, args, fromAgentID);
++                        Console.WriteLine(response);
++                    }
++                }
++                else if (firstToken == &quot;quit&quot;)
++                {
++                    // Special quit case: This allows us to quit even when there
++                    // are zero avatars logged in
++                    Commands[&quot;quit&quot;].Execute(null, null, null);
++                }
++                else
++                {
++                    foreach (SecondLife client in Clients.Values)
++                    {
++                        if (client.Network.Connected)
++                        {
++                            string[] args = new string[tokens.Length - 1];
++                            Array.Copy(tokens, 1, args, 0, args.Length);
++                            string response = Commands[firstToken].Execute(client, args, fromAgentID);
+ 
+-                        if (response.Length &gt; 0)
+-                        {
+-                            if (fromAgentID != null &amp;&amp; client.Network.Connected)
+-                                client.Self.InstantMessage(fromAgentID, response, imSessionID);
+-                            Console.WriteLine(response);
++                            if (response.Length &gt; 0)
++                            {
++                                if (fromAgentID != null &amp;&amp; client.Network.Connected)
++                                    client.Self.InstantMessage(fromAgentID, response, imSessionID);
++                                Console.WriteLine(response);
++                            }
+                         }
+ 
+-                        if (firstToken == &quot;login&quot;)
++                        if (avatars != Clients.Count)
+                         {
+-                            // Special login case: Only call it once
+-                            break;
++                            // The dictionary size changed, start over since the 
++                            // foreach is shot
++                            goto Begin;
+                         }
+                     }
+-
+-                    if (avatars != Clients.Count)
+-                    {
+-                        // The dictionary size changed, start over since the 
+-                        // foreach is shot
+-                        goto Begin;
+-                    }
+                 }
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-11-30 03:35:36 UTC (rev 662)
+@@ -36,6 +36,7 @@
+     &lt;Compile Include=&quot;Arguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoadCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-11-30 00:48:03 UTC (rev 661)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-11-30 03:35:36 UTC (rev 662)
+@@ -157,6 +157,7 @@
+     &lt;Compile Include=&quot;SecondLife.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;SerializableDictionary.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Textures.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000040.html">[Libsecondlife-commits] r661 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000014.html">[Libsecondlife-commits] r663 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#13">[ date ]</a>
+              <a href="thread.html#13">[ thread ]</a>
+              <a href="subject.html#13">[ subject ]</a>
+              <a href="author.html#13">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

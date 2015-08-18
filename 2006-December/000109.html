@@ -1,0 +1,2361 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r742 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_ImageTool	examples/IA_InventoryManager examples/IA_MultiImageUpload	examples/IA_NotecardTool examples/IA_SimpleInventory	examples/IA_TestAsyncImage examples/Teleport
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r742%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20examples/IA_ImageTool%0A%09examples/IA_InventoryManager%20examples/IA_MultiImageUpload%0A%09examples/IA_NotecardTool%20examples/IA_SimpleInventory%0A%09examples/IA_TestAsyncImage%20examples/Teleport&In-Reply-To=%3C200612192313.kBJNDJR3008448%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000108.html">
+   <LINK REL="Next"  HREF="000110.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r742 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_ImageTool	examples/IA_InventoryManager examples/IA_MultiImageUpload	examples/IA_NotecardTool examples/IA_SimpleInventory	examples/IA_TestAsyncImage examples/Teleport</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r742%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20examples/IA_ImageTool%0A%09examples/IA_InventoryManager%20examples/IA_MultiImageUpload%0A%09examples/IA_NotecardTool%20examples/IA_SimpleInventory%0A%09examples/IA_TestAsyncImage%20examples/Teleport&In-Reply-To=%3C200612192313.kBJNDJR3008448%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r742 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_ImageTool	examples/IA_InventoryManager examples/IA_MultiImageUpload	examples/IA_NotecardTool examples/IA_SimpleInventory	examples/IA_TestAsyncImage examples/Teleport">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 20 00:13:19 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000108.html">[Libsecondlife-commits] r741 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+        <LI>Next message: <A HREF="000110.html">[Libsecondlife-commits] r743 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-20 00:13:04 +0100 (Wed, 20 Dec 2006)
+New Revision: 742
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+   trunk/libsecondlife-cs/examples/IA_MultiImageUpload/MultiImageUpload.cs
+   trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs
+   trunk/libsecondlife-cs/examples/IA_SimpleInventory/IA_SimpleInventory.cs
+   trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs
+   trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Begining major rework of Asset/Inventory code.  Doing a lot of refectoing.  What's in here so far?
++ Inventory, Asset and Image managers are now directly apart of the SecondLife class
++ Root Inventory folder has been added to MainAvatar and is set upon login
++ Inventory is no longer downloaded all at once, you have to request the download of individual folders
++ Folder downloading is available Asynchronously, and returns a object that has a ManualResetEvent that you can use to optionally block with
++ The code for AssetManager has been reworked some in prep for allowing Wearables to be Saved/Loaded to/from disk, and for creating new wearables.
+
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -18,30 +18,23 @@
+         private uint SerialNum = 1;
+ 
+         private ManualResetEvent AgentWearablesSignal = null;
+-        private AgentWearablesUpdatePacket.WearableDataBlock[] AgentWearablesData;
+ 
++        // This data defines all appearance info for an avatar
++        public AgentWearablesUpdatePacket.WearableDataBlock[] AgentWearablesData;
++        public SerializableDictionary&lt;uint, float&gt; AgentAppearanceParams = new SerializableDictionary&lt;uint, float&gt;();
++        public TextureEntry AgentTextureEntry = new TextureEntry(&quot;C228D1CF4B5D4BA884F4899A0796AA97&quot;); // if this isn't valid, blame JH ;-)
++
++
++
+         public AppearanceManager(SecondLife client)
+         {
+             Client = client;
+-            AManager = AssetManager.GetAssetManager(client);
++            AManager = client.Assets;
+ 
+-            Client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+             RegisterCallbacks();
+ 
+         }
+ 
+-        void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+-        {
+-            if (avatar.ID == Client.Network.AgentID)
+-            {
+-                Console.WriteLine(&quot;**********************&quot;);
+-                Console.WriteLine(&quot;**********************&quot;);
+-                Console.WriteLine(&quot;Saw Myself&quot;);
+-                Console.WriteLine(&quot;**********************&quot;);
+-                Console.WriteLine(&quot;**********************&quot;);
+-            }
+-        }
+-
+         private void RegisterCallbacks()
+         {
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+@@ -61,33 +54,8 @@
+             return AgentWearablesData;
+         }
+ 
+-        public void SendAgentSetAppearance()
++        public void GetAvatarAppearanceInfoFromWearableAssets()
+         {
+-
+-            TextureEntry textures = new TextureEntry(&quot;C228D1CF4B5D4BA884F4899A0796AA97&quot;); // if this isn't valid, blame JH ;-)
+-
+-            // Face 17 - Under Pants
+-            // textures.CreateFace(17).TextureID = &quot;b0bac26505cc7076202ba2a2e05fd172&quot;; //Default Men's briefs
+-
+-            // Face 16 - Under Shirt
+-            // textures.CreateFace(16).TextureID = &quot;d283de852dc3dc07dc452e1bfd4cf193&quot;; //Default Men's tank
+-
+-            // Face 11 - Eyes
+-            // textures.CreateFace(11).TextureID = &quot;3abd329a78478984ac1cb95f4ef35fbe&quot;; //Default Eye
+-
+-            // Face 10 - 
+-            // textures.CreateFace(10).TextureID = &quot;c24403bc4569361852b31917ad733035&quot;; //Default 
+-
+-            // Face 9 - 
+-            // textures.CreateFace(9).TextureID = &quot;a88225377555cf975720aa128e47f934&quot;; //Default 
+-
+-            // Face 8 - 
+-            // textures.CreateFace(8).TextureID = &quot;472ccc472a4e2556d082f7bb708bcca7&quot;; //Default 
+-
+-
+-
+-            Dictionary&lt;uint, float&gt; AgentAppearance = new Dictionary&lt;uint, float&gt;();
+-
+             foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in GetWearables())
+             {
+                 if (wdb.ItemID == LLUUID.Zero)
+@@ -124,13 +92,12 @@
+ 
+                     foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in bp.textures)
+                     {
+-                        Console.WriteLine(texture.Key + &quot; : &quot; + texture.Value);
+-                        textures.CreateFace(texture.Key).TextureID = texture.Value;
++                        AgentTextureEntry.CreateFace(texture.Key).TextureID = texture.Value;
+                     }
+ 
+                     foreach (KeyValuePair&lt;uint, float&gt; kvp in bp.parameters)
+                     {
+-                        AgentAppearance[kvp.Key] = bp.parameters[kvp.Key];
++                        AgentAppearanceParams[kvp.Key] = bp.parameters[kvp.Key];
+                     }
+                 }
+                 catch (Exception e)
+@@ -145,10 +112,56 @@
+                 }
+             }
+ 
+-            
+-            Dictionary&lt;uint, byte&gt; VisualParams = new Dictionary&lt;uint, byte&gt;();
+ 
++            // Correct the order of the textures
++            foreach (uint faceid in AgentTextureEntry.FaceTextures.Keys)
++            {
++                switch (faceid)
++                {
++                    case 0:
++                    case 1:
++                    case 2:
++                    case 3:
++                    case 4:
++                    case 5:
++                    case 6:
++                    case 7:
++                    case 12:
++                    case 15:
++                    case 16:
++                    case 17:
++                    case 18:
++                        break;
++                    default:
++                        Console.WriteLine(&quot;Unknown order for FaceID: &quot; + faceid);
++                        Console.WriteLine(&quot;Your wearables define a face that we don't know the order of.  Please capture a AgentSetAppearance packet for your current outfit and submit to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;);
++                        break;
++                }
++            }
+ 
++            //Re-order texture faces to match Linden Labs internal data structure.
++            TextureEntry te2 = new TextureEntry(AgentTextureEntry.DefaultTexture.TextureID);
++            te2.CreateFace(18).TextureID = AgentTextureEntry.GetFace(18).TextureID;
++            te2.CreateFace(17).TextureID = AgentTextureEntry.GetFace(17).TextureID;
++            te2.CreateFace(16).TextureID = AgentTextureEntry.GetFace(16).TextureID;
++            te2.CreateFace(15).TextureID = AgentTextureEntry.GetFace(15).TextureID;
++            te2.CreateFace(2).TextureID = AgentTextureEntry.GetFace(2).TextureID;
++            te2.CreateFace(12).TextureID = AgentTextureEntry.GetFace(12).TextureID;
++            te2.CreateFace(7).TextureID = AgentTextureEntry.GetFace(7).TextureID;
++            te2.CreateFace(6).TextureID = AgentTextureEntry.GetFace(6).TextureID;
++            te2.CreateFace(5).TextureID = AgentTextureEntry.GetFace(5).TextureID;
++            te2.CreateFace(4).TextureID = AgentTextureEntry.GetFace(4).TextureID;
++            te2.CreateFace(3).TextureID = AgentTextureEntry.GetFace(3).TextureID;
++            te2.CreateFace(1).TextureID = AgentTextureEntry.GetFace(1).TextureID;
++            te2.CreateFace(0).TextureID = AgentTextureEntry.GetFace(0).TextureID;
++
++            AgentTextureEntry = te2;
++        }
++
++        private Dictionary&lt;uint, byte&gt; GetAssetParamsAsVisualParams()
++        {
++            Dictionary&lt;uint, byte&gt; VisualParams = new Dictionary&lt;uint, byte&gt;();
++
+             float maxVal = 0;
+             float minVal = 0;
+             uint packetIdx = 0;
+@@ -156,7 +169,7 @@
+             float percentage = 0;
+             byte packetVal = 0;
+ 
+-            foreach (KeyValuePair&lt;uint, float&gt; kvp in AgentAppearance)
++            foreach (KeyValuePair&lt;uint, float&gt; kvp in AgentAppearanceParams)
+             {
+                 packetIdx = AppearanceManager.GetAgentSetAppearanceIndex(kvp.Key) - 1; //TODO/FIXME: this should be zero indexed, not 1 based.
+                 maxVal = BodyShapeParams.GetValueMax(kvp.Key);
+@@ -171,61 +184,34 @@
+                 VisualParams[packetIdx] = packetVal;
+             }
+ 
++            return VisualParams;
++        }
+ 
+-            AgentSetAppearancePacket p = new AgentSetAppearancePacket();
+-            p.AgentData.AgentID = Client.Network.AgentID;
+-            p.AgentData.SessionID = Client.Network.SessionID;
+-            p.AgentData.SerialNum = ++SerialNum;
+-
++        private LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;uint, byte&gt; VisualParams)
++        {
+             float AV_Height_Range = 2.025506f - 1.50856f;
+             float AV_Height = 1.50856f + (((float)VisualParams[25] / 255.0f) * AV_Height_Range);
++            return new LLVector3(0.45f, 0.6f, AV_Height);
++        }
+ 
+-            p.AgentData.Size = new LLVector3(0.45f, 0.6f, AV_Height);
+-//            p.AgentData.Size = new LLVector3(0.45f, 0.6f, 1.35187f);
+-            //            p.ObjectData.TextureEntry = textures.ToBytes();
+-
+-            foreach( uint faceid in textures.FaceTextures.Keys )
++        public void SendAgentSetAppearance()
++        {
++            // Get latest appearance info
++            if (AgentAppearanceParams.Count == 0)
+             {
+-                switch (faceid)
+-                {
+-                    case 0:
+-                    case 1:
+-                    case 2:
+-                    case 3:
+-                    case 4:
+-                    case 5:
+-                    case 6:
+-                    case 7:
+-                    case 12:
+-                    case 15:
+-                    case 16:
+-                    case 17:
+-                    case 18:
+-                        break;
+-                    default:
+-                        Console.WriteLine(&quot;Unknown order for FaceID: &quot; + faceid);
+-                        Console.WriteLine(&quot;Your wearables define a face that we don't know the order of.  Please capture a AgentSetAppearance packet for your current outfit and submit to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;);
+-                        break;
+-                }
++                GetAvatarAppearanceInfoFromWearableAssets();
+             }
+ 
+-            //Re-order texture faces to match Linden Labs internal data structure.
+-            TextureEntry te2 = new TextureEntry(textures.DefaultTexture.TextureID);
+-            te2.CreateFace(18).TextureID = textures.GetFace(18).TextureID;
+-            te2.CreateFace(17).TextureID = textures.GetFace(17).TextureID;
+-            te2.CreateFace(16).TextureID = textures.GetFace(16).TextureID;
+-            te2.CreateFace(15).TextureID = textures.GetFace(15).TextureID;
+-            te2.CreateFace(2).TextureID  = textures.GetFace(2).TextureID;
+-            te2.CreateFace(12).TextureID = textures.GetFace(12).TextureID;
+-            te2.CreateFace(7).TextureID = textures.GetFace(7).TextureID;
+-            te2.CreateFace(6).TextureID = textures.GetFace(6).TextureID;
+-            te2.CreateFace(5).TextureID = textures.GetFace(5).TextureID;
+-            te2.CreateFace(4).TextureID = textures.GetFace(4).TextureID;
+-            te2.CreateFace(3).TextureID = textures.GetFace(3).TextureID;
+-            te2.CreateFace(1).TextureID = textures.GetFace(1).TextureID;
+-            te2.CreateFace(0).TextureID = textures.GetFace(0).TextureID;
+-            p.ObjectData.TextureEntry = te2.ToBytes();
++            AgentSetAppearancePacket p = new AgentSetAppearancePacket();
++            p.AgentData.AgentID = Client.Network.AgentID;
++            p.AgentData.SessionID = Client.Network.SessionID;
++            p.AgentData.SerialNum = ++SerialNum;
+ 
++            // Add Texture Data
++            p.ObjectData.TextureEntry = AgentTextureEntry.ToBytes();
++
++            // Add Visual Params
++            Dictionary&lt;uint, byte&gt; VisualParams = GetAssetParamsAsVisualParams();
+             p.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
+             for (uint i = 0; i &lt; 218; i++)
+             {
+@@ -240,33 +226,22 @@
+                     uint paramid = GetParamID(i + 1);
+                     float defaultValue = BodyShapeParams.GetValueDefault(paramid);
+ 
+-                    maxVal = BodyShapeParams.GetValueMax(paramid);
+-                    minVal = BodyShapeParams.GetValueMin(paramid);
++                    float minVal = BodyShapeParams.GetValueMin(paramid);
+ 
+-                    range = maxVal - minVal;
++                    float range = BodyShapeParams.GetValueMax(paramid) - minVal;
+ 
+-                    percentage = (defaultValue - minVal) / range;
++                    float percentage = (defaultValue - minVal) / range;
+ 
+-                    packetVal = (byte)(percentage * (byte)255);
++                    byte packetVal = (byte)(percentage * (byte)255);
+ 
+-                    // Console.WriteLine(&quot;Warning Visual Param not defined, IDX: &quot; + (i+1));
+-                    // Console.WriteLine(&quot;PID: &quot; + paramid + &quot; / Default: &quot; + defaultValue);
+                     p.VisualParam[i].ParamValue = packetVal;
+                 }
+             }
+ 
+-            Client.Network.SendPacket(p);
++            // Add Size Data
++            p.AgentData.Size = GetAgentSizeFromVisualParams(VisualParams);
+ 
+-            Console.WriteLine(&quot;Default: &quot; + textures.DefaultTexture.TextureID);
+-
+-            foreach (KeyValuePair&lt;uint, TextureEntryFace&gt; kvp in textures.FaceTextures)
+-            {
+-                Console.WriteLine(kvp.Key + &quot; : &quot; + kvp.Value.TextureID);
+-            }
+-
+-
+-            
+-            Console.WriteLine(p);
++            Client.Network.SendPacket(p);
+         }
+ 
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -43,8 +43,6 @@
+ 	/// &lt;/summary&gt;
+ 	public class AssetManager
+ 	{
+-        private static Dictionary&lt;LLUUID,AssetManager&gt; AssetManagers = new Dictionary&lt;LLUUID,AssetManager&gt;();
+-
+ 		public const int SINK_FEE_IMAGE = 1;
+ 
+ 		private SecondLife slClient;
+@@ -55,12 +53,13 @@
+         /// &lt;summary&gt;
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+-        private AssetManager(SecondLife client)
++        internal AssetManager(SecondLife client)
+ 		{
+ 			slClient = client;
+ 
+-            // need to make sure we don't keep around old AssetManagers connected to stale instances of SL
++            // Need to know when we're Connected/Disconnected to clear state
+             slClient.Network.OnDisconnected += new NetworkManager.DisconnectCallback(Network_OnDisconnected);
++            slClient.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
+ 
+ 			// Used to upload small assets, or as an initial start packet for large transfers
+             slClient.Network.RegisterCallback(PacketType.AssetUploadComplete, new NetworkManager.PacketCallback(AssetUploadCompleteCallbackHandler));
+@@ -72,30 +71,20 @@
+             slClient.Network.RegisterCallback(PacketType.RequestXfer, new NetworkManager.PacketCallback(RequestXferCallbackHandler));
+ 		}
+ 
++        void Network_OnConnected(object sender)
++        {
++            ClearState();
++        }
++
+         void Network_OnDisconnected(NetworkManager.DisconnectType reason, string message)
+         {
+-            // Remove this asset manager from the managers list.
+-            AssetManager.AssetManagers.Remove(this.slClient.Network.AgentID);
++            ClearState();
+         }
+ 
+-        public static AssetManager GetAssetManager( SecondLife client )
++        private void ClearState()
+         {
+-            lock (AssetManagers)
+-            {
+-                if (AssetManagers.ContainsKey(client.Network.AgentID))
+-                {
+-                    AssetManager existingAssetManager = AssetManagers[client.Network.AgentID];
+-                    if (existingAssetManager.slClient.Network.Connected == false)
+-                    {
+-                        existingAssetManager.slClient = client;
+-                    }
+-                    return existingAssetManager;
+-                } else {
+-                    AssetManager am = new AssetManager(client);
+-                    AssetManagers[client.Network.AgentID] = am;
+-                    return am;
+-                }
+-            }
++            htDownloadRequests.Clear();
++            curUploadRequest = null;
+         }
+ 
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -9,6 +9,8 @@
+     /// &lt;/summary&gt;
+     public class InventoryFolder : InventoryBase
+     {
++        public enum FolderUpdateFlag { None, NoRecurse, Recurse };
++
+         public string Name
+         {
+             get { return _Name; }
+@@ -33,10 +35,10 @@
+             set
+             {
+                 InventoryFolder ifParent = iManager.getFolder(this.ParentID);
+-                ifParent.alContents.Remove(this);
++                ifParent._Contents.Remove(this);
+ 
+                 ifParent = iManager.getFolder(value);
+-                ifParent.alContents.Add(this);
++                ifParent._Contents.Add(this);
+ 
+                 this._ParentID = value;
+ 
+@@ -50,8 +52,9 @@
+             get { return _Type; }
+         }
+ 
+-        public List&lt;InventoryBase&gt; alContents = new List&lt;InventoryBase&gt;();
++        internal List&lt;InventoryBase&gt; _Contents = new List&lt;InventoryBase&gt;();
+ 
++
+         internal InventoryFolder(InventoryManager manager)
+             : base(manager)
+         {
+@@ -88,7 +91,30 @@
+             this._Type = sbyte.Parse(htData[&quot;type_default&quot;].ToString());
+         }
+ 
++        /// &lt;summary&gt;
++        /// Get the contents of this folder
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;Contents of this folder&lt;/returns&gt;
++        public List&lt;InventoryBase&gt; GetContents()
++        {
++            return _Contents;
++        }
+ 
++        /// &lt;summary&gt;
++        /// Request a download of this folder's content information.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
++        /// &lt;returns&gt;The Request object for this download&lt;/returns&gt;
++        public DownloadRequest_Folder BeginDownloadContents(bool recurse)
++        {
++            _Contents.Clear();
++
++            DownloadRequest_Folder dr = new DownloadRequest_Folder(FolderID, recurse);
++            iManager.RequestFolder(dr);
++
++            return dr;
++        }
++
+         public InventoryFolder CreateFolder(string name)
+         {
+             return base.iManager.FolderCreate(name, FolderID);
+@@ -96,7 +122,7 @@
+ 
+         public void Delete()
+         {
+-            iManager.getFolder(this.ParentID).alContents.Remove(this);
++            iManager.getFolder(this.ParentID)._Contents.Remove(this);
+             iManager.FolderRemove(this);
+         }
+ 
+@@ -123,7 +149,7 @@
+         public List&lt;InventoryBase&gt; GetItemByName(string name)
+         {
+             List&lt;InventoryBase&gt; items = new List&lt;InventoryBase&gt;();
+-            foreach (InventoryBase ib in alContents)
++            foreach (InventoryBase ib in _Contents)
+             {
+                 if (ib is InventoryFolder)
+                 {
+@@ -155,7 +181,7 @@
+             output += &quot;Type = '&quot; + Type + &quot;' &quot;;
+             output += &quot;&gt;\n&quot;;
+ 
+-            foreach (Object oContent in alContents)
++            foreach (Object oContent in _Contents)
+             {
+                 output += ((InventoryBase)oContent).toXML(outputAssets);
+             }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -37,8 +37,8 @@
+                     throw new Exception(&quot;Target Folder [&quot; + value + &quot;] does not exist.&quot;);
+                 }
+ 
+-                base.iManager.getFolder(this.FolderID).alContents.Remove(this);
+-                iTargetFolder.alContents.Add(this);
++                base.iManager.getFolder(this.FolderID)._Contents.Remove(this);
++                iTargetFolder._Contents.Add(this);
+ 
+                 _FolderID = value;
+                 UpdateItem();
+@@ -422,7 +422,7 @@
+         /// &lt;/summary&gt;
+         public void Delete()
+         {
+-            base.iManager.getFolder(this.FolderID).alContents.Remove(this);
++            base.iManager.getFolder(this.FolderID)._Contents.Remove(this);
+             base.iManager.ItemRemove(this);
+ 
+         }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -27,6 +27,7 @@
+ //#define DEBUG_PACKETS
+ 
+ using System;
++using System.Collections;
+ using System.Collections.Generic;
+ using System.Threading;
+ 
+@@ -46,6 +47,7 @@
+ 
+         // Reference to the SLClient Library
+         private SecondLife slClient;
++        private ManualResetEvent InventoryManagerInitialized = new ManualResetEvent(false);
+ 
+         // Reference to the Asset Manager
+         private static AssetManager slAssetManager;
+@@ -56,15 +58,12 @@
+ 
+         public InventoryPacketHelper InvPacketHelper = null;
+ 
+-        // UUID of Root Inventory Folder
+-        private LLUUID uuidRootFolder;
+-
+         // Setup a dictionary to easily lookup folders by UUID
+         private Dictionary&lt;LLUUID, InventoryFolder&gt; htFoldersByUUID = new Dictionary&lt;LLUUID, InventoryFolder&gt;();
+ 
+         // Setup a dictionary to track download progress
+-        private Dictionary&lt;LLUUID, DescendentRequest&gt; htFolderDownloadStatus;
+-        private List&lt;DescendentRequest&gt; alFolderRequestQueue;
++        private Dictionary&lt;LLUUID, DownloadRequest_Folder&gt; FolderDownloadStatus = new Dictionary&lt;LLUUID, DownloadRequest_Folder&gt;();
++        private List&lt;DownloadRequest_Folder&gt; alFolderRequestQueue = new List&lt;DownloadRequest_Folder&gt;();
+ 
+         // Used to track current item being created
+         private InventoryItem iiCreationInProgress;
+@@ -73,20 +72,17 @@
+         private int LastPacketRecievedAtTick;
+ 
+         // Each InventorySystem needs to be initialized with a client and root folder.
+-        public InventoryManager(SecondLife client, LLUUID rootFolder)
++        public InventoryManager(SecondLife client)
+         {
+             slClient = client;
+-            if (slAssetManager == null)
+-            {
+-                slAssetManager = AssetManager.GetAssetManager(slClient);
+-            }
++            slAssetManager = slClient.Assets;
+ 
+-            InvPacketHelper = new InventoryPacketHelper(slClient.Network.AgentID, slClient.Network.SessionID);
++            InvPacketHelper = new InventoryPacketHelper(slClient);
+ 
+-            uuidRootFolder = rootFolder;
++            // Need to know what when we're connected/disconnected
++            slClient.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++            slClient.Network.OnDisconnected += new NetworkManager.DisconnectCallback(Network_OnDisconnected);
+ 
+-            resetFoldersByUUID();
+-
+             // Setup the callback for Inventory Downloads
+             slClient.Network.RegisterCallback(PacketType.InventoryDescendents, new NetworkManager.PacketCallback(InventoryDescendentsHandler));
+ 
+@@ -95,25 +91,35 @@
+ 
+         }
+ 
+-        // Used primarily for debugging and testing
+-        public AssetManager getAssetManager()
++        void Network_OnDisconnected(NetworkManager.DisconnectType reason, string message)
+         {
+-            // Console.WriteLine(&quot;It is not recommended that you access the asset manager directly&quot;);
+-            return AssetManager;
++            // Clear out current state
++            ClearState();
+         }
+ 
+-        private void resetFoldersByUUID()
++        void Network_OnConnected(object sender)
+         {
+-            // Init folder structure with root
+-            htFoldersByUUID = new Dictionary&lt;LLUUID,InventoryFolder&gt;();
++            // Clear out current state
++            ClearState();
++        }
+ 
+-            InventoryFolder ifRootFolder = new InventoryFolder(this, &quot;My Inventory&quot;, uuidRootFolder, null);
+-            htFoldersByUUID[uuidRootFolder] = ifRootFolder;
++        private void ClearState()
++        {
++            htFoldersByUUID.Clear();
++            FolderDownloadStatus.Clear();
++            alFolderRequestQueue.Clear();
++
++            if (slClient.Self.InventoryRootFolderUUID != null)
++            {
++                // Init folder structure with root
++                InventoryFolder ifRootFolder = new InventoryFolder(this, &quot;My Inventory&quot;, slClient.Self.InventoryRootFolderUUID, null);
++                htFoldersByUUID[slClient.Self.InventoryRootFolderUUID] = ifRootFolder;
++            }
+         }
+ 
+         public InventoryFolder getRootFolder()
+         {
+-            return htFoldersByUUID[uuidRootFolder];
++            return htFoldersByUUID[slClient.Self.InventoryRootFolderUUID];
+         }
+ 
+         public InventoryFolder getFolder(LLUUID folderID)
+@@ -157,7 +163,7 @@
+         {
+             string sCurFolder = qFolderPath.Dequeue();
+ 
+-            foreach (InventoryBase ibFolder in ifRoot.alContents)
++            foreach (InventoryBase ibFolder in ifRoot._Contents)
+             {
+                 if (ibFolder is libsecondlife.InventorySystem.InventoryFolder)
+                 {
+@@ -178,14 +184,18 @@
+             return null;
+         }
+ 
+-        private void RequestFolder(DescendentRequest dr)
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;dr&quot;&gt;&lt;/param&gt;
++        internal void RequestFolder(DownloadRequest_Folder dr)
+         {
+             Packet packet = InvPacketHelper.FetchInventoryDescendents(
+                             dr.FolderID
+                             , dr.FetchFolders
+                             , dr.FetchItems);
+ 
+-            htFolderDownloadStatus[dr.FolderID] = dr;
++            FolderDownloadStatus[dr.FolderID] = dr;
+ 
+             slClient.Network.SendPacket(packet);
+         }
+@@ -197,10 +207,10 @@
+ 
+             if (htFoldersByUUID.ContainsKey(ifolder.ParentID))
+             {
+-                if (((InventoryFolder)htFoldersByUUID[ifolder.ParentID]).alContents.Contains(ifolder) == false)
++                if (((InventoryFolder)htFoldersByUUID[ifolder.ParentID])._Contents.Contains(ifolder) == false)
+                 {
+                     // Add new folder to the contents of the parent folder.
+-                    ((InventoryFolder)htFoldersByUUID[ifolder.ParentID]).alContents.Add(ifolder);
++                    ((InventoryFolder)htFoldersByUUID[ifolder.ParentID])._Contents.Add(ifolder);
+                 }
+             }
+             else
+@@ -317,7 +327,7 @@
+         internal void ItemRemove(InventoryItem iitem)
+         {
+             InventoryFolder ifolder = getFolder(iitem.FolderID);
+-            ifolder.alContents.Remove(iitem);
++            ifolder._Contents.Remove(iitem);
+ 
+             Packet packet = InvPacketHelper.RemoveInventoryItem(iitem.ItemID);
+             slClient.Network.SendPacket(packet);
+@@ -359,16 +369,16 @@
+ 
+         public void DownloadInventory()
+         {
+-            resetFoldersByUUID();
++            ClearState();
+ 
+-            if (htFolderDownloadStatus == null)
++            if (FolderDownloadStatus == null)
+             {
+                 // Create status table
+-                htFolderDownloadStatus = new Dictionary&lt;LLUUID,DescendentRequest&gt;();
++                FolderDownloadStatus = new Dictionary&lt;LLUUID, DownloadRequest_Folder&gt;();
+             }
+             else
+             {
+-                if (htFolderDownloadStatus.Count != 0)
++                if (FolderDownloadStatus.Count != 0)
+                 {
+                     throw new Exception(&quot;Inventory Download requested while previous download in progress.&quot;);
+                 }
+@@ -376,7 +386,7 @@
+ 
+             if (alFolderRequestQueue == null)
+             {
+-                alFolderRequestQueue = new List&lt;DescendentRequest&gt;();
++                alFolderRequestQueue = new List&lt;DownloadRequest_Folder&gt;();
+             }
+ 
+             // Set last packet received to now, just so out time-out timer works
+@@ -384,13 +394,13 @@
+ 
+             // Send Packet requesting the root Folder, 
+             // this should recurse through all folders
+-            RequestFolder(new DescendentRequest(uuidRootFolder));
++            RequestFolder(new DownloadRequest_Folder(slClient.Self.InventoryRootFolderUUID));
+ 
+-            while ((htFolderDownloadStatus.Count &gt; 0) || (alFolderRequestQueue.Count &gt; 0))
++            while ((FolderDownloadStatus.Count &gt; 0) || (alFolderRequestQueue.Count &gt; 0))
+             {
+-                if (htFolderDownloadStatus.Count == 0)
++                if (FolderDownloadStatus.Count == 0)
+                 {
+-                    DescendentRequest dr = alFolderRequestQueue[0];
++                    DownloadRequest_Folder dr = alFolderRequestQueue[0];
+                     alFolderRequestQueue.RemoveAt(0);
+                     RequestFolder(dr);
+                 }
+@@ -403,14 +413,14 @@
+ 
+                     // have to make a seperate list otherwise we run into modifying the original array
+                     // while still enumerating it.
+-                    List&lt;DescendentRequest&gt; alRestartList = new List&lt;DescendentRequest&gt;();
++                    List&lt;DownloadRequest_Folder&gt; alRestartList = new List&lt;DownloadRequest_Folder&gt;();
+ 
+-                    //if (htFolderDownloadStatus[0] != null)
++                    //if (FolderDownloadStatus[0] != null)
+                     //{
+-                    //    Console.WriteLine(htFolderDownloadStatus[0].GetType());
++                    //    Console.WriteLine(FolderDownloadStatus[0].GetType());
+                     //}
+ 
+-                    foreach (DescendentRequest dr in htFolderDownloadStatus.Values)
++                    foreach (DownloadRequest_Folder dr in FolderDownloadStatus.Values)
+                     {
+                         Console.WriteLine(dr.FolderID + &quot; &quot; + dr.Expected + &quot; / &quot; + dr.Received + &quot; / &quot; + dr.LastReceivedAtTick);
+ 
+@@ -418,7 +428,7 @@
+                     }
+ 
+                     LastPacketRecievedAtTick = Environment.TickCount;
+-                    foreach (DescendentRequest dr in alRestartList)
++                    foreach (DownloadRequest_Folder dr in alRestartList)
+                     {
+                         RequestFolder(dr);
+                     }
+@@ -477,21 +487,36 @@
+             }
+         }
+ 
+-
++        /// &lt;summary&gt;
++        /// Returned in response to a InventoryDescendantRequest.  Contains information about the
++        /// contents of a folder.
++        /// &lt;/summary&gt;
++        /// &lt;seealso cref=&quot;InventoryManager.RequestFolder&quot;/&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public void InventoryDescendentsHandler(Packet packet, Simulator simulator)
+         {
+             InventoryDescendentsPacket reply = (InventoryDescendentsPacket)packet;
+ 
++            // The UUID of this folder.
++            LLUUID uuidFolderID = reply.AgentData.FolderID;
++
++            // Get the original Descendent Request for this Packet
++            DownloadRequest_Folder dr = (DownloadRequest_Folder)FolderDownloadStatus[uuidFolderID];
++
++            // Update Inventory Manager's last tick point, used for timeouts and such
+             LastPacketRecievedAtTick = Environment.TickCount;
+ 
++            // Some temp variables to be reused as we're parsing the packet
+             InventoryItem invItem;
+             InventoryFolder invFolder;
+ 
+-            LLUUID uuidFolderID = LLUUID.Zero;
+-
+-            int iDescendentsExpected = int.MaxValue;
++            // Used to count the number of descendants received to see if we're finished or not.
++            int iDescendentsExpected = reply.AgentData.Descendents;
+             int iDescendentsReceivedThisBlock = 0;
+ 
++
++
+             foreach (InventoryDescendentsPacket.ItemDataBlock itemBlock in reply.ItemData)
+             {
+                 // There is always an item block, even if there isn't any items
+@@ -502,8 +527,8 @@
+ 
+                     if (itemBlock.ItemID == LLUUID.Zero)
+                     {
+-                        // this shouldn't ever happen, but unless you've uploaded an invalid item
+-                        // to yourself while developping inventory code
++                        // this shouldn't ever happen, unless you've uploaded an invalid item
++                        // to yourself while developping inventory code :-(
+                     }
+                     else
+                     {
+@@ -511,7 +536,7 @@
+ 
+                         InventoryFolder ifolder = (InventoryFolder)htFoldersByUUID[invItem.FolderID];
+ 
+-                        if (ifolder.alContents.Contains(invItem) == false)
++                        if (ifolder._Contents.Contains(invItem) == false)
+                         {
+                             if ((invItem.InvType == 7) &amp;&amp; (invItem.Type == Asset.ASSET_TYPE_NOTECARD))
+                             {
+@@ -525,7 +550,7 @@
+                                 invItem = temp;
+                             }
+ 
+-                            ifolder.alContents.Add(invItem);
++                            ifolder._Contents.Add(invItem);
+                         }
+                     }
+                 }
+@@ -549,9 +574,9 @@
+ 
+                     // Add folder to Parent
+                     InventoryFolder ifolder = (InventoryFolder)htFoldersByUUID[invFolder.ParentID];
+-                    if (ifolder.alContents.Contains(invFolder) == false)
++                    if (ifolder._Contents.Contains(invFolder) == false)
+                     {
+-                        ifolder.alContents.Add(invFolder);
++                        ifolder._Contents.Add(invFolder);
+                     }
+ 
+ 
+@@ -559,45 +584,45 @@
+                     htFoldersByUUID[invFolder.FolderID] = invFolder;
+ 
+ 
+-                    // It's not the root, should be safe to &quot;recurse&quot;
+-                    if (!invFolder.FolderID.Equals(uuidRootFolder))
++                    // Do we recurse?
++                    if (dr.Recurse)
+                     {
+-                        bool alreadyQueued = false;
+-                        foreach (DescendentRequest dr in alFolderRequestQueue)
++                        // It's not the root, should be safe to &quot;recurse&quot;
++                        if (!invFolder.FolderID.Equals(slClient.Self.InventoryRootFolderUUID))
+                         {
+-                            if (dr.FolderID == invFolder.FolderID)
++                            bool alreadyQueued = false;
++                            foreach (DownloadRequest_Folder adr in alFolderRequestQueue)
+                             {
+-                                alreadyQueued = true;
+-                                break;
++                                if (adr.FolderID == invFolder.FolderID)
++                                {
++                                    alreadyQueued = true;
++                                    break;
++                                }
+                             }
+-                        }
+ 
+-                        if (!alreadyQueued)
+-                        {
+-                            alFolderRequestQueue.Add(new DescendentRequest(invFolder.FolderID));
++                            if (!alreadyQueued)
++                            {
++                                alFolderRequestQueue.Add(new DownloadRequest_Folder(invFolder.FolderID));
++                            }
+                         }
+                     }
+                 }
+             }
+ 
+ 
+-            // Check how many descendents we're actually supposed to receive
+-            iDescendentsExpected = reply.AgentData.Descendents;
+-            uuidFolderID = reply.AgentData.FolderID;
+ 
+             // Update download status for this folder
+             if (iDescendentsReceivedThisBlock &gt;= iDescendentsExpected)
+             {
+                 // We received all the descendents we're expecting for this folder
+                 // in this packet, so go ahead and remove folder from status list.
+-                htFolderDownloadStatus.Remove(uuidFolderID);
++                FolderDownloadStatus.Remove(uuidFolderID);
++                dr.RequestComplete.Set();
+             }
+             else
+             {
+                 // This one packet didn't have all the descendents we're expecting
+                 // so update the total we're expecting, and update the total downloaded
+-
+-                DescendentRequest dr = (DescendentRequest)htFolderDownloadStatus[uuidFolderID];
+                 dr.Expected = iDescendentsExpected;
+                 dr.Received += iDescendentsReceivedThisBlock;
+                 dr.LastReceivedAtTick = Environment.TickCount;
+@@ -606,41 +631,15 @@
+                 {
+                     // Looks like after updating, we have all the descendents, 
+                     // remove from folder status.
+-                    htFolderDownloadStatus.Remove(uuidFolderID);
++                    FolderDownloadStatus.Remove(uuidFolderID);
++                    dr.RequestComplete.Set();
+                 }
+                 else
+                 {
+-                    htFolderDownloadStatus[uuidFolderID] = dr;
++                    FolderDownloadStatus[uuidFolderID] = dr;
+                     //					Console.WriteLine( uuidFolderID + &quot; is expecting &quot; + (iDescendentsExpected - iStatus[1]) + &quot; more packets.&quot; );
+                 }
+             }
+         }
+-
+-        private class DescendentRequest
+-        {
+-            public LLUUID FolderID;
+-
+-            public int Expected = int.MaxValue;
+-            public int Received = 0;
+-            public int LastReceivedAtTick = 0;
+-
+-            public bool FetchFolders = true;
+-            public bool FetchItems = true;
+-
+-            public DescendentRequest(LLUUID folderID)
+-            {
+-                FolderID = folderID;
+-                LastReceivedAtTick = Environment.TickCount;
+-            }
+-
+-            public DescendentRequest(LLUUID folderID, bool fetchFolders, bool fetchItems)
+-            {
+-                FolderID = folderID;
+-                FetchFolders = fetchFolders;
+-                FetchItems = fetchItems;
+-                LastReceivedAtTick = Environment.TickCount;
+-            }
+-
+-        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -11,13 +11,21 @@
+ 	/// &lt;/summary&gt;
+     public class InventoryPacketHelper
+ 	{
+-        private LLUUID AgentID;
+-        private LLUUID SessionID;
++        private SecondLife Client;
+ 
+-        public InventoryPacketHelper(LLUUID AgentID, LLUUID SessionID)
++        private LLUUID AgentID
++        {
++            get { return Client.Network.AgentID; }
++        }
++
++        private LLUUID SessionID
++        {
++            get { return Client.Network.SessionID; }
++        }
++
++        public InventoryPacketHelper(SecondLife client)
+ 		{
+-            this.AgentID   = AgentID;
+-            this.SessionID = SessionID;
++            Client = client;
+ 		}
+ 
+ 		public const int FETCH_INVENTORY_SORT_NAME = 0;
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -175,7 +175,10 @@
+         public LLVector3 HomeLookAt = LLVector3.Zero;
+         /// &lt;summary&gt;Used for camera and control key state tracking&lt;/summary&gt;
+         public MainAvatarStatus Status;
++        /// &lt;summary&gt;The UUID of your root inventory folder&lt;/summary&gt;
++        public LLUUID InventoryRootFolderUUID;
+         
++        
+         /// &lt;summary&gt;Gets the health of the agent&lt;/summary&gt;
+         public float Health
+         {
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -1154,6 +1154,13 @@
+                 Client.Self.HomePosition = posVector;
+                 Client.Self.HomeLookAt = lookatVector;
+ 
++                // Get Inventory Root Folder
++                Client.Log(&quot;Pulling root folder UUID from login data.&quot;, Helpers.LogLevel.Debug);
++                ArrayList alInventoryRoot = (ArrayList)LoginValues[&quot;inventory-root&quot;];
++                Hashtable htInventoryRoot = (Hashtable)alInventoryRoot[0];
++                Client.Self.InventoryRootFolderUUID = new LLUUID((string)htInventoryRoot[&quot;folder_id&quot;]);
++
++
+                 // Connect to the sim given in the login reply
+                 Simulator simulator = new Simulator(Client, this.Callbacks, (uint)(int)LoginValues[&quot;circuit_code&quot;],
+                     IPAddress.Parse((string)LoginValues[&quot;sim_ip&quot;]), (int)LoginValues[&quot;sim_port&quot;]);
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/SecondLife.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -28,6 +28,7 @@
+ using System.Collections.Generic;
+ using libsecondlife.Packets;
+ using libsecondlife.AssetSystem;
++using libsecondlife.InventorySystem;
+ 
+ namespace libsecondlife
+ {
+@@ -60,34 +61,19 @@
+         public ObjectManager Objects;
+         /// &lt;summary&gt;Group Subsystem&lt;/summary&gt;
+         public GroupManager Groups;
++
++        /// &lt;summary&gt;Asset Subsystem&lt;/summary&gt;
++        public AssetManager Assets;
++        /// &lt;summary&gt;Inventory Subsystem&lt;/summary&gt;
++        public InventoryManager Inventory;
++        /// &lt;summary&gt;Image Subsystem&lt;/summary&gt;
++        public ImageManager Images;
++
+         /// &lt;summary&gt;Throttling Subsystem&lt;/summary&gt;
+         public AgentThrottle Throttle;
+         /// &lt;summary&gt;Settings Subsystem&lt;/summary&gt;
+         public Settings Settings;
+ 
+-        private ImageManager _ImageManager;
+-        /// &lt;summary&gt;Image Subsystem&lt;/summary&gt;
+-        public ImageManager Images
+-        {
+-            get
+-            {
+-                if (_ImageManager == null)
+-                {
+-                    _ImageManager = new ImageManager(this);
+-                    return _ImageManager;
+-                }
+-                else
+-                {
+-                    return _ImageManager;
+-                }
+-            }
+-
+-            set
+-            {
+-                _ImageManager = value;
+-            }
+-        }
+-
+         /// &lt;summary&gt;Triggered whenever a message is logged.
+         /// If this is left null, log messages will go to 
+         /// the console&lt;/summary&gt;
+@@ -107,6 +93,11 @@
+             Grid = new GridManager(this);
+             Objects = new ObjectManager(this);
+             Groups = new GroupManager(this);
++
++            Assets = new AssetManager(this);
++            Images = new ImageManager(this);
++            Inventory = new InventoryManager(this);
++
+             Throttle = new AgentThrottle(this);
+             Settings = new Settings(this);
+         }
+
+Modified: trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_ImageTool/ImageTool.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -1,6 +1,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.IO;
++using System.Threading;
+ 
+ using IA_SimpleInventory;
+ 
+@@ -13,8 +14,12 @@
+     /// &lt;summary&gt;
+     /// Summary description for Class1.
+     /// &lt;/summary&gt;
+-    class ImageTool : SimpleInventory
++    class ImageTool
+     {
++        private SecondLife _Client;
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
++
++
+         private List&lt;LLUUID&gt; _ImageIDs = new List&lt;LLUUID&gt;();
+         private string _FileName;
+         private bool _Put;
+@@ -24,7 +29,7 @@
+         /// Used to upload/download images.
+         /// &lt;/summary&gt;
+         [STAThread]
+-        static new void Main(string[] args)
++        static void Main(string[] args)
+         {
+             if ( (File.Exists(&quot;libjasper.dll&quot;) == false) )
+             {
+@@ -94,17 +99,16 @@
+ 
+             ImageTool it = new ImageTool(uuidList, filename, put, rate);
+ 
+-            // Only download the inventory tree if we're planning on putting/uploading files.
+-            it.DownloadInventoryOnConnect = put; 
+ 
+             if (it.Connect(args[0], args[1], args[2]))
+             {
+-                it.doStuff();
+-                it.Disconnect();
++                if (it.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++                {
++                    it.doStuff();
+ 
+-                System.Threading.Thread.Sleep(500);
++                    it.Disconnect();
++                }
+ 
+-                Console.WriteLine(&quot;Done logging out.&quot;);
+             }
+         }
+ 
+@@ -114,12 +118,62 @@
+             _FileName = filename;
+             _Put = put;
+             _Rate = rate;
++
++            try
++            {
++                _Client = new SecondLife();
++                _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++            }
++            catch (Exception e)
++            {
++                // Error initializing the client
++                Console.WriteLine();
++                Console.WriteLine(e.ToString());
++            }
++
+         }
+ 
+-        protected new void doStuff()
++        void Network_OnConnected(object sender)
+         {
++            ConnectedSignal.Set();
++        }
++
++        protected bool Connect(string FirstName, string LastName, string Password)
++        {
++            Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
++
++            // Setup Login to Second Life
++            Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
++
++            // Login
++            if (!_Client.Network.Login(FirstName, LastName, Password, &quot;ImageTool&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            {
++                // Login failed
++                Console.WriteLine(&quot;Error logging in: &quot; + _Client.Network.LoginError);
++                return false;
++            }
++
++            // Login was successful
++            Console.WriteLine(&quot;Login was successful.&quot;);
++            Console.WriteLine(&quot;AgentID:   &quot; + _Client.Network.AgentID);
++            Console.WriteLine(&quot;SessionID: &quot; + _Client.Network.SessionID);
++
++            return true;
++        }
++
++        protected void Disconnect()
++        {
++            // Logout of Second Life
++            Console.WriteLine(&quot;Request logout&quot;);
++            _Client.Network.Logout();
++        }        
++
++        protected void doStuff()
++        {
+             if (_Put)
+             {
++                
++
+                 Console.WriteLine(&quot;Reading: &quot; + _FileName);
+ 
+                 byte[] j2cdata;
+@@ -135,7 +189,7 @@
+                 
+ 
+                 Console.WriteLine(&quot;Connecting to your Texture folder...&quot;);
+-                InventoryFolder iFolder = AgentInventory.getFolder(&quot;Textures&quot;);
++                InventoryFolder iFolder = _Client.Inventory.getFolder(&quot;Textures&quot;);
+ 
+                 Console.WriteLine(&quot;Uploading Texture...&quot;);
+                 InventoryImage image = iFolder.NewImage(_FileName, &quot;ImageTool Upload&quot;, j2cdata);
+@@ -162,7 +216,7 @@
+ 
+                     try
+                     {
+-                        j2cdata = client.Images.RequestImage(ImageID);
++                        j2cdata = _Client.Images.RequestImage(ImageID);
+ 
+                         int end = Environment.TickCount;
+                         Console.WriteLine(&quot;Elapsed download time, in TickCounts: &quot; + (end - start));
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -1,6 +1,8 @@
+ using System;
+ using System.Collections.Generic;
++using System.IO;
+ using System.Text;
++using System.Threading;
+ 
+ using System.Xml;
+ using System.Xml.Serialization;
+@@ -23,7 +25,7 @@
+     /// * MOVE
+     /// * GIVE
+     /// &lt;/summary&gt;
+-    class iManager : SimpleInventory
++    class iManager
+     {
+         private char[] cmdSeperators = { ' ' };
+         private string curDirectory = &quot;/&quot;;
+@@ -31,9 +33,12 @@
+         private string TYPE_DIR  = &quot;&lt;DIR&gt;  &quot;;
+         private string TYPE_ITEM = &quot;&lt;ITEM&gt; &quot;;
+ 
++        private SecondLife _Client;
+         private AppearanceManager aManager;
+ 
+-        static new void Main(string[] args)
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
++
++        static void Main(string[] args)
+         {
+             if (args.Length &lt; 3)
+             {
+@@ -42,18 +47,35 @@
+             }
+ 
+             iManager it = new iManager();
+-            it.Connect(args[0], args[1], args[2]);
+-            it.doStuff();
+-            it.Disconnect();
++            if (it.Connect(args[0], args[1], args[2]))
++            {
++                if (it.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++                {
++                    it.doStuff();
++                    it.Disconnect();
++                }
++            }
++        }
+ 
+-            System.Threading.Thread.Sleep(1000);
++        public iManager()
++        {
++            try
++            {
++                _Client = new SecondLife();
++                _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++                _Client.Self.OnTeleport += new TeleportCallback(Self_OnTeleport);
++            }
++            catch (Exception e)
++            {
++                // Error initializing the client
++                Console.WriteLine();
++                Console.WriteLine(e.ToString());
++            }
+ 
+         }
+ 
+-        private new void doStuff()
++        private void doStuff()
+         {
+-            client.Self.OnTeleport += new TeleportCallback(Self_OnTeleport);
+-
+             System.Threading.Thread.Sleep(1000);
+ 
+             Console.WriteLine(&quot;==================================================================&quot;);
+@@ -164,7 +186,18 @@
+                         getlook();
+                         break;
+ 
++                    case &quot;saveav&quot;:
++                        saveavatar(curCmdLine);
++                        break;
+ 
++                    case &quot;savew&quot;:
++                        savewearables(curCmdLine);
++                        break;
++
++                    case &quot;loadw&quot;:
++                        loadwearables(curCmdLine);
++                        break;
++
+                     default:
+                         Console.WriteLine(&quot;Unknown command '&quot; + curCmdLine[0] + &quot;'.&quot;);
+                         Console.WriteLine(&quot;Type HELP for a list of available commands.&quot;);
+@@ -192,10 +225,144 @@
+             Console.WriteLine(&quot;REGIONINFO  - Display Grid Region Info.&quot;);
+             Console.WriteLine(&quot;TELEPORT    - Teleport to a new sim.&quot;);
+             Console.WriteLine(&quot;NOTECARD    - Create a new notecard.&quot;);
+-            Console.WriteLine(&quot;XML         - Display an item as xml&quot;);
++            Console.WriteLine(&quot;XML         - Display an item as xml.&quot;);
++            Console.WriteLine(&quot;GETLOOK     - Send an AgentSetAppearance based on your current weables.&quot;);
++            Console.WriteLine(&quot;SAVEAV      - Serialize your current wearables and the info from them.&quot;);
++            Console.WriteLine(&quot;SAVEW       - Serialize your current wearables.&quot;);
++            Console.WriteLine(&quot;LOADW       - Load a previously serialized wearables.&quot;);
+             Console.WriteLine(&quot;QUIT        - Exit the Inventory Manager.&quot;);
+         }
+ 
++        private void savewearables(string[] cmdLine)
++        {
++            if (aManager == null)
++            {
++                aManager = new AppearanceManager(_Client);
++            }
++
++            // Get Wearable Data
++            AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
++            List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt; WearablesList = new List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;();
++            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in wdbs)
++            {
++                WearablesList.Add(wdb);
++            }
++            
++            // Serialize to XML
++            StringBuilder sb = new StringBuilder();
++            XmlWriterSettings xmlws = new XmlWriterSettings();
++            xmlws.Indent = true;
++            XmlWriter xmlw = XmlWriter.Create(sb, xmlws);
++            XmlSerializer serializer = new XmlSerializer(typeof(List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;));
++            serializer.Serialize(xmlw, WearablesList);
++
++            // Output
++            if (cmdLine.Length &gt;= 2)
++            {
++                Console.WriteLine(&quot;Writing wearable data to : &quot; + cmdLine[1]);
++
++                File.WriteAllText(cmdLine[1], sb.ToString());
++
++                Console.WriteLine(&quot;Done...&quot;);
++            }
++            else
++            {
++                Console.WriteLine(sb.ToString());
++            }
++        }
++
++        private void loadwearables(string[] cmdLine)
++        {
++            if (cmdLine.Length &lt; 2)
++            {
++                Console.WriteLine(&quot;You must specify the file to load the wearables from.&quot;);
++                Console.WriteLine(&quot;Usage: loadw [file.xml]&quot;);
++                return;
++            }
++
++            Console.WriteLine(&quot;Reading Wearable data from: &quot; + cmdLine[1]);
++
++            try
++            {
++                XmlReader xmlr = XmlReader.Create(File.OpenText(cmdLine[1]));
++
++                XmlSerializer serializer = new XmlSerializer(typeof(List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;));
++                List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt; WearablesList = (List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;)serializer.Deserialize(xmlr);
++
++                foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in WearablesList)
++                {
++                    Console.WriteLine(wdb.AssetID);
++                }
++
++            }
++            catch (Exception e)
++            {
++                Console.WriteLine(&quot;An error has occured...&quot;);
++                Console.WriteLine(e.Message);
++                Console.WriteLine(e.StackTrace);
++            }
++
++        }
++
++        private void saveavatar(string[] cmdLine)
++        {
++            if (aManager == null)
++            {
++                aManager = new AppearanceManager(_Client);
++            }
++
++            AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
++            aManager.GetAvatarAppearanceInfoFromWearableAssets();
++
++            // Get the list of wearables
++            
++            List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt; WearablesList = new List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;();
++            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in wdbs)
++            {
++                WearablesList.Add(wdb);
++            }
++
++            XmlWriterSettings xmlws = new XmlWriterSettings();
++            xmlws.OmitXmlDeclaration = true;
++            xmlws.Indent = true;
++            xmlws.CloseOutput = false;
++
++            StringBuilder Save = new StringBuilder();
++            Save.Append(&quot;&lt;avatar_appearance&gt;&quot;);
++
++            // Wearables
++            StringBuilder sb = new StringBuilder();
++            XmlWriter xmlw   = XmlWriter.Create(sb, xmlws);
++            XmlSerializer serializer = new XmlSerializer(typeof(List&lt;AgentWearablesUpdatePacket.WearableDataBlock&gt;));
++            serializer.Serialize(xmlw, WearablesList);
++
++            Save.AppendLine(sb.ToString());
++
++            // Parameters
++            sb = new StringBuilder();
++            xmlw = XmlWriter.Create(sb, xmlws);
++            serializer = new XmlSerializer(typeof(SerializableDictionary&lt;uint, float&gt;));
++            serializer.Serialize(xmlw, aManager.AgentAppearanceParams);
++
++            Save.AppendLine(sb.ToString());
++
++            // Parameters
++            sb = new StringBuilder();
++            xmlw = XmlWriter.Create(sb, xmlws);
++            serializer = new XmlSerializer(typeof(TextureEntry));
++            serializer.Serialize(xmlw, aManager.AgentTextureEntry);
++
++            Save.AppendLine(sb.ToString());
++
++            // Finish off save data
++            Save.Append(&quot;&lt;/avatar_appearance&gt;&quot;);
++
++            Console.WriteLine(Save.ToString());
++
++            //aManager.SendAgentSetAppearance
++
++        }
++
+         private void StandUpStraight()
+         {
+             AgentUpdatePacket p = new AgentUpdatePacket();
+@@ -206,17 +373,17 @@
+             p.AgentData.CameraUpAxis = new LLVector3(0, 0, 0);
+             p.AgentData.HeadRotation = new LLQuaternion(0, 0, 0, 1); ;
+             p.AgentData.BodyRotation = new LLQuaternion(0, 0, 0, 1); ;
+-            p.AgentData.AgentID = client.Network.AgentID;
+-            p.AgentData.SessionID = client.Network.SessionID;
++            p.AgentData.AgentID = _Client.Network.AgentID;
++            p.AgentData.SessionID = _Client.Network.SessionID;
+             p.AgentData.ControlFlags = (uint)Avatar.AgentUpdateFlags.AGENT_CONTROL_STAND_UP;
+-            client.Network.SendPacket(p);
++            _Client.Network.SendPacket(p);
+         }
+ 
+         private void getlook()
+         {
+             if (aManager == null)
+             {
+-                aManager = new AppearanceManager(client);
++                aManager = new AppearanceManager(_Client);
+             }
+ 
+ 
+@@ -242,17 +409,20 @@
+             {
+             }
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(curDirectory);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
+ 
+             InventoryBase itemOfInterest = null;
+ 
+-            foreach (InventoryBase ib in iFolder.alContents)
++            iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000,false);
++            foreach (InventoryBase ib in iFolder.GetContents())
+             {
+                 if (ib is InventoryFolder)
+                 {
+                     InventoryFolder folder = (InventoryFolder)ib;
+                     if (folder.Name.Equals(cmdLine[1]) || folder.FolderID.Equals(uuid))
+                     {
++                        // Refresh the folder tree for this folder before outputing it.
++                        folder.BeginDownloadContents(true).RequestComplete.WaitOne(30000, false);
+                         itemOfInterest = folder;
+                         break;
+                     }
+@@ -309,7 +479,7 @@
+                 sb.Append(cki.Key.ToString());
+             } while (cki.Key != ConsoleKey.Escape);
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(curDirectory);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
+             iFolder.NewNotecard(cmdLine[1], NoteDesc, sb.ToString());
+ 
+             Console.WriteLine(&quot;Notecard '&quot; + NoteName + &quot; 'Created&quot;);
+@@ -324,22 +494,22 @@
+                 return;
+             }
+ 
+-            if (cmdLine[1].ToLower() == client.Network.CurrentSim.Region.Name.ToLower())
++            if (cmdLine[1].ToLower() == _Client.Network.CurrentSim.Region.Name.ToLower())
+             {
+                 Console.WriteLine(&quot;TODO: Add the ability to teleport somewhere in the local region. &quot; +
+                     &quot;Exiting for now, please specify a region other than the current one&quot;);
+             }
+             else
+             {
+-                if (client.Grid.Regions.Count == 0)
++                if (_Client.Grid.Regions.Count == 0)
+                 {
+                     Console.WriteLine(&quot;Caching estate sims...&quot;);
+-                    client.Grid.AddEstateSims();
++                    _Client.Grid.AddEstateSims();
+                     System.Threading.Thread.Sleep(3000);
+                 }
+ 
+-                
+-                client.Self.Teleport(cmdLine[1], new LLVector3( float.Parse(cmdLine[2]), float.Parse(cmdLine[3]), float.Parse(cmdLine[4]) ) );
++
++                _Client.Self.Teleport(cmdLine[1], new LLVector3(float.Parse(cmdLine[2]), float.Parse(cmdLine[3]), float.Parse(cmdLine[4])));
+             }
+ 
+         }
+@@ -360,7 +530,7 @@
+             }
+             regionName = regionName.Trim();
+ 
+-            GridRegion gr = client.Grid.GetGridRegion(regionName);
++            GridRegion gr = _Client.Grid.GetGridRegion(regionName);
+             Console.WriteLine(gr);
+         }
+ 
+@@ -382,15 +552,17 @@
+                 // Arbitrary Asset
+                 Asset asset = new Asset(cmdLine[2], sbyte.Parse(cmdLine[1]), null);
+ 
+-                AgentInventory.getAssetManager().GetInventoryAsset(asset);
++                _Client.Assets.GetInventoryAsset(asset);
+ 
+                 Console.WriteLine(asset.AssetDataToString());
+             }
+             else
+             {
+                 // Asset for an item in inventory
+-                InventoryFolder iFolder = AgentInventory.getFolder(curDirectory);
+-                foreach (InventoryBase ib in iFolder.alContents)
++                InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
++
++                iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000, false);
++                foreach (InventoryBase ib in iFolder.GetContents())
+                 {
+                     if (ib is InventoryItem)
+                     {
+@@ -423,7 +595,7 @@
+             }
+             targetDir += combineCmdArg(cmdLine);
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(targetDir);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(targetDir);
+             if (iFolder == null)
+             {
+                 Console.WriteLine(&quot;Could not find directory: &quot; + targetDir);
+@@ -446,7 +618,7 @@
+ 
+             string targetDir = combineCmdArg(cmdLine);
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(curDirectory);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
+ 
+             InventoryFolder newFolder = iFolder.CreateFolder(targetDir);
+ 
+@@ -492,7 +664,7 @@
+             Console.WriteLine(&quot;Changing directory to: &quot; + targetDir );
+ 
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(targetDir);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(targetDir);
+ 
+             if (iFolder == null)
+             {
+@@ -521,8 +693,9 @@
+                 Console.WriteLine(&quot;..&quot;);
+             }
+ 
+-            InventoryFolder iFolder = AgentInventory.getFolder(curDirectory);
+-            foreach (InventoryBase ib in iFolder.alContents)
++            InventoryFolder iFolder = _Client.Inventory.getFolder(curDirectory);
++            iFolder.BeginDownloadContents(false).RequestComplete.WaitOne(15000, false);
++            foreach (InventoryBase ib in iFolder.GetContents())
+             {
+                 if (ib is InventoryFolder)
+                 {
+@@ -550,5 +723,41 @@
+             }
+             return rtn.Trim();
+         }
++
++        void Network_OnConnected(object sender)
++        {
++            ConnectedSignal.Set();
++        }
++
++        protected bool Connect(string FirstName, string LastName, string Password)
++        {
++            Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
++
++            // Setup Login to Second Life
++            Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
++
++            // Login
++            if (!_Client.Network.Login(FirstName, LastName, Password, &quot;createnotecard&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            {
++                // Login failed
++                Console.WriteLine(&quot;Error logging in: &quot; + _Client.Network.LoginError);
++                return false;
++            }
++
++            // Login was successful
++            Console.WriteLine(&quot;Login was successful.&quot;);
++            Console.WriteLine(&quot;AgentID:   &quot; + _Client.Network.AgentID);
++            Console.WriteLine(&quot;SessionID: &quot; + _Client.Network.SessionID);
++
++            return true;
++        }
++
++        protected void Disconnect()
++        {
++            // Logout of Second Life
++            Console.WriteLine(&quot;Request logout&quot;);
++            _Client.Network.Logout();
++        }
++
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/IA_MultiImageUpload/MultiImageUpload.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_MultiImageUpload/MultiImageUpload.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_MultiImageUpload/MultiImageUpload.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -1,6 +1,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.IO;
++using System.Threading;
+ 
+ using IA_SimpleInventory;
+ using IA_ImageTool;
+@@ -11,11 +12,14 @@
+ 
+ namespace IA_MultiImageUpload
+ {
+-    class MultiImageUpload : SimpleInventory
++    class MultiImageUpload
+     {
++        private SecondLife _Client;
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
++
+         protected string ImageDirectory;
+ 
+-        static new void Main(string[] args)
++        static void Main(string[] args)
+         {
+             if (args.Length &lt; 4)
+             {
+@@ -32,14 +36,31 @@
+             }
+ 
+             MultiImageUpload app = new MultiImageUpload( fullpath );
+-            app.Connect(args[0], args[1], args[2]);
+-            app.doStuff();
+-            app.Disconnect();
++            if (app.Connect(args[0], args[1], args[2]))
++            {
++                if (app.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++                {
++                    app.doStuff();
++                    app.Disconnect();
++                }
++            }
+         }
+ 
+         public MultiImageUpload(string dir)
+         {
+             ImageDirectory = dir;
++            try
++            {
++                _Client = new SecondLife();
++                _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++            }
++            catch (Exception e)
++            {
++                // Error initializing the client
++                Console.WriteLine();
++                Console.WriteLine(e.ToString());
++            }
++
+         }
+ 
+         public static void Usage()
+@@ -47,9 +68,9 @@
+             System.Console.WriteLine(&quot;MultiImageUpload [FirstName] [LastName] [Password] [Directory]&quot;);
+         }
+ 
+-        protected new void doStuff()
++        protected void doStuff()
+         {
+-            InventoryFolder iFolder = AgentInventory.getFolder(&quot;Textures&quot;);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(&quot;Textures&quot;);
+             iFolder = iFolder.CreateFolder(Helpers.GetUnixTime().ToString());
+ 
+             Console.WriteLine(&quot;Uploading images:&quot;);
+@@ -79,5 +100,39 @@
+                 }
+             }
+         }
++        void Network_OnConnected(object sender)
++        {
++            ConnectedSignal.Set();
++        }
++
++        protected bool Connect(string FirstName, string LastName, string Password)
++        {
++            Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
++
++            // Setup Login to Second Life
++            Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
++
++            // Login
++            if (!_Client.Network.Login(FirstName, LastName, Password, &quot;MultiImageUpload&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            {
++                // Login failed
++                Console.WriteLine(&quot;Error logging in: &quot; + _Client.Network.LoginError);
++                return false;
++            }
++
++            // Login was successful
++            Console.WriteLine(&quot;Login was successful.&quot;);
++            Console.WriteLine(&quot;AgentID:   &quot; + _Client.Network.AgentID);
++            Console.WriteLine(&quot;SessionID: &quot; + _Client.Network.SessionID);
++
++            return true;
++        }
++
++        protected void Disconnect()
++        {
++            // Logout of Second Life
++            Console.WriteLine(&quot;Request logout&quot;);
++            _Client.Network.Logout();
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_NotecardTool/NotecardTool.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -28,6 +28,7 @@
+ using System.Collections.Generic;
+ using System.IO;
+ using System.Text;
++using System.Threading;
+ 
+ using IA_SimpleInventory;
+ using libsecondlife;
+@@ -35,12 +36,16 @@
+ 
+ namespace IA_NotecardTool
+ {
+-    class NotecardTool : SimpleInventory
++    class NotecardTool
+     {
+         private string FileName;
+         private string NotecardName;
+ 
+-        static new void Main(string[] args)
++        private SecondLife _Client;
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
++
++
++        static void Main(string[] args)
+         {
+             if (args.Length &lt; 6)
+             {
+@@ -59,21 +64,22 @@
+             tool.FileName = args[5];
+ 
+             tool.Connect(args[0], args[1], args[2]);
+-            tool.doStuff();
+-            tool.Disconnect();
+ 
+-            System.Threading.Thread.Sleep(500);
+-
++            if (tool.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++            {
++                tool.doStuff();
++                tool.Disconnect();
++            }
+         }
+ 
+-        private new void doStuff()
++        private void doStuff()
+         {
+             Console.WriteLine(&quot;Reading &quot; + FileName);
+             StreamReader sr = File.OpenText(FileName);
+             string Body = sr.ReadToEnd();
+ 
+             Console.WriteLine(&quot;Getting Notecard Folder&quot;);
+-            InventoryFolder iFolder = base.AgentInventory.getFolder(&quot;Notecards&quot;);
++            InventoryFolder iFolder = _Client.Inventory.getFolder(&quot;Notecards&quot;);
+ 
+ 
+             Console.WriteLine(&quot;Creating Notecard&quot;);
+@@ -81,5 +87,55 @@
+ 
+             Console.WriteLine(&quot;Done.&quot;);
+         }
++
++        public NotecardTool()
++        {
++            try
++            {
++                _Client = new SecondLife();
++                _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++            }
++            catch (Exception e)
++            {
++                // Error initializing the client
++                Console.WriteLine();
++                Console.WriteLine(e.ToString());
++            }
++        }
++
++        void Network_OnConnected(object sender)
++        {
++            ConnectedSignal.Set();
++        }
++
++        protected bool Connect(string FirstName, string LastName, string Password)
++        {
++            Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
++
++            // Setup Login to Second Life
++            Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
++
++            // Login
++            if (!_Client.Network.Login(FirstName, LastName, Password, &quot;createnotecard&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            {
++                // Login failed
++                Console.WriteLine(&quot;Error logging in: &quot; + _Client.Network.LoginError);
++                return false;
++            }
++
++            // Login was successful
++            Console.WriteLine(&quot;Login was successful.&quot;);
++            Console.WriteLine(&quot;AgentID:   &quot; + _Client.Network.AgentID);
++            Console.WriteLine(&quot;SessionID: &quot; + _Client.Network.SessionID);
++
++            return true;
++        }
++
++        protected void Disconnect()
++        {
++            // Logout of Second Life
++            Console.WriteLine(&quot;Request logout&quot;);
++            _Client.Network.Logout();
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/IA_SimpleInventory/IA_SimpleInventory.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_SimpleInventory/IA_SimpleInventory.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_SimpleInventory/IA_SimpleInventory.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -27,6 +27,7 @@
+ using System;
+ using System.Collections;
+ using System.Collections.Generic;
++using System.Threading;
+ 
+ using libsecondlife;
+ using libsecondlife.InventorySystem;
+@@ -38,11 +39,9 @@
+     /// &lt;/summary&gt;
+     public class SimpleInventory
+     {
+-        protected SecondLife client;
+-        protected InventoryManager AgentInventory;
++        private SecondLife client;
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
+ 
+-        protected bool DownloadInventoryOnConnect = true;
+-
+         public static void Main(string[] args)
+         {
+ 
+@@ -53,9 +52,14 @@
+             }
+ 
+             SimpleInventory simple = new SimpleInventory();
+-            simple.Connect(args[0], args[1], args[2]);
+-            simple.doStuff();
+-            simple.Disconnect();
++            if (simple.Connect(args[0], args[1], args[2]))
++            {
++                if (simple.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++                {
++                    simple.doStuff();
++                    simple.Disconnect();
++                }
++            }
+         }
+ 
+         protected SimpleInventory()
+@@ -63,6 +67,7 @@
+             try
+             {
+                 client = new SecondLife();
++                client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
+             }
+             catch (Exception e)
+             {
+@@ -72,6 +77,11 @@
+             }
+         }
+ 
++        void Network_OnConnected(object sender)
++        {
++            ConnectedSignal.Set();
++        }
++
+         protected bool Connect(string FirstName, string LastName, string Password)
+         {
+             Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
+@@ -80,7 +90,7 @@
+             Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
+ 
+             // Login
+-            if (!client.Network.Login(FirstName, LastName, Password, &quot;createnotecard&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            if (!client.Network.Login(FirstName, LastName, Password, &quot;IA_SimpleInventory&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
+             {
+                 // Login failed
+                 Console.WriteLine(&quot;Error logging in: &quot; + client.Network.LoginError);
+@@ -92,22 +102,6 @@
+             Console.WriteLine(&quot;AgentID:   &quot; + client.Network.AgentID);
+             Console.WriteLine(&quot;SessionID: &quot; + client.Network.SessionID);
+ 
+-            // Get Root Inventory Folder UUID
+-            Console.WriteLine(&quot;Pulling root folder UUID from login data.&quot;);
+-            ArrayList alInventoryRoot = (ArrayList)client.Network.LoginValues[&quot;inventory-root&quot;];
+-            Hashtable htInventoryRoot = (Hashtable)alInventoryRoot[0];
+-            LLUUID agentRootFolderID = new LLUUID((string)htInventoryRoot[&quot;folder_id&quot;]);
+-
+-            // Initialize Inventory Manager object
+-            Console.WriteLine(&quot;Initializing Inventory Manager.&quot;);
+-            AgentInventory = new InventoryManager(client, agentRootFolderID);
+-
+-            if (DownloadInventoryOnConnect)
+-            {
+-                // and request an inventory download
+-                Console.WriteLine(&quot;Downloading Inventory.&quot;);
+-                AgentInventory.DownloadInventory();
+-            }
+             return true;
+         }
+ 
+@@ -120,17 +114,19 @@
+ 
+         protected void doStuff()
+         {
++            // and request an inventory download
++            Console.WriteLine(&quot;Downloading Inventory.&quot;);
++            client.Inventory.DownloadInventory();
++
++
+             Console.WriteLine(&quot;Dumping a copy of &quot; + client.Self.FirstName + &quot;'s inventory to the console.&quot;);
+             Console.WriteLine();
+ 
+-            if (AgentInventory != null)
+-            {
+-                InventoryFolder root = AgentInventory.getRootFolder();
++            InventoryFolder root = client.Inventory.getRootFolder();
+ 
+-                if (root != null)
+-                {
+-                    Console.WriteLine(root.toXML(false));
+-                }
++            if (root != null)
++            {
++                Console.WriteLine(root.toXML(false));
+             }
+         }
+     }
+
+Modified: trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -3,6 +3,7 @@
+ using System.IO;
+ using System.Text;
+ using System.Threading;
++
+ using IA_SimpleInventory;
+ 
+ using libsecondlife;
+@@ -10,76 +11,79 @@
+ 
+ namespace IA_TestAsyncImage
+ {
+-    class TestAsync : SimpleInventory
++    class TestAsync
+     {
+-        ImageManager imgManager;
++        private SecondLife _Client;
++        private ManualResetEvent ConnectedSignal = new ManualResetEvent(false);
+ 
+-        Queue&lt;LLUUID&gt; TextureQueue = new Queue&lt;LLUUID&gt;();
+ 
+-        string OutputDirectory = &quot;IA_TestAsyncImages&quot;;
++        private Queue&lt;LLUUID&gt; TextureQueue = new Queue&lt;LLUUID&gt;();
+ 
++        private string OutputDirectory = &quot;IA_TestAsyncImages&quot;;
++
+         [STAThread]
+-        static new void Main(string[] args)
++        static void Main(string[] args)
+         {
+             TestAsync app = new TestAsync();
+-            app.DownloadInventoryOnConnect = false;
+ 
+-            app.client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(app.Objects_OnNewPrim);
+-            app.client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(app.Objects_OnNewAvatar);
++            app._Client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(app.Objects_OnNewPrim);
++            app._Client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(app.Objects_OnNewAvatar);
+ 
+ 
+             app.Connect(args[0], args[1], args[2]);
+-            app.doStuff();
+-            app.Disconnect();
+-
+-            System.Threading.Thread.Sleep(500);
+-
++            if (app.ConnectedSignal.WaitOne(TimeSpan.FromMinutes(1), false))
++            {
++                app.doStuff();
++                app.Disconnect();
++            }
+             Console.WriteLine(&quot;Done...&quot;);
+         }
+ 
++        public TestAsync()
++        {
++            try
++            {
++                _Client = new SecondLife();
++                _Client.Images = new ImageManager(_Client, ImageManager.CacheTypes.Disk, OutputDirectory);
++                _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
++            }
++            catch (Exception e)
++            {
++                // Error initializing the client
++                Console.WriteLine();
++                Console.WriteLine(e.ToString());
++            }
++        }
++
+         private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+         {
+-            if (imgManager == null)
++            if (avatar.FirstLifeImage != null)
+             {
+-                Console.WriteLine(&quot;ImageManager not ready yet, queueing Avatar textures.&quot;);
+-                TextureQueue.Enqueue(avatar.FirstLifeImage);
+-                TextureQueue.Enqueue(avatar.ProfileImage);
+-
+-                foreach (TextureEntryFace tef in avatar.Textures.FaceTextures.Values)
++                if (_Client.Images.isCachedImage(avatar.FirstLifeImage) == false)
+                 {
+-                    TextureQueue.Enqueue(tef.TextureID);
++                    _Client.Images.RequestImageAsync(avatar.FirstLifeImage);
+                 }
+             }
+-            else
++
++            if (avatar.ProfileImage != null)
+             {
+-                if (avatar.FirstLifeImage != null)
++                if (_Client.Images.isCachedImage(avatar.FirstLifeImage) == false)
+                 {
+-                    if (imgManager.isCachedImage(avatar.FirstLifeImage) == false)
+-                    {
+-                        imgManager.RequestImageAsync(avatar.FirstLifeImage);
+-                    }
++                    _Client.Images.RequestImageAsync(avatar.ProfileImage);
+                 }
++            }
+ 
+-                if (avatar.ProfileImage != null)
++            if (avatar.Textures != null)
++            {
++                foreach (TextureEntryFace tef in avatar.Textures.FaceTextures.Values)
+                 {
+-                    if (imgManager.isCachedImage(avatar.FirstLifeImage) == false)
++                    if (_Client.Images.isCachedImage(tef.TextureID) == false)
+                     {
+-                        imgManager.RequestImageAsync(avatar.ProfileImage);
++                        _Client.Images.RequestImageAsync(tef.TextureID);
+                     }
+-                }
+-
+-                if (avatar.Textures != null)
+-                {
+-                    foreach (TextureEntryFace tef in avatar.Textures.FaceTextures.Values)
++                    else
+                     {
+-                        if (imgManager.isCachedImage(tef.TextureID) == false)
+-                        {
+-                            imgManager.RequestImageAsync(tef.TextureID);
+-                        }
+-                        else
+-                        {
+-                            Console.WriteLine(&quot;Already cached: &quot; + tef.TextureID);
+-                        }
++                        Console.WriteLine(&quot;Already cached: &quot; + tef.TextureID);
+                     }
+                 }
+             }
+@@ -87,44 +91,31 @@
+ 
+         private void Objects_OnNewPrim(Simulator simulator, PrimObject prim, ulong regionHandle, ushort timeDilation)
+         {
+-            if (imgManager == null)
++            if ((prim.Textures.DefaultTexture != null) &amp;&amp; (prim.Textures.DefaultTexture.TextureID != null))
+             {
+-                Console.WriteLine(&quot;ImageManager not ready yet, queueing Prim textures.&quot;);
+-                TextureQueue.Enqueue(prim.Textures.DefaultTexture.TextureID);
+-
+-                foreach (TextureEntryFace tef in prim.Textures.FaceTextures.Values)
++                if (_Client.Images.isCachedImage(prim.Textures.DefaultTexture.TextureID) == false)
+                 {
+-                    TextureQueue.Enqueue(tef.TextureID);
++                    _Client.Images.RequestImageAsync(prim.Textures.DefaultTexture.TextureID);
+                 }
++                else
++                {
++                    Console.WriteLine(&quot;Already cached: &quot; + prim.Textures.DefaultTexture.TextureID);
++                }
+             }
+-            else
++
++            if (prim.Textures.FaceTextures != null)
+             {
+-                if ((prim.Textures.DefaultTexture != null) &amp;&amp; (prim.Textures.DefaultTexture.TextureID != null))
++                foreach (TextureEntryFace tef in prim.Textures.FaceTextures.Values)
+                 {
+-                    if (imgManager.isCachedImage(prim.Textures.DefaultTexture.TextureID) == false)
++                    if (_Client.Images.isCachedImage(tef.TextureID) == false)
+                     {
+-                        imgManager.RequestImageAsync(prim.Textures.DefaultTexture.TextureID);
++                        _Client.Images.RequestImageAsync(tef.TextureID);
+                     }
+                     else
+                     {
+-                        Console.WriteLine(&quot;Already cached: &quot; + prim.Textures.DefaultTexture.TextureID);
++                        Console.WriteLine(&quot;Already cached: &quot; + tef.TextureID);
+                     }
+                 }
+-
+-                if (prim.Textures.FaceTextures != null)
+-                {
+-                    foreach (TextureEntryFace tef in prim.Textures.FaceTextures.Values)
+-                    {
+-                        if (imgManager.isCachedImage(tef.TextureID) == false)
+-                        {
+-                            imgManager.RequestImageAsync(tef.TextureID);
+-                        }
+-                        else
+-                        {
+-                            Console.WriteLine(&quot;Already cached: &quot; + tef.TextureID);
+-                        }
+-                    }
+-                }
+             }
+         }
+ 
+@@ -153,14 +144,14 @@
+             }
+         }
+ 
+-        protected new void doStuff()
++        protected void doStuff()
+         {
+-            imgManager = new ImageManager(client, ImageManager.CacheTypes.Disk, OutputDirectory);
+-            imgManager.OnImageRetrieved += new ImageRetrievedCallback(NewImageRetrievedCallBack);
++            
++            _Client.Images.OnImageRetrieved += new ImageRetrievedCallback(NewImageRetrievedCallBack);
+ 
+             while (TextureQueue.Count &gt; 0)
+             {
+-                imgManager.RequestImageAsync(TextureQueue.Dequeue());
++                _Client.Images.RequestImageAsync(TextureQueue.Dequeue());
+             }
+ 
+             Console.WriteLine(&quot;Press any key to stop.&quot;);
+@@ -183,5 +174,40 @@
+                 File.WriteAllBytes(filename, JasperWrapper.jasper_decode_j2c_to_tiff(j2cdata));
+             }
+         }
++
++        void Network_OnConnected(object sender)
++        {
++            ConnectedSignal.Set();
++        }
++
++        protected bool Connect(string FirstName, string LastName, string Password)
++        {
++            Console.WriteLine(&quot;Attempting to connect and login to SecondLife.&quot;);
++
++            // Setup Login to Second Life
++            Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string, object&gt;();
++
++            // Login
++            if (!_Client.Network.Login(FirstName, LastName, Password, &quot;createnotecard&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;))
++            {
++                // Login failed
++                Console.WriteLine(&quot;Error logging in: &quot; + _Client.Network.LoginError);
++                return false;
++            }
++
++            // Login was successful
++            Console.WriteLine(&quot;Login was successful.&quot;);
++            Console.WriteLine(&quot;AgentID:   &quot; + _Client.Network.AgentID);
++            Console.WriteLine(&quot;SessionID: &quot; + _Client.Network.SessionID);
++
++            return true;
++        }
++
++        protected void Disconnect()
++        {
++            // Logout of Second Life
++            Console.WriteLine(&quot;Request logout&quot;);
++            _Client.Network.Logout();
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-19 23:13:04 UTC (rev 742)
+@@ -136,7 +136,7 @@
+                 }
+             }
+ 
+-            Client.Self.OnTeleport += new TeleportCallback(Avatar_OnTeleportMessage);
++            Client.Self.OnTeleport += new TeleportCallback(Self_OnTeleport);
+ 
+             DoneTeleporting = false;
+             Client.Self.Teleport(RegionHandle, coords);
+@@ -147,7 +147,7 @@
+             }
+         }
+ 
+-        private void Avatar_OnTeleportMessage(Simulator currentSim, string message, TeleportStatus status)
++        void Self_OnTeleport(Simulator currentSim, string message, TeleportStatus status)
+         {
+             Console.WriteLine(message);
+ 
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-19 18:32:59 UTC (rev 741)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-19 23:13:04 UTC (rev 742)
+@@ -107,6 +107,8 @@
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;AvatarManager.cs&quot; /&gt;
++    &lt;Compile Include=&quot;InventorySystem\DownloadRequest_Folder.cs&quot; /&gt;
++    &lt;Compile Include=&quot;InventorySystem\InventoryWearable.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatarStatus.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatar.cs&quot; /&gt;
+     &lt;Compile Include=&quot;EstateTools.cs&quot;&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000108.html">[Libsecondlife-commits] r741 - trunk/libsecondlife-cs/AssetSystem
+</A></li>
+	<LI>Next message: <A HREF="000110.html">[Libsecondlife-commits] r743 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r686 - in trunk/libsecondlife-cs: .	AssetSystem examples/IA_InventoryManager
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r686%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612060330.kB63UBAZ031764%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000043.html">
+   <LINK REL="Next"  HREF="000045.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r686 - in trunk/libsecondlife-cs: .	AssetSystem examples/IA_InventoryManager</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r686%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612060330.kB63UBAZ031764%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r686 - in trunk/libsecondlife-cs: .	AssetSystem examples/IA_InventoryManager">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec  6 04:30:11 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000043.html">[Libsecondlife-commits] r685 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000045.html">[Libsecondlife-commits] r687 - branches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#44">[ date ]</a>
+              <a href="thread.html#44">[ thread ]</a>
+              <a href="subject.html#44">[ subject ]</a>
+              <a href="author.html#44">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-06 04:30:00 +0100 (Wed, 06 Dec 2006)
+New Revision: 686
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+Log:
+AppearanceManager is closer to 95% working...  Only thing missing is the order of some of the textures (faces 8-11, and 16, 17) and how to get the LLVector3 for Size.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-06 00:56:36 UTC (rev 685)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-06 03:30:00 UTC (rev 686)
+@@ -25,10 +25,23 @@
+             Client = client;
+             AManager = AssetManager.GetAssetManager(client);
+ 
++            Client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+             RegisterCallbacks();
+ 
+         }
+ 
++        void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
++        {
++            if (avatar.ID == Client.Network.AgentID)
++            {
++                Console.WriteLine(&quot;**********************&quot;);
++                Console.WriteLine(&quot;**********************&quot;);
++                Console.WriteLine(&quot;Saw Myself&quot;);
++                Console.WriteLine(&quot;**********************&quot;);
++                Console.WriteLine(&quot;**********************&quot;);
++            }
++        }
++
+         private void RegisterCallbacks()
+         {
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+@@ -54,22 +67,22 @@
+             TextureEntry textures = new TextureEntry(&quot;C228D1CF4B5D4BA884F4899A0796AA97&quot;); // if this isn't valid, blame JH ;-)
+ 
+             // Face 17 - Under Pants
+-            textures.CreateFace(17).TextureID = &quot;b0bac26505cc7076202ba2a2e05fd172&quot;; //Default Men's briefs
++            // textures.CreateFace(17).TextureID = &quot;b0bac26505cc7076202ba2a2e05fd172&quot;; //Default Men's briefs
+ 
+             // Face 16 - Under Shirt
+-            textures.CreateFace(16).TextureID = &quot;d283de852dc3dc07dc452e1bfd4cf193&quot;; //Default Men's tank
++            // textures.CreateFace(16).TextureID = &quot;d283de852dc3dc07dc452e1bfd4cf193&quot;; //Default Men's tank
+ 
+             // Face 11 - Eyes
+-            textures.CreateFace(11).TextureID = &quot;3abd329a78478984ac1cb95f4ef35fbe&quot;; //Default Eye
++            // textures.CreateFace(11).TextureID = &quot;3abd329a78478984ac1cb95f4ef35fbe&quot;; //Default Eye
+ 
+             // Face 10 - 
+-            textures.CreateFace(10).TextureID = &quot;c24403bc4569361852b31917ad733035&quot;; //Default 
++            // textures.CreateFace(10).TextureID = &quot;c24403bc4569361852b31917ad733035&quot;; //Default 
+ 
+             // Face 9 - 
+-            textures.CreateFace(9).TextureID = &quot;a88225377555cf975720aa128e47f934&quot;; //Default 
++            // textures.CreateFace(9).TextureID = &quot;a88225377555cf975720aa128e47f934&quot;; //Default 
+ 
+             // Face 8 - 
+-            textures.CreateFace(8).TextureID = &quot;472ccc472a4e2556d082f7bb708bcca7&quot;; //Default 
++            // textures.CreateFace(8).TextureID = &quot;472ccc472a4e2556d082f7bb708bcca7&quot;; //Default 
+ 
+ 
+ 
+@@ -164,8 +177,43 @@
+             p.AgentData.SessionID = Client.Network.SessionID;
+             p.AgentData.SerialNum = ++SerialNum;
+             p.AgentData.Size = new LLVector3(0.45f, 0.6f, 1.35187f);
+-            p.ObjectData.TextureEntry = textures.ToBytes();
++//            p.ObjectData.TextureEntry = textures.ToBytes();
+ 
++            foreach( uint faceid in textures.FaceTextures.Keys )
++            {
++                switch (faceid)
++                {
++                    case 0:
++                    case 1:
++                    case 2:
++                    case 3:
++                    case 4:
++                    case 5:
++                    case 6:
++                    case 7:
++                    case 12:
++                    case 15:
++                        break;
++                    default:
++                        Console.WriteLine(&quot;Your wearables define a face that we don't know the order of.  Please capture a AgentSetAppearance packet for your current outfit and submit to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;);
++                        break;
++                }
++            }
++
++
++            TextureEntry te2 = new TextureEntry(textures.DefaultTexture.TextureID);
++            te2.CreateFace(15).TextureID = textures.GetFace(15).TextureID;
++            te2.CreateFace(2).TextureID  = textures.GetFace(2).TextureID;
++            te2.CreateFace(12).TextureID = textures.GetFace(12).TextureID;
++            te2.CreateFace(7).TextureID = textures.GetFace(7).TextureID;
++            te2.CreateFace(6).TextureID = textures.GetFace(6).TextureID;
++            te2.CreateFace(5).TextureID = textures.GetFace(5).TextureID;
++            te2.CreateFace(4).TextureID = textures.GetFace(4).TextureID;
++            te2.CreateFace(3).TextureID = textures.GetFace(3).TextureID;
++            te2.CreateFace(1).TextureID = textures.GetFace(1).TextureID;
++            te2.CreateFace(0).TextureID = textures.GetFace(0).TextureID;
++            p.ObjectData.TextureEntry = te2.ToBytes();
++
+             p.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
+             for (uint i = 0; i &lt; 218; i++)
+             {
+@@ -197,6 +245,14 @@
+ 
+             Client.Network.SendPacket(p);
+ 
++            Console.WriteLine(&quot;Default: &quot; + textures.DefaultTexture.TextureID);
++
++            foreach (KeyValuePair&lt;uint, TextureEntryFace&gt; kvp in textures.FaceTextures)
++            {
++                Console.WriteLine(kvp.Key + &quot; : &quot; + kvp.Value.TextureID);
++            }
++
++
+             Console.WriteLine(p);
+         }
+ 
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-12-06 00:56:36 UTC (rev 685)
++++ trunk/libsecondlife-cs/Textures.cs	2006-12-06 03:30:00 UTC (rev 686)
+@@ -26,6 +26,7 @@
+ 
+ using System;
+ using System.Collections.Generic;
++using System.Xml;
+ using System.Xml.Serialization;
+ using System.IO;
+ 
+@@ -825,6 +826,15 @@
+             else
+                 hasAttribute = TextureAttributes.None;
+         }
++
++        public void ToXml(XmlWriter xmlWriter)
++        {
++            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
++            ns.Add(&quot;&quot;, &quot;&quot;);
++            XmlSerializer serializer = new XmlSerializer(typeof(TextureEntryFace));
++            serializer.Serialize(xmlWriter, this, ns);
++        }
++
+     }
+ 
+     /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-06 00:56:36 UTC (rev 685)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-06 03:30:00 UTC (rev 686)
+@@ -2,6 +2,9 @@
+ using System.Collections.Generic;
+ using System.Text;
+ 
++using System.Xml;
++using System.Xml.Serialization;
++
+ using IA_SimpleInventory;
+ using libsecondlife;
+ using libsecondlife.InventorySystem;
+@@ -161,6 +164,7 @@
+                         getlook();
+                         break;
+ 
++
+                     default:
+                         Console.WriteLine(&quot;Unknown command '&quot; + curCmdLine[0] + &quot;'.&quot;);
+                         Console.WriteLine(&quot;Type HELP for a list of available commands.&quot;);
+@@ -174,6 +178,7 @@
+         void Self_OnTeleport(string message, TeleportStatus status)
+         {
+             Console.WriteLine(&quot;Teleport Completed&quot;);
++            StandUpStraight();
+         }
+ 
+         private void help()
+@@ -191,6 +196,22 @@
+             Console.WriteLine(&quot;QUIT        - Exit the Inventory Manager.&quot;);
+         }
+ 
++        private void StandUpStraight()
++        {
++            AgentUpdatePacket p = new AgentUpdatePacket();
++            p.AgentData.Far = 96.0f;
++            p.AgentData.CameraAtAxis = new LLVector3(0, 0, 0);
++            p.AgentData.CameraCenter = new LLVector3(0, 0, 0);
++            p.AgentData.CameraLeftAxis = new LLVector3(0, 0, 0);
++            p.AgentData.CameraUpAxis = new LLVector3(0, 0, 0);
++            p.AgentData.HeadRotation = new LLQuaternion(0, 0, 0, 1); ;
++            p.AgentData.BodyRotation = new LLQuaternion(0, 0, 0, 1); ;
++            p.AgentData.AgentID = client.Network.AgentID;
++            p.AgentData.SessionID = client.Network.SessionID;
++            p.AgentData.ControlFlags = (uint)Avatar.AgentUpdateFlags.AGENT_CONTROL_STAND_UP;
++            client.Network.SendPacket(p);
++        }
++
+         private void getlook()
+         {
+             if (aManager == null)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000043.html">[Libsecondlife-commits] r685 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000045.html">[Libsecondlife-commits] r687 - branches
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#44">[ date ]</a>
+              <a href="thread.html#44">[ thread ]</a>
+              <a href="subject.html#44">[ subject ]</a>
+              <a href="author.html#44">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

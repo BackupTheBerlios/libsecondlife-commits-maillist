@@ -1,0 +1,3149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r754 - in trunk: SLProxy applications/SLIRC	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/examples/IA_InventoryManager	libsecondlife-cs/examples/IA_TestAsyncImage	libsecondlife-cs/examples/Teleport	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands	libsecondlife-cs/examples/groupmanager	libsecondlife-cs/examples/primexport	libsecondlife-cs/libsecondlife.Tests	libsecondlife-cs/libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r754%20-%20in%20trunk%3A%20SLProxy%20applications/SLIRC%0A%09libsecondlife-cs%20libsecondlife-cs/AssetSystem%0A%09libsecondlife-cs/examples/IA_InventoryManager%0A%09libsecondlife-cs/examples/IA_TestAsyncImage%0A%09libsecondlife-cs/examples/Teleport%0A%09libsecondlife-cs/examples/TestClient%0A%09libsecondlife-cs/examples/TestClient/Commands%0A%09libsecondlife-cs/examples/groupmanager%0A%09libsecondlife-cs/examples/primexport%0A%09libsecondlife-cs/libsecondlife.Tests%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200612221528.kBMFSZvZ019511%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000121.html">
+   <LINK REL="Next"  HREF="000123.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r754 - in trunk: SLProxy applications/SLIRC	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/examples/IA_InventoryManager	libsecondlife-cs/examples/IA_TestAsyncImage	libsecondlife-cs/examples/Teleport	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands	libsecondlife-cs/examples/groupmanager	libsecondlife-cs/examples/primexport	libsecondlife-cs/libsecondlife.Tests	libsecondlife-cs/libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r754%20-%20in%20trunk%3A%20SLProxy%20applications/SLIRC%0A%09libsecondlife-cs%20libsecondlife-cs/AssetSystem%0A%09libsecondlife-cs/examples/IA_InventoryManager%0A%09libsecondlife-cs/examples/IA_TestAsyncImage%0A%09libsecondlife-cs/examples/Teleport%0A%09libsecondlife-cs/examples/TestClient%0A%09libsecondlife-cs/examples/TestClient/Commands%0A%09libsecondlife-cs/examples/groupmanager%0A%09libsecondlife-cs/examples/primexport%0A%09libsecondlife-cs/libsecondlife.Tests%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200612221528.kBMFSZvZ019511%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r754 - in trunk: SLProxy applications/SLIRC	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/examples/IA_InventoryManager	libsecondlife-cs/examples/IA_TestAsyncImage	libsecondlife-cs/examples/Teleport	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands	libsecondlife-cs/examples/groupmanager	libsecondlife-cs/examples/primexport	libsecondlife-cs/libsecondlife.Tests	libsecondlife-cs/libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 22 16:28:35 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000121.html">[Libsecondlife-commits] r753 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+        <LI>Next message: <A HREF="000123.html">[Libsecondlife-commits] r755 - trunk/SLProxy
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#122">[ date ]</a>
+              <a href="thread.html#122">[ thread ]</a>
+              <a href="subject.html#122">[ subject ]</a>
+              <a href="author.html#122">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-22 16:28:33 +0100 (Fri, 22 Dec 2006)
+New Revision: 754
+
+Added:
+   trunk/libsecondlife-cs/libsecondlife.Tests/NetworkTests.cs
+Removed:
+   trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs
+Modified:
+   trunk/SLProxy/ChatConsole.cs
+   trunk/applications/SLIRC/frmSLIRC.cs
+   trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/Settings.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+   trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs
+   trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.Designer.cs
+   trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.cs
+   trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs
+   trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+Log:
+* Moved several stranded delegates and enums inside parent classes
+* Updated the various clients to reflect the moved delegates and enums
+* Redid Avatar, AvatarManager, and MainAvatar almost from the ground up
+* Moved the avatar caching to AvatarTracker in libsecondlife.Utilities, AvatarManager only does lookups now
+* Added support for fuzzy avatar searching through the Picker packets (alternative to directory searches)
+* Added a unit test for AvatarTracker.GetAvatarName()
+* Removed unused references from SLProxy
+* Whitespace reformatting in ImageManager
+* Renamed Tests.cs to NetworkTests.cs to reflect its contents properly
+
+Modified: trunk/SLProxy/ChatConsole.cs
+===================================================================
+--- trunk/SLProxy/ChatConsole.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/SLProxy/ChatConsole.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -1,83 +1,81 @@
+-/*
+- * ChatConsole.cs: sample SLProxy appliation that writes chat to the console.
+- *   Typing on the console will send chat to Second Life.
+- *
+- * Copyright (c) 2006 Austin Jennings
+- * Modified by Andrew Ortman (&quot;qode&quot;) on Decemeber 21, 2006 to work with the new pregen proxy.
+- * All rights reserved.
+- *
+- * - Redistribution and use in source and binary forms, with or without 
+- *   modification, are permitted provided that the following conditions are met:
+- *
+- * - Redistributions of source code must retain the above copyright notice, this
+- *   list of conditions and the following disclaimer.
+- * - Neither the name of the Second Life Reverse Engineering Team nor the names 
+- *   of its contributors may be used to endorse or promote products derived from
+- *   this software without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
+- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+- * POSSIBILITY OF SUCH DAMAGE.
+- */
+-
+-using SLProxy;
++/*
++ * ChatConsole.cs: sample SLProxy appliation that writes chat to the console.
++ *   Typing on the console will send chat to Second Life.
++ *
++ * Copyright (c) 2006 Austin Jennings
++ * Modified by Andrew Ortman (&quot;qode&quot;) on Decemeber 21, 2006 to work with the new pregen proxy.
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using SLProxy;
+ using libsecondlife;
+-using libsecondlife.Packets;
+-using Nwc.XmlRpc;
+-
+-using System;
+-using System.Collections;
+-using System.Net;
+-using System.Threading;
+-
+-public class ChatConsole {
+-	private static SecondLife client;
+-	private static ProtocolManager protocolManager;
+-	private static Proxy proxy;
+-	private static LLUUID agentID;
+-	private static LLUUID sessionID;
+-
+-	public static void Main(string[] args) {
+-		// configure the proxy
+-		ProxyConfig proxyConfig = new ProxyConfig(&quot;ChatConsole V2&quot;, &quot;Austin Jennings / Andrew Ortman&quot;, args);
+-		proxy = new Proxy(proxyConfig);
+-
+-		// set a delegate for when the client logs in
+-		proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(Login));
+-
+-		// add a delegate for incoming chat
+-		proxy.AddDelegate(PacketType.ChatFromSimulator, Direction.Incoming, new PacketDelegate(ChatFromSimulator));
+-
+-		// start the proxy
+-		proxy.Start();
+-	}
+-
+-	private static void Login(XmlRpcResponse response) {
+-		Hashtable values = (Hashtable)response.Value;
+-		if (values.Contains(&quot;agent_id&quot;) &amp;&amp; values.Contains(&quot;session_id&quot;)) {
+-			// remember our agentID and sessionID
+-			agentID = new LLUUID((string)values[&quot;agent_id&quot;]);
+-			sessionID = new LLUUID((string)values[&quot;session_id&quot;]);
+-
+-			// start a new thread that reads lines from the console
+-			(new Thread(new ThreadStart(ReadFromConsole))).Start();
+-		}
+-	}
+-
+-	private static void ReadFromConsole() {
+-		// send text from the console in an infinite loop
+-		for (;;) {
+-			// read a line from the console
+-			string message = Console.ReadLine();
+-
++using libsecondlife.Packets;
++using Nwc.XmlRpc;
++
++using System;
++using System.Collections;
++using System.Net;
++using System.Threading;
++
++public class ChatConsole {
++	private static Proxy proxy;
++	private static LLUUID agentID;
++	private static LLUUID sessionID;
++
++	public static void Main(string[] args) {
++		// configure the proxy
++		ProxyConfig proxyConfig = new ProxyConfig(&quot;ChatConsole V2&quot;, &quot;Austin Jennings / Andrew Ortman&quot;, args);
++		proxy = new Proxy(proxyConfig);
++
++		// set a delegate for when the client logs in
++		proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(Login));
++
++		// add a delegate for incoming chat
++		proxy.AddDelegate(PacketType.ChatFromSimulator, Direction.Incoming, new PacketDelegate(ChatFromSimulator));
++
++		// start the proxy
++		proxy.Start();
++	}
++
++	private static void Login(XmlRpcResponse response) {
++		Hashtable values = (Hashtable)response.Value;
++		if (values.Contains(&quot;agent_id&quot;) &amp;&amp; values.Contains(&quot;session_id&quot;)) {
++			// remember our agentID and sessionID
++			agentID = new LLUUID((string)values[&quot;agent_id&quot;]);
++			sessionID = new LLUUID((string)values[&quot;session_id&quot;]);
++
++			// start a new thread that reads lines from the console
++			(new Thread(new ThreadStart(ReadFromConsole))).Start();
++		}
++	}
++
++	private static void ReadFromConsole() {
++		// send text from the console in an infinite loop
++		for (;;) {
++			// read a line from the console
++			string message = Console.ReadLine();
++
+ 			// construct a ChatFromViewer packet
+             ChatFromViewerPacket chat = new ChatFromViewerPacket();
+             chat.ChatData.Channel = 0;
+@@ -85,25 +83,25 @@
+             chat.ChatData.Type = (byte)1;
+ 
+             chat.AgentData.AgentID = agentID;
+-            chat.AgentData.SessionID = sessionID;
+-			// inject the packet
+-			proxy.InjectPacket((Packet)chat, Direction.Outgoing);
+-		}
+-	}
+-
+-	private static Packet ChatFromSimulator(Packet packet, IPEndPoint sim) {
++            chat.AgentData.SessionID = sessionID;
++			// inject the packet
++			proxy.InjectPacket((Packet)chat, Direction.Outgoing);
++		}
++	}
++
++	private static Packet ChatFromSimulator(Packet packet, IPEndPoint sim) {
+ 		// deconstruct the packet
+         ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
+         string message = Helpers.FieldToString(chat.ChatData.Message);
+         string name = Helpers.FieldToString(chat.ChatData.FromName);
+         byte audible = chat.ChatData.Audible;
+-        byte type = chat.ChatData.ChatType;
+-
+-		// if this was a normal, audible message, write it to the console
+-		if (audible != 0 &amp;&amp; (type == 0 || type == 1 || type == 2))
+-			Console.WriteLine(name + &quot;: &quot; + message);
+-
+-		// return the packet unmodified
+-		return packet;
+-	}
+-}
++        byte type = chat.ChatData.ChatType;
++
++		// if this was a normal, audible message, write it to the console
++		if (audible != 0 &amp;&amp; (type == 0 || type == 1 || type == 2))
++			Console.WriteLine(name + &quot;: &quot; + message);
++
++		// return the packet unmodified
++		return packet;
++	}
++}
+
+Modified: trunk/applications/SLIRC/frmSLIRC.cs
+===================================================================
+--- trunk/applications/SLIRC/frmSLIRC.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/applications/SLIRC/frmSLIRC.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -89,7 +89,7 @@
+             try
+             {
+                 client = new SecondLife();
+-                client.Self.OnChat += new ChatCallback(Avatar_OnChat);
++                client.Self.OnChat += new MainAvatar.ChatCallback(Avatar_OnChat);
+                 grpLogin.Enabled = true;
+             }
+             catch (Exception error)
+
+Modified: trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -42,14 +42,14 @@
+     public delegate void ImageRetrievedCallback(LLUUID id, byte[] data, bool cached, string statusmsg); //this delegate is called when an image completed.
+ 
+     /// &lt;summary&gt;
+-	/// Manages the uploading and downloading of Images from SecondLife
+-	/// &lt;/summary&gt;
+-	public class ImageManager
+-	{
++    /// Manages the uploading and downloading of Images from SecondLife
++    /// &lt;/summary&gt;
++    public class ImageManager
++    {
+ 
+         private SecondLife slClient;
+ 
+-        public enum CacheTypes {None, Memory, Disk};
++        public enum CacheTypes { None, Memory, Disk };
+         private CacheTypes CacheType;
+         private string CacheDirectory = &quot;ImageCache&quot;;
+         private Dictionary&lt;LLUUID, Byte[]&gt; CacheTable = new Dictionary&lt;LLUUID, byte[]&gt;();
+@@ -57,40 +57,40 @@
+ 
+         private ImagePacketHelpers ImagePacketHelper;
+ 
+-		private Dictionary&lt;LLUUID, TransferRequest&gt; htDownloadRequests = new Dictionary&lt;LLUUID,TransferRequest&gt;();
++        private Dictionary&lt;LLUUID, TransferRequest&gt; htDownloadRequests = new Dictionary&lt;LLUUID, TransferRequest&gt;();
+ 
+         public ImageRetrievedCallback OnImageRetrieved;
+ 
+-		private class TransferRequest
+-		{
++        private class TransferRequest
++        {
+             public ManualResetEvent ReceivedHeaderPacket = new ManualResetEvent(false);
+             public ManualResetEvent Completed = new ManualResetEvent(false);
+ 
+-			public bool Status;
+-			public string StatusMsg;
++            public bool Status;
++            public string StatusMsg;
+ 
+-			public uint Size;
+-			public uint Received;
+-			public uint LastPacket;
+-			public byte[] AssetData;
++            public uint Size;
++            public uint Received;
++            public uint LastPacket;
++            public byte[] AssetData;
+ 
+             public int BaseDataReceived;
+ 
+-			public TransferRequest()
+-			{
+-				Status		= false;
+-				StatusMsg	= &quot;&quot;;
++            public TransferRequest()
++            {
++                Status = false;
++                StatusMsg = &quot;&quot;;
+ 
+-				AssetData	= null;
++                AssetData = null;
+                 BaseDataReceived = 0;
+-			}
+-		}
++            }
++        }
+ 
+         /// &lt;summary&gt;
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         public ImageManager(SecondLife client)
+-		{
++        {
+             Init(client, CacheTypes.None, null);
+         }
+ 
+@@ -251,7 +251,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;ImageID&quot;&gt;The Image's AssetID&lt;/param&gt;
+         public byte[] RequestImage(LLUUID ImageID)
+-		{
++        {
+             byte[] imgData = CachedImage(ImageID);
+             if (imgData != null)
+             {
+@@ -280,17 +280,17 @@
+             }
+ 
+             // Wait for transfer to complete.
+-            tr.Completed.WaitOne();
++            tr.Completed.WaitOne(20000, false);
+ 
+-			if( tr.Status == true )
+-			{
+-				return tr.AssetData;
+-			} 
+-			else 
+-			{
+-				throw new Exception( &quot;RequestImage: &quot; + tr.StatusMsg );
+-			}
+-		}
++            if (tr.Status == true)
++            {
++                return tr.AssetData;
++            }
++            else
++            {
++                throw new Exception(&quot;RequestImage: &quot; + tr.StatusMsg);
++            }
++        }
+ 
+         /// &lt;summary&gt;
+         /// Requests an image from SecondLife.
+@@ -335,17 +335,17 @@
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public void ImageDataCallbackHandler(Packet packet, Simulator simulator)
+-		{
+-            #if DEBUG_PACKETS
++        {
++#if DEBUG_PACKETS
+                 slClient.DebugLog(packet);
+-            #endif
++#endif
+ 
+             ImageDataPacket reply = (ImageDataPacket)packet;
+ 
+-			LLUUID ImageID = reply.ImageID.ID;
+-// unused?		ushort Packets = reply.ImageID.Packets;
+-			uint   Size    = reply.ImageID.Size;
+-			byte[] Data    = reply.ImageData.Data;
++            LLUUID ImageID = reply.ImageID.ID;
++            // unused?		ushort Packets = reply.ImageID.Packets;
++            uint Size = reply.ImageID.Size;
++            byte[] Data = reply.ImageData.Data;
+ 
+             // Lookup the request that this packet is for
+             TransferRequest tr;
+@@ -363,28 +363,28 @@
+             }
+ 
+             // Initialize the request so that it's data buffer is the right size for the image
+-			tr.Size = Size;
+-			tr.AssetData = new byte[tr.Size];
++            tr.Size = Size;
++            tr.AssetData = new byte[tr.Size];
+             tr.BaseDataReceived = Data.Length;
+ 
+             // Copy the first block of image data into the request.
+-			Array.Copy(Data, 0, tr.AssetData, tr.Received, Data.Length);
+-			tr.Received += (uint)Data.Length;
++            Array.Copy(Data, 0, tr.AssetData, tr.Received, Data.Length);
++            tr.Received += (uint)Data.Length;
+ 
+             // Mark that the TransferRequest has received this header packet
+             tr.ReceivedHeaderPacket.Set();
+ 
+-			// If we've gotten all the data, mark it completed.
+-			if( tr.Received &gt;= tr.Size )
+-			{
+-				tr.Status	 = true;
++            // If we've gotten all the data, mark it completed.
++            if (tr.Received &gt;= tr.Size)
++            {
++                tr.Status = true;
+                 tr.Completed.Set();
+ 
+                 // Fire off image downloaded event
+                 CacheImage(ImageID, tr.AssetData);
+                 FireImageRetrieved(ImageID, tr.AssetData, false);
+-			}
+-		}
++            }
++        }
+ 
+         /// &lt;summary&gt;
+         /// Handles the remaining Image data that did not fit in the initial ImageData packet
+@@ -392,13 +392,13 @@
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public void ImagePacketCallbackHandler(Packet packet, Simulator simulator)
+-		{
+-            #if DEBUG_PACKETS
++        {
++#if DEBUG_PACKETS
+                 slClient.DebugLog(packet);
+-            #endif
++#endif
+ 
+             ImagePacketPacket reply = (ImagePacketPacket)packet;
+-            
++
+             LLUUID ImageID = reply.ImageID.ID;
+ 
+             // Lookup the request for this packet
+@@ -407,11 +407,11 @@
+             {
+                 tr = (TransferRequest)htDownloadRequests[ImageID];
+             }
+-			if( tr == null )
+-			{
++            if (tr == null)
++            {
+                 // Received a packet that doesn't belong to any requests in our queue, strange...
+-				return;
+-			}
++                return;
++            }
+ 
+ 
+             // TODO: Received data should probably be put into a temporary collection that's indected by ImageID.Packet
+@@ -428,42 +428,42 @@
+             Array.Copy(reply.ImageData.Data, 0, tr.AssetData, tr.BaseDataReceived + (1000 * (reply.ImageID.Packet - 1)), reply.ImageData.Data.Length);
+             tr.Received += (uint)reply.ImageData.Data.Length;
+ 
+-			// If we've gotten all the data, mark it completed.
+-			if( tr.Received &gt;= tr.Size )
+-			{
++            // If we've gotten all the data, mark it completed.
++            if (tr.Received &gt;= tr.Size)
++            {
+                 tr.Status = true;
+                 tr.Completed.Set();
+ 
+                 // Fire off image downloaded event
+                 CacheImage(ImageID, tr.AssetData);
+                 FireImageRetrieved(ImageID, tr.AssetData, false);
+-			}		
+-		}
++            }
++        }
+ 
+         /// &lt;summary&gt;
+         ///
+         /// &lt;/summary&gt;
+         public void ImageNotInDatabaseCallbackHandler(Packet packet, Simulator simulator)
+         {
+-            #if DEBUG_PACKETS
++#if DEBUG_PACKETS
+                 slClient.DebugLog(packet);
+-            #endif
++#endif
+ 
+             ImageNotInDatabasePacket reply = (ImageNotInDatabasePacket)packet;
+ 
+             LLUUID ImageID = reply.ImageID.ID;
+ 
+             // Lookup the request for this packet
+-			TransferRequest tr;
++            TransferRequest tr;
+             lock (htDownloadRequests)
+             {
+                 tr = (TransferRequest)htDownloadRequests[ImageID];
+             }
+-			if( tr == null )
+-			{
++            if (tr == null)
++            {
+                 // Received a packet that doesn't belong to any requests in our queue, strange...
+-				return;
+-			}
++                return;
++            }
+ 
+             tr.Status = false;
+             tr.StatusMsg = &quot;Image not in database&quot;;
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/Avatar.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -71,17 +71,17 @@
+             AGENT_CONTROL_FAST_LEFT = 0x1 &lt;&lt; CONTROL_FAST_LEFT_INDEX,
+             /// &lt;summary&gt;ORed with AGENT_CONTROL_UP_* if the keyboard is being used&lt;/summary&gt;
+             AGENT_CONTROL_FAST_UP = 0x1 &lt;&lt; CONTROL_FAST_UP_INDEX,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;Fly&lt;/summary&gt;
+             AGENT_CONTROL_FLY = 0x1 &lt;&lt; CONTROL_FLY_INDEX,
+             /// &lt;summary&gt;&lt;/summary&gt;
+             AGENT_CONTROL_STOP = 0x1 &lt;&lt; CONTROL_STOP_INDEX,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;Finish our current animation&lt;/summary&gt;
+             AGENT_CONTROL_FINISH_ANIM = 0x1 &lt;&lt; CONTROL_FINISH_ANIM_INDEX,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;Stand up from the ground or a prim seat&lt;/summary&gt;
+             AGENT_CONTROL_STAND_UP = 0x1 &lt;&lt; CONTROL_STAND_UP_INDEX,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;Sit on the ground at our current location&lt;/summary&gt;
+             AGENT_CONTROL_SIT_ON_GROUND = 0x1 &lt;&lt; CONTROL_SIT_ON_GROUND_INDEX,
+-            /// &lt;summary&gt;&lt;/summary&gt;
++            /// &lt;summary&gt;Whether mouselook is currently enabled&lt;/summary&gt;
+             AGENT_CONTROL_MOUSELOOK = 0x1 &lt;&lt; CONTROL_MOUSELOOK_INDEX,
+             /// &lt;summary&gt;Legacy, used if a key was pressed for less than a certain amount of time&lt;/summary&gt;
+             AGENT_CONTROL_NUDGE_AT_POS = 0x1 &lt;&lt; CONTROL_NUDGE_AT_POS_INDEX,
+@@ -112,65 +112,105 @@
+             AGENT_CONTROL_ML_LBUTTON_UP = 0x1 &lt;&lt; CONTROL_ML_LBUTTON_UP_INDEX
+         }
+ 
+-        /// &lt;summary&gt;The Avatar's UUID, asset server&lt;/summary&gt;
+-        public LLUUID ID;
+-        /// &lt;summary&gt;Avatar ID in Region (sim) it is in&lt;/summary&gt;
+-        public uint LocalID;
+-        /// &lt;summary&gt;Full Name of Avatar&lt;/summary&gt;
+-        public string Name;
+-        /// &lt;summary&gt;Active Group of Avatar&lt;/summary&gt;
+-        public string GroupName;
+-        /// &lt;summary&gt;Online Status of Avatar&lt;/summary&gt;
+-        public bool Online;
+-        /// &lt;summary&gt;Location of Avatar (x,y,z probably)&lt;/summary&gt;
+-        public LLVector3 Position;
+-        /// &lt;summary&gt;Rotational Position of Avatar&lt;/summary&gt;
+-        public LLQuaternion Rotation;
+-        /// &lt;summary&gt;Region (aka sim) the Avatar is in&lt;/summary&gt;
+-        public Region CurrentRegion;
+-        /// &lt;summary&gt;Date the Avatar was Born into Second Life&lt;/summary&gt;
+-        public string BornOn;
+-        /// &lt;summary&gt;Key pointing to the Profile Image&lt;/summary&gt;
+-        public LLUUID ProfileImage;
+-        /// &lt;summary&gt;Key of their Partner&lt;/summary&gt;
+-        public LLUUID PartnerID;
+-        /// &lt;summary&gt;Text from the About field in the Profile&lt;/summary&gt;
+-        public string AboutText;
+-        /// &lt;summary&gt;Bitmask representing Want To checkboxes&lt;/summary&gt;
+-        public uint WantToMask;
+-        /// &lt;summary&gt;Text field for Want To&lt;/summary&gt;
+-        public string WantToText;
+-        /// &lt;summary&gt;Bitmask representing Skills checkboxes&lt;/summary&gt;
+-        public uint SkillsMask;
+-        /// &lt;summary&gt;Text field for Skills&lt;/summary&gt;
+-        public string SkillsText;
+-        /// &lt;summary&gt;Text from the First Life field in the Profile&lt;/summary&gt;
+-        public string FirstLifeText;
+-        /// &lt;summary&gt;Key pointing to the First Life picture&lt;/summary&gt;
+-        public LLUUID FirstLifeImage;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public bool Identified;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public bool Transacted;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public bool AllowPublish;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public bool MaturePublish;
+-        /// &lt;summary&gt;Charter Member type, if applicable&lt;/summary&gt;
+-        public string CharterMember;
+-        /// &lt;summary&gt;Rating for Behavior&lt;/summary&gt;
+-        public float Behavior;
+-        /// &lt;summary&gt;Rating for Appearance&lt;/summary&gt;
+-        public float Appearance;
+-        /// &lt;summary&gt;Rating for Building&lt;/summary&gt;
+-        public float Building;
+-        /// &lt;summary&gt;Text from the Languages field in the Profile&lt;/summary&gt;
+-        public string LanguagesText;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public TextureEntry Textures;
+-        /// &lt;summary&gt;URL to load in Web Profile&lt;/summary&gt;
+-        public string ProfileURL;
++        /// &lt;summary&gt;
++        /// Positive and negative ratings
++        /// &lt;/summary&gt;
++        public struct Statistics
++        {
++            /// &lt;summary&gt;Positive ratings for Behavior&lt;/summary&gt;
++            public int BehaviorPositive;
++            /// &lt;summary&gt;Negative ratings for Behavior&lt;/summary&gt;
++            public int BehaviorNegative;
++            /// &lt;summary&gt;Positive ratings for Appearance&lt;/summary&gt;
++            public int AppearancePositive;
++            /// &lt;summary&gt;Negative ratings for Appearance&lt;/summary&gt;
++            public int AppearanceNegative;
++            /// &lt;summary&gt;Positive ratings for Building&lt;/summary&gt;
++            public int BuildingPositive;
++            /// &lt;summary&gt;Negative ratings for Building&lt;/summary&gt;
++            public int BuildingNegative;
++        }
+ 
++        /// &lt;summary&gt;
++        /// Avatar properties including about text, profile URL, image IDs and 
++        /// publishing settings
++        /// &lt;/summary&gt;
++        public struct Properties
++        {
++            /// &lt;summary&gt;Should this profile be published on the web&lt;/summary&gt;
++            public bool AllowPublish;
++            /// &lt;summary&gt;First Life about text&lt;/summary&gt;
++            public string FirstLifeText;
++            /// &lt;summary&gt;First Life image ID&lt;/summary&gt;
++            public LLUUID FirstLifeImage;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public LLUUID Partner;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string AboutText;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string BornOn;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string CharterMember;
++            /// &lt;summary&gt;Profile image ID&lt;/summary&gt;
++            public LLUUID ProfileImage;
++            /// &lt;summary&gt;Is this a mature profile&lt;/summary&gt;
++            public bool MaturePublish;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public bool Identified;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public bool Transacted;
++            /// &lt;summary&gt;Web URL for this profile&lt;/summary&gt;
++            public string ProfileURL;
++        }
++
++        /// &lt;summary&gt;
++        /// Avatar interests including spoken languages, skills, and &quot;want to&quot;
++        /// choices
++        /// &lt;/summary&gt;
++        public struct Interests
++        {
++            /// &lt;summary&gt;Languages profile field&lt;/summary&gt;
++            public string LanguagesText;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public uint SkillsMask;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string SkillsText;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public uint WantToMask;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string WantToText;
++        }
++
++
++        /// &lt;summary&gt;UUID for this avatar&lt;/summary&gt;
++        public LLUUID ID = LLUUID.Zero;
++        /// &lt;summary&gt;Temporary ID for this avatar, local to the current region&lt;/summary&gt;
++        public uint LocalID = 0;
++        /// &lt;summary&gt;Full name&lt;/summary&gt;
++        public string Name = String.Empty;
++        /// &lt;summary&gt;Active group&lt;/summary&gt;
++        public string GroupName = String.Empty;
++        /// &lt;summary&gt;Online status&lt;/summary&gt;
++        public bool Online = false;
++        /// &lt;summary&gt;Positive and negative ratings&lt;/summary&gt;
++        public Statistics ProfileStatistics = new Statistics();
++        /// &lt;summary&gt;Avatar properties including about text, profile URL, image IDs and 
++        /// publishing settings&lt;/summary&gt;
++        public Properties ProfileProperties = new Properties();
++        /// &lt;summary&gt;Avatar interests including spoken languages, skills, and &quot;want to&quot;
++        /// choices&lt;/summary&gt;
++        public Interests ProfileInterests = new Interests();
++        /// &lt;summary&gt;Local location, relative to the sim or what the avatar is
++        /// sitting on&lt;/summary&gt;
++        public LLVector3 Position = LLVector3.Zero;
++        /// &lt;summary&gt;Rotational position, relative to the sim or what the avatar
++        /// is sitting on&lt;/summary&gt;
++        public LLQuaternion Rotation = LLQuaternion.Identity;
++        /// &lt;summary&gt;Region the avatar is in&lt;/summary&gt;
++        public Region CurrentRegion = null;
++        /// &lt;summary&gt;Textures for this avatars clothing&lt;/summary&gt;
++        public TextureEntry Textures = new TextureEntry();
++
+         /// &lt;summary&gt;Gets the local ID of the prim the avatar is sitting on,
+         /// zero if the avatar is not currently sitting&lt;/summary&gt;
+         public uint SittingOn
+@@ -180,39 +220,42 @@
+ 
+         internal uint sittingOn = 0;
+ 
+-        protected const int CONTROL_AT_POS_INDEX = 0;
+-        protected const int CONTROL_AT_NEG_INDEX = 1;
+-        protected const int CONTROL_LEFT_POS_INDEX = 2;
+-        protected const int CONTROL_LEFT_NEG_INDEX = 3;
+-        protected const int CONTROL_UP_POS_INDEX = 4;
+-        protected const int CONTROL_UP_NEG_INDEX = 5;
+-        protected const int CONTROL_PITCH_POS_INDEX = 6;
+-        protected const int CONTROL_PITCH_NEG_INDEX = 7;
+-        protected const int CONTROL_YAW_POS_INDEX = 8;
+-        protected const int CONTROL_YAW_NEG_INDEX = 9;
+-        protected const int CONTROL_FAST_AT_INDEX = 10;
+-        protected const int CONTROL_FAST_LEFT_INDEX = 11;
+-        protected const int CONTROL_FAST_UP_INDEX = 12;
+-        protected const int CONTROL_FLY_INDEX = 13;
+-        protected const int CONTROL_STOP_INDEX = 14;
+-        protected const int CONTROL_FINISH_ANIM_INDEX = 15;
+-        protected const int CONTROL_STAND_UP_INDEX = 16;
+-        protected const int CONTROL_SIT_ON_GROUND_INDEX = 17;
+-        protected const int CONTROL_MOUSELOOK_INDEX = 18;
+-        protected const int CONTROL_NUDGE_AT_POS_INDEX = 19;
+-        protected const int CONTROL_NUDGE_AT_NEG_INDEX = 20;
+-        protected const int CONTROL_NUDGE_LEFT_POS_INDEX = 21;
+-        protected const int CONTROL_NUDGE_LEFT_NEG_INDEX = 22;
+-        protected const int CONTROL_NUDGE_UP_POS_INDEX = 23;
+-        protected const int CONTROL_NUDGE_UP_NEG_INDEX = 24;
+-        protected const int CONTROL_TURN_LEFT_INDEX = 25;
+-        protected const int CONTROL_TURN_RIGHT_INDEX = 26;
+-        protected const int CONTROL_AWAY_INDEX = 27;
+-        protected const int CONTROL_LBUTTON_DOWN_INDEX = 28;
+-        protected const int CONTROL_LBUTTON_UP_INDEX = 29;
+-        protected const int CONTROL_ML_LBUTTON_DOWN_INDEX = 30;
+-        protected const int CONTROL_ML_LBUTTON_UP_INDEX = 31;
+-        protected const int TOTAL_CONTROLS = 32;
++        private const int CONTROL_AT_POS_INDEX = 0;
++        private const int CONTROL_AT_NEG_INDEX = 1;
++        private const int CONTROL_LEFT_POS_INDEX = 2;
++        private const int CONTROL_LEFT_NEG_INDEX = 3;
++        private const int CONTROL_UP_POS_INDEX = 4;
++        private const int CONTROL_UP_NEG_INDEX = 5;
++        private const int CONTROL_PITCH_POS_INDEX = 6;
++        private const int CONTROL_PITCH_NEG_INDEX = 7;
++        private const int CONTROL_YAW_POS_INDEX = 8;
++        private const int CONTROL_YAW_NEG_INDEX = 9;
++        private const int CONTROL_FAST_AT_INDEX = 10;
++        private const int CONTROL_FAST_LEFT_INDEX = 11;
++        private const int CONTROL_FAST_UP_INDEX = 12;
++        private const int CONTROL_FLY_INDEX = 13;
++        private const int CONTROL_STOP_INDEX = 14;
++        private const int CONTROL_FINISH_ANIM_INDEX = 15;
++        private const int CONTROL_STAND_UP_INDEX = 16;
++        private const int CONTROL_SIT_ON_GROUND_INDEX = 17;
++        private const int CONTROL_MOUSELOOK_INDEX = 18;
++        private const int CONTROL_NUDGE_AT_POS_INDEX = 19;
++        private const int CONTROL_NUDGE_AT_NEG_INDEX = 20;
++        private const int CONTROL_NUDGE_LEFT_POS_INDEX = 21;
++        private const int CONTROL_NUDGE_LEFT_NEG_INDEX = 22;
++        private const int CONTROL_NUDGE_UP_POS_INDEX = 23;
++        private const int CONTROL_NUDGE_UP_NEG_INDEX = 24;
++        private const int CONTROL_TURN_LEFT_INDEX = 25;
++        private const int CONTROL_TURN_RIGHT_INDEX = 26;
++        private const int CONTROL_AWAY_INDEX = 27;
++        private const int CONTROL_LBUTTON_DOWN_INDEX = 28;
++        private const int CONTROL_LBUTTON_UP_INDEX = 29;
++        private const int CONTROL_ML_LBUTTON_DOWN_INDEX = 30;
++        private const int CONTROL_ML_LBUTTON_UP_INDEX = 31;
++        private const int TOTAL_CONTROLS = 32;
++
++        public Avatar()
++        {
++        }
+     }
+-
+ }
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -32,52 +32,63 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// Class to manage multiple Avatars
++    /// Retrieve friend status notifications, and retrieve avatar names and
++    /// profiles
+     /// &lt;/summary&gt;
+     public class AvatarManager
+     {
+         /// &lt;summary&gt;
+         /// Triggered after friend request packet is sent out
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;AgentID&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;Online&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;agentID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;online&quot;&gt;&lt;/param&gt;
+         public delegate void FriendNotificationCallback(LLUUID agentID, bool online);
+         /// &lt;summary&gt;
+         /// Triggered when a UUIDNameReply is received
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;names&quot;&gt;&lt;/param&gt;
+-        public delegate void AgentNamesCallback(Dictionary&lt;LLUUID, string&gt; names);
++        public delegate void AvatarNamesCallback(Dictionary&lt;LLUUID, string&gt; names);
+         /// &lt;summary&gt;
+-        /// Triggered when Avatar properties are received (AvatarPropertiesReply)
++        /// Triggered when a response for avatar statistics (ratings) is returned
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatar&quot;&gt;&lt;/param&gt;
+-        public delegate void AvatarPropertiesCallback(Avatar avatar);
++        /// &lt;param name=&quot;avatarID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;statistics&quot;&gt;&lt;/param&gt;
++        public delegate void AvatarStatisticsCallback(LLUUID avatarID, Avatar.Statistics statistics);
+         /// &lt;summary&gt;
+-        /// 
++        /// Triggered when a response for avatar interests is returned
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatar&quot;&gt;&lt;/param&gt;
+-        public delegate void AvatarNameCallback(Avatar avatar);
++        /// &lt;param name=&quot;avatarID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;interests&quot;&gt;&lt;/param&gt;
++        public delegate void AvatarInterestsCallback(LLUUID avatarID, Avatar.Interests interests);
+         /// &lt;summary&gt;
+-        /// 
++        /// Triggered when avatar properties are received (AvatarPropertiesReply)
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatar&quot;&gt;&lt;/param&gt;
+-        public delegate void AvatarStatisticsCallback(Avatar avatar);
++        /// &lt;param name=&quot;avatarID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;properties&quot;&gt;&lt;/param&gt;
++        public delegate void AvatarPropertiesCallback(LLUUID avatarID, Avatar.Properties properties);
+         /// &lt;summary&gt;
+-        /// Triggered when a response for Avatar Interests is returned
++        /// Triggered when a name search reply is received (AvatarPickerReply)
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatar&quot;&gt;&lt;/param&gt;
+-        public delegate void AvatarInterestsCallback(Avatar avatar);
++        /// &lt;param name=&quot;queryID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;avatars&quot;&gt;&lt;/param&gt;
++        public delegate void AvatarNameSearchCallback(LLUUID queryID, Dictionary&lt;LLUUID, string&gt; avatars);
+ 
++
+         /// &lt;summary&gt;Triggered whenever a friend comes online or goes offline&lt;/summary&gt;
+         public event FriendNotificationCallback OnFriendNotification;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarNamesCallback OnAvatarNames;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarStatisticsCallback OnAvatarStatistics;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarInterestsCallback OnAvatarInterests;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarPropertiesCallback OnAvatarProperties;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarNameSearchCallback OnAvatarNameSearch;
+ 
+-		private Dictionary&lt;LLUUID, Avatar&gt; Avatars;
+         private SecondLife Client;
+-        private AgentNamesCallback OnAgentNames;
+-        private Dictionary&lt;LLUUID, AvatarPropertiesCallback&gt; AvatarPropertiesCallbacks;
+-	    private Dictionary&lt;LLUUID, AvatarStatisticsCallback&gt; AvatarStatisticsCallbacks;
+-        private Dictionary&lt;LLUUID, AvatarInterestsCallback&gt; AvatarInterestsCallbacks;
+-        private Dictionary&lt;LLUUID, ManualResetEvent&gt; ManualResetEvents;
++
+         /// &lt;summary&gt;
+         /// Represents other avatars
+         /// &lt;/summary&gt;
+@@ -85,197 +96,87 @@
+         public AvatarManager(SecondLife client)
+         {
+             Client = client;
+-            Avatars = new Dictionary&lt;LLUUID, Avatar&gt;();
+-            //Callback Dictionaries
+-            AvatarPropertiesCallbacks = new Dictionary&lt;LLUUID, AvatarPropertiesCallback&gt;();
+-	        AvatarStatisticsCallbacks = new Dictionary&lt;LLUUID, AvatarStatisticsCallback&gt;();
+-            AvatarInterestsCallbacks = new Dictionary&lt;LLUUID, AvatarInterestsCallback&gt;();
+-            //ManualResetEvent Dictionary
+-            ManualResetEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
++
+             // Friend notification callback
+             NetworkManager.PacketCallback callback = new NetworkManager.PacketCallback(FriendNotificationHandler);
+             Client.Network.RegisterCallback(PacketType.OnlineNotification, callback);
+             Client.Network.RegisterCallback(PacketType.OfflineNotification, callback);
+-            Client.Network.RegisterCallback(PacketType.UUIDNameReply, new NetworkManager.PacketCallback(GetAgentNameHandler));
++
++            // Avatar profile callbacks
+             Client.Network.RegisterCallback(PacketType.AvatarPropertiesReply, new NetworkManager.PacketCallback(AvatarPropertiesHandler));
+             Client.Network.RegisterCallback(PacketType.AvatarStatisticsReply, new NetworkManager.PacketCallback(AvatarStatisticsHandler));
+             Client.Network.RegisterCallback(PacketType.AvatarInterestsReply, new NetworkManager.PacketCallback(AvatarInterestsHandler));
+-        }
+-              
+ 
+-        /// &lt;summary&gt;
+-        /// Add an Avatar into the Avatars Dictionary
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatar&quot;&gt;Filled-out Avatar class to insert&lt;/param&gt;
+-        public void AddAvatar(Avatar avatar)
+-        {
+-            lock (Avatars)
+-            {
+-                Avatars[avatar.ID] = avatar;
+-            }
++            // Other callbacks
++            Client.Network.RegisterCallback(PacketType.UUIDNameReply, new NetworkManager.PacketCallback(AvatarNameHandler));
++            Client.Network.RegisterCallback(PacketType.AvatarPickerReply, new NetworkManager.PacketCallback(AvatarPickerReplyHandler));
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Used to search all known Avatars for a particular Avatar Key
++        /// Request a single avatar name
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool Contains(LLUUID id)
++        /// &lt;param name=&quot;id&quot;&gt;The avatar key to retrieve a name for&lt;/param&gt;
++        public void RequestAvatarName(LLUUID id)
+         {
+-            return Avatars.ContainsKey(id);
+-        }
++            UUIDNameRequestPacket request = new UUIDNameRequestPacket();
++            request.UUIDNameBlock = new UUIDNameRequestPacket.UUIDNameBlockBlock[1];
++            request.UUIDNameBlock[0] = new UUIDNameRequestPacket.UUIDNameBlockBlock();
++            request.UUIDNameBlock[0].ID = id;
+ 
+-        /// &lt;summary&gt;
+-        /// Refresh Avatar Profile information
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;a&quot;&gt;&lt;/param&gt;
+-        public void UpdateAvatar(Avatar a)
+-        {
+-            //Basic profile properties
+-            AvatarPropertiesUpdatePacket apup = new AvatarPropertiesUpdatePacket();
+-            AvatarPropertiesUpdatePacket.AgentDataBlock adb = new AvatarPropertiesUpdatePacket.AgentDataBlock();
+-            adb.AgentID = a.ID;
+-            adb.SessionID = Client.Network.SessionID;
+-            apup.AgentData = adb;
+-            AvatarPropertiesUpdatePacket.PropertiesDataBlock pdb = new AvatarPropertiesUpdatePacket.PropertiesDataBlock();
+-            pdb.AllowPublish = a.AllowPublish;
+-            pdb.FLAboutText = Helpers.StringToField(a.FirstLifeText);
+-            pdb.FLImageID = a.FirstLifeImage;
+-            pdb.ImageID = a.ProfileImage;
+-            pdb.MaturePublish = a.MaturePublish;
+-            pdb.ProfileURL = Helpers.StringToField(a.ProfileURL);
+-            apup.PropertiesData = pdb;
+-            //Intrests
+-            AvatarInterestsUpdatePacket aiup = new AvatarInterestsUpdatePacket();
+-            AvatarInterestsUpdatePacket.AgentDataBlock iadb = new AvatarInterestsUpdatePacket.AgentDataBlock();
+-            iadb.AgentID = a.ID;
+-            iadb.SessionID = Client.Network.SessionID;
+-            aiup.AgentData = iadb;
+-            AvatarInterestsUpdatePacket.PropertiesDataBlock ipdb = new AvatarInterestsUpdatePacket.PropertiesDataBlock();
+-            ipdb.LanguagesText = Helpers.StringToField(a.LanguagesText);
+-            ipdb.SkillsMask = a.SkillsMask;
+-            ipdb.SkillsText = Helpers.StringToField(a.SkillsText);
+-            ipdb.WantToMask = a.WantToMask;
+-            ipdb.WantToText = Helpers.StringToField(a.WantToText);
+-            aiup.PropertiesData = ipdb;
+-            //Send packets
+-            Client.Network.SendPacket(apup);
+-            Client.Network.SendPacket(aiup);
++            Client.Network.SendPacket(request);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// This function will only check if the avatar name exists locally,
+-        /// it will not do any networking calls to fetch the name
++        /// Request a list of avatar names
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;The avatar name, or an empty string if it's not found&lt;/returns&gt;
+-        public string LocalAvatarNameLookup(LLUUID id)
++        /// &lt;param name=&quot;ids&quot;&gt;The avatar keys to retrieve names for&lt;/param&gt;
++        public void RequestAvatarNames(List&lt;LLUUID&gt; ids)
+         {
+-            string name = &quot;&quot;;
++            UUIDNameRequestPacket request = new UUIDNameRequestPacket();
++            request.UUIDNameBlock = new UUIDNameRequestPacket.UUIDNameBlockBlock[ids.Count];
+ 
+-            lock (Avatars)
++            for (int i = 0; i &lt; ids.Count; i++)
+             {
+-                if (Avatars.ContainsKey(id))
+-                {
+-                    name = Avatars[id].Name;
+-                }
++                request.UUIDNameBlock[i] = new UUIDNameRequestPacket.UUIDNameBlockBlock();
++                request.UUIDNameBlock[i].ID = ids[i];
+             }
+ 
+-            return name;
++            Client.Network.SendPacket(request);
+         }
+-        /// &lt;summary&gt;
+-        /// Get an avatar's name, either from the cache or request it.
+-        /// This function does block.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;key&quot;&gt;Key to look up&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public string GetAvatarName(LLUUID key)
+-        {    
+-            //Short circuit the cache lookup in GetAvatarNames
+-            string name = LocalAvatarNameLookup(key);
+-            if (name != &quot;&quot;) return name;
+ 
+-            //Add to the dictionary
+-            ManualResetEvents.Add(key, new ManualResetEvent(false));
+-
+-            //Call function
+-            BeginGetAvatarName(key, null);
+-            
+-            //Start the blocking
+-            ManualResetEvents[key].WaitOne();
+-            
+-            //Clean up
+-            ManualResetEvents[key] = null;
+-
+-            //Return
+-            return Avatars[key].Name;
+-        }
+-
+         /// &lt;summary&gt;
+-        /// 
++        /// Start a request for Avatar Properties
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
+-        public void BeginGetAvatarName(LLUUID id, AgentNamesCallback anc)
++        /// &lt;param name=&quot;avatarid&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;aic&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;asc&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;apc&quot;&gt;&lt;/param&gt;
++        public void RequestAvatarProperties(LLUUID avatarid)
+         {
+-            // TODO: BeginGetAvatarNames is pretty bulky, rewrite a simple version here
++            AvatarPropertiesRequestPacket aprp = new AvatarPropertiesRequestPacket();
++            
++            aprp.AgentData.AgentID = Client.Network.AgentID;
++            aprp.AgentData.SessionID = Client.Network.SessionID;
++            aprp.AgentData.AvatarID = avatarid;
+ 
+-            List&lt;LLUUID&gt; ids = new List&lt;LLUUID&gt;();
+-            ids.Add(id);
+-            BeginGetAvatarNames(ids, anc);
++            Client.Network.SendPacket(aprp);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Search for an avatar (first name, last name, and uuid)
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;ids&quot;&gt;&lt;/param&gt;
+-        public void BeginGetAvatarNames(List&lt;LLUUID&gt; ids, AgentNamesCallback anc)
++        /// &lt;param name=&quot;name&quot;&gt;The name to search for&lt;/param&gt;
++        /// &lt;param name=&quot;queryID&quot;&gt;An ID to associate with this query&lt;/param&gt;
++        public void RequestAvatarNameSearch(string name, LLUUID queryID)
+         {
+-            if (anc != null)
+-            {
+-                OnAgentNames = anc;
+-            }
++            AvatarPickerRequestPacket aprp = new AvatarPickerRequestPacket();
+ 
+-            Dictionary&lt;LLUUID, string&gt; havenames = new Dictionary&lt;LLUUID,string&gt;();
+-            List&lt;LLUUID&gt; neednames = new List&lt;LLUUID&gt;();
++            aprp.AgentData.AgentID = Client.Network.AgentID;
++            aprp.AgentData.SessionID = Client.Network.SessionID;
++            aprp.AgentData.QueryID = queryID;
++            aprp.Data.Name = Helpers.StringToField(name);
+ 
+-            // Fire callbacks for the ones we already have cached
+-            foreach (LLUUID id in ids)
+-            {
+-                if (Avatars.ContainsKey(id))
+-                {
+-                    havenames[id] = Avatars[id].Name;
+-                    //Short circuit the lookup process
+-                    if (ManualResetEvents.ContainsKey(id))
+-                    {
+-                        ManualResetEvents[id].Set();
+-                        return;
+-                    }
+-                }
+-                else
+-                {
+-                    neednames.Add(id);
+-                }
+-            }
+-
+-            if (havenames.Count &gt; 0 &amp;&amp; OnAgentNames != null)
+-            {
+-                OnAgentNames(havenames);
+-
+-            }
+-
+-            if (neednames.Count &gt; 0)
+-            {
+-                UUIDNameRequestPacket request = new UUIDNameRequestPacket();
+-
+-                request.UUIDNameBlock = new UUIDNameRequestPacket.UUIDNameBlockBlock[neednames.Count];
+-
+-                for (int i = 0; i &lt; neednames.Count; i++)
+-                {
+-                    request.UUIDNameBlock[i] = new UUIDNameRequestPacket.UUIDNameBlockBlock();
+-                    request.UUIDNameBlock[i].ID = neednames[i];
+-                }
+-
+-                Client.Network.SendPacket(request);
+-            }
++            Client.Network.SendPacket(aprp);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -283,38 +184,23 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming Packet to process&lt;/param&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+-        private void GetAgentNameHandler(Packet packet, Simulator simulator)
++        private void AvatarNameHandler(Packet packet, Simulator simulator)
+         {
+-            Dictionary&lt;LLUUID, string&gt; names = new Dictionary&lt;LLUUID, string&gt;();
+-            UUIDNameReplyPacket reply = (UUIDNameReplyPacket)packet;
+-            
+-            lock (Avatars)
++            if (OnAvatarNames != null)
+             {
++                Dictionary&lt;LLUUID, string&gt; names = new Dictionary&lt;LLUUID, string&gt;();
++                UUIDNameReplyPacket reply = (UUIDNameReplyPacket)packet;
++
+                 foreach (UUIDNameReplyPacket.UUIDNameBlockBlock block in reply.UUIDNameBlock)
+                 {
+-                    if (!Avatars.ContainsKey(block.ID))
+-                    {
+-                        Avatars[block.ID] = new Avatar();
+-                        Avatars[block.ID].ID = block.ID;
+-                    }
+-
+-                    Avatars[block.ID].Name = Helpers.FieldToString(block.FirstName) +
++                    names[block.ID] = Helpers.FieldToString(block.FirstName) +
+                         &quot; &quot; + Helpers.FieldToString(block.LastName);
+-
+-                    names[block.ID] = Avatars[block.ID].Name;
+-                    if (ManualResetEvents.ContainsKey(block.ID))
+-                    {
+-                        //Stop Blocking
+-                        ManualResetEvents[block.ID].Set();
+-                    }
+                 }
++                
++                OnAvatarNames(names);
+             }
+-
+-            if (OnAgentNames != null)
+-            {
+-                OnAgentNames(names);
+-            }
+         }
++
+         /// &lt;summary&gt;
+         /// Handle incoming friend notifications
+         /// &lt;/summary&gt;
+@@ -322,204 +208,127 @@
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void FriendNotificationHandler(Packet packet, Simulator simulator)
+         {
+-            List&lt;LLUUID&gt; requestids = new List&lt;LLUUID&gt;();
+-
+-            if (packet.Type == PacketType.OnlineNotification)
++            if (OnFriendNotification != null)
+             {
+-                // If the agent is online...
+-                foreach (OnlineNotificationPacket.AgentBlockBlock block in ((OnlineNotificationPacket)packet).AgentBlock)
++                if (packet.Type == PacketType.OnlineNotification)
+                 {
+-                    lock (Avatars)
+-                    {
+-                        if (!Avatars.ContainsKey(block.AgentID))
+-                        {
+-                            // Mark this avatar for a name request
+-                            requestids.Add(block.AgentID);
+-
+-                            Avatars[block.AgentID] = new Avatar();
+-                            Avatars[block.AgentID].ID = block.AgentID;
+-                        }
+-
+-                        Avatars[block.AgentID].Online = true;
+-                    }
+-
+-                    if (OnFriendNotification != null)
+-                    {
++                    // If the agent is online
++                    foreach (OnlineNotificationPacket.AgentBlockBlock block in ((OnlineNotificationPacket)packet).AgentBlock)
+                         OnFriendNotification(block.AgentID, true);
+-                    }
+                 }
+-            }
+-            else if (packet.Type == PacketType.OfflineNotification)
+-            {
+-                // If the agent is Offline...
+-                foreach (OfflineNotificationPacket.AgentBlockBlock block in ((OfflineNotificationPacket)packet).AgentBlock)
++                else if (packet.Type == PacketType.OfflineNotification)
+                 {
+-                    lock (Avatars)
+-                    {
+-                        if (!Avatars.ContainsKey(block.AgentID))
+-                        {
+-                            // Mark this avatar for a name request
+-                            requestids.Add(block.AgentID);
+-
+-                            Avatars[block.AgentID] = new Avatar();
+-                            Avatars[block.AgentID].ID = block.AgentID;
+-                        }
+-
+-                        Avatars[block.AgentID].Online = false;
+-                    }
+-
+-                    if (OnFriendNotification != null)
+-                    {
++                    // If the agent is offline
++                    foreach (OfflineNotificationPacket.AgentBlockBlock block in ((OfflineNotificationPacket)packet).AgentBlock)
+                         OnFriendNotification(block.AgentID, true);
+-                    }
+                 }
+             }
+-
+-            if (requestids.Count &gt; 0)
+-            {
+-                BeginGetAvatarNames(requestids, null);
+-            }
+         }
++
+         /// &lt;summary&gt;
+-        /// Handles incoming avatar statistics. What are those ?
++        /// Handles incoming avatar statistics, such as ratings
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void AvatarStatisticsHandler(Packet packet, Simulator simulator)
+         {
+-	    AvatarStatisticsReplyPacket asr = (AvatarStatisticsReplyPacket)packet;
+-            lock(Avatars)
++            if (OnAvatarStatistics != null)
+             {
+-		Avatar av;
+-		if (!Avatars.ContainsKey(asr.AvatarData.AvatarID))
+-		{
+-			 av = new Avatar();
+-			 av.ID = asr.AvatarData.AvatarID;
+-		}
+-		else
+-		{
+-			 av = Avatars[asr.AvatarData.AvatarID];
+-		}
++                AvatarStatisticsReplyPacket asr = (AvatarStatisticsReplyPacket)packet;
++                Avatar.Statistics stats = new Avatar.Statistics();
+ 
+-                foreach(AvatarStatisticsReplyPacket.StatisticsDataBlock b in asr.StatisticsData)
+-		{
+-			string n = Helpers.FieldToString(b.Name);
+-			if(n.Equals(&quot;Behavior&quot;))
+-			{
+-				av.Behavior = b.Positive;
+-			}
+-			else if(n.Equals(&quot;Appearance&quot;))
+-			{
+-				av.Appearance = b.Positive;
+-			}
+-			else if(n.Equals(&quot;Building&quot;))
+-			{
+-				av.Building = b.Positive;
+-			}
+-		}
+-		
+-		//Call it
+-        if (AvatarStatisticsCallbacks.ContainsKey(av.ID) &amp;&amp; AvatarStatisticsCallbacks[av.ID] != null)
+-	                AvatarStatisticsCallbacks[av.ID](av);
++                foreach (AvatarStatisticsReplyPacket.StatisticsDataBlock b in asr.StatisticsData)
++                {
++                    string n = Helpers.FieldToString(b.Name);
++
++                    switch (n)
++                    {
++                        case &quot;Behavior&quot;:
++                            stats.BehaviorPositive = b.Positive;
++                            stats.BehaviorNegative = b.Negative;
++                            break;
++                        case &quot;Appearance&quot;:
++                            stats.AppearancePositive = b.Positive;
++                            stats.AppearanceNegative = b.Negative;
++                            break;
++                        case &quot;Building&quot;:
++                            stats.AppearancePositive = b.Positive;
++                            stats.AppearanceNegative = b.Negative;
++                            break;
++                        default:
++                            Client.Log(&quot;Got an AvatarStatistics block with the name &quot; + n, Helpers.LogLevel.Warning);
++                            break;
++                    }
++                }
++
++                OnAvatarStatistics(asr.AvatarData.AvatarID, stats);
+             }
+         }
++
+         /// &lt;summary&gt;
+-        /// Process incoming Avatar properties (profile data)
++        /// Process incoming avatar properties (profile data)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;sim&quot;&gt;&lt;/param&gt;
+         private void AvatarPropertiesHandler(Packet packet, Simulator sim)
+         {
+-            Avatar av;
+-            AvatarPropertiesReplyPacket reply = (AvatarPropertiesReplyPacket)packet;
+-            lock(Avatars)
++            if (OnAvatarProperties != null)
+             {
+-            if (!Avatars.ContainsKey(reply.AgentData.AvatarID))
+-            {
+-                //not in our &quot;cache&quot;, create a new object
+-                av = new Avatar();
++                AvatarPropertiesReplyPacket reply = (AvatarPropertiesReplyPacket)packet;
++                Avatar.Properties properties = new Avatar.Properties();
++
++                properties.ProfileImage = reply.PropertiesData.ImageID;
++                properties.FirstLifeImage = reply.PropertiesData.FLImageID;
++                properties.Partner = reply.PropertiesData.PartnerID;
++                properties.AboutText = Helpers.FieldToString(reply.PropertiesData.AboutText);
++                properties.FirstLifeText = Helpers.FieldToString(reply.PropertiesData.FLAboutText);
++                properties.BornOn = Helpers.FieldToString(reply.PropertiesData.BornOn);
++                properties.CharterMember = Helpers.FieldToString(reply.PropertiesData.CharterMember);
++                properties.AllowPublish = reply.PropertiesData.AllowPublish;
++                properties.MaturePublish = reply.PropertiesData.MaturePublish;
++                properties.Identified = reply.PropertiesData.Identified;
++                properties.Transacted = reply.PropertiesData.Transacted;
++                properties.ProfileURL = Helpers.FieldToString(reply.PropertiesData.ProfileURL);
++
++                OnAvatarProperties(reply.AgentData.AvatarID, properties);
+             }
+-            else
+-            {
+-                //Cache hit, modify existing avatar
+-                av = Avatars[reply.AgentData.AvatarID];
+-            }
+-            av.ID = reply.AgentData.AvatarID;
+-            av.ProfileImage = reply.PropertiesData.ImageID;
+-            av.FirstLifeImage = reply.PropertiesData.FLImageID;
+-            av.PartnerID = reply.PropertiesData.PartnerID;
+-            av.AboutText = Helpers.FieldToString(reply.PropertiesData.AboutText);
+-	    
+-            av.FirstLifeText = Helpers.FieldToString(reply.PropertiesData.FLAboutText);
+-            av.BornOn = Helpers.FieldToString(reply.PropertiesData.BornOn);
+-            av.CharterMember = Helpers.FieldToString(reply.PropertiesData.CharterMember);
+-            av.AllowPublish = reply.PropertiesData.AllowPublish;
+-            av.MaturePublish = reply.PropertiesData.MaturePublish;
+-            av.Identified = reply.PropertiesData.Identified;
+-            av.Transacted = reply.PropertiesData.Transacted;
+-            av.ProfileURL = Helpers.FieldToString(reply.PropertiesData.ProfileURL);
+-            //reassign in the cache
+-            Avatars[av.ID] = av;
+-            //Heaven forbid that we actually get a packet we didn't ask for.
+-            if (AvatarPropertiesCallbacks.ContainsKey(av.ID) &amp;&amp; AvatarPropertiesCallbacks[av.ID] != null)
+-                AvatarPropertiesCallbacks[av.ID](av);
+-            }
+         }
++
+         /// &lt;summary&gt;
+-        /// Start a request for Avatar Properties
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;avatarid&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;aic&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;asc&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;apc&quot;&gt;&lt;/param&gt;
+-        public void BeginAvatarPropertiesRequest(LLUUID avatarid, AvatarPropertiesCallback apc, AvatarStatisticsCallback asc, AvatarInterestsCallback aic)
+-        {
+-            //Set teh callback!
+-            AvatarPropertiesCallbacks[avatarid] = apc;
+-	        AvatarStatisticsCallbacks[avatarid] = asc;
+-            AvatarInterestsCallbacks[avatarid] = aic;
+-            //Oh noes
+-            //Packet construction, good times
+-            AvatarPropertiesRequestPacket aprp = new AvatarPropertiesRequestPacket();
+-            AvatarPropertiesRequestPacket.AgentDataBlock adb = new AvatarPropertiesRequestPacket.AgentDataBlock();
+-            adb.AgentID = Client.Network.AgentID;
+-            adb.SessionID = Client.Network.SessionID;
+-            adb.AvatarID = avatarid;
+-            aprp.AgentData = adb;
+-            //send the packet!
+-            Client.Network.SendPacket(aprp);
+-        }
+-        /// &lt;summary&gt;
+         /// Process incoming Avatar Interests information
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void AvatarInterestsHandler(Packet packet, Simulator simulator)
+         {
+-            AvatarInterestsReplyPacket airp = (AvatarInterestsReplyPacket)packet;
+-            Avatar av;
+-            lock (Avatars)
++            if (OnAvatarInterests != null)
+             {
+-                if (!Avatars.ContainsKey(airp.AgentData.AvatarID))
++                AvatarInterestsReplyPacket airp = (AvatarInterestsReplyPacket)packet;
++                Avatar.Interests interests = new Avatar.Interests();
++
++                interests.WantToMask = airp.PropertiesData.WantToMask;
++                interests.WantToText = Helpers.FieldToString(airp.PropertiesData.WantToText);
++                interests.SkillsMask = airp.PropertiesData.SkillsMask;
++                interests.SkillsText = Helpers.FieldToString(airp.PropertiesData.SkillsText);
++                interests.LanguagesText = Helpers.FieldToString(airp.PropertiesData.LanguagesText);
++
++                OnAvatarInterests(airp.AgentData.AvatarID, interests);
++            }
++        }
++
++        private void AvatarPickerReplyHandler(Packet packet, Simulator simulator)
++        {
++            if (OnAvatarNameSearch != null)
++            {
++                AvatarPickerReplyPacket reply = (AvatarPickerReplyPacket)packet;
++                Dictionary&lt;LLUUID, string&gt; avatars = new Dictionary&lt;LLUUID,string&gt;();
++
++                foreach (AvatarPickerReplyPacket.DataBlock block in reply.Data)
+                 {
+-                    //not in our &quot;cache&quot;, create a new object
+-                    av = new Avatar();
+-                    av.ID = airp.AgentData.AvatarID;
++                    avatars[block.AvatarID] = Helpers.FieldToString(block.FirstName) +
++                        &quot; &quot; + Helpers.FieldToString(block.LastName);
+                 }
+-                else
+-                {
+-                    //Cache hit, modify existing avatar
+-                    av = Avatars[airp.AgentData.AvatarID];
+-                }
+-                //The rest of the properties, thanks LL.
+-                av.WantToMask = airp.PropertiesData.WantToMask;
+-                av.WantToText = Helpers.FieldToString(airp.PropertiesData.WantToText);
+-                av.SkillsMask = airp.PropertiesData.SkillsMask;
+-                av.SkillsText = Helpers.FieldToString(airp.PropertiesData.SkillsText);
+-                av.LanguagesText = Helpers.FieldToString(airp.PropertiesData.LanguagesText);
++
++                OnAvatarNameSearch(reply.AgentData.QueryID, avatars);
+             }
+-            if (AvatarInterestsCallbacks.ContainsKey(airp.AgentData.AvatarID) &amp;&amp; AvatarInterestsCallbacks[airp.AgentData.AvatarID] != null)
+-                AvatarInterestsCallbacks[airp.AgentData.AvatarID](av);
+         }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -33,113 +33,135 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// Triggered on incoming chat messages
++    /// Class to hold Client Avatar's data
+     /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;Message&quot;&gt;Text of chat message&lt;/param&gt;
+-    /// &lt;param name=&quot;Audible&quot;&gt;Is this normal audible chat or not.&lt;/param&gt;
+-    /// &lt;param name=&quot;Type&quot;&gt;Type of chat (whisper,shout,status,etc)&lt;/param&gt;
+-    /// &lt;param name=&quot;Sourcetype&quot;&gt;Type of source (Agent / Object / ???)&lt;/param&gt;
+-    /// &lt;param name=&quot;FromName&quot;&gt;Text name of sending Avatar/Object&lt;/param&gt;
+-    /// &lt;param name=&quot;ID&quot;&gt;&lt;/param&gt;
+-    public delegate void ChatCallback(string message, byte audible, byte type, byte sourcetype,
+-        string fromName, LLUUID id, LLUUID ownerid, LLVector3 position);
++    public partial class MainAvatar
++    {
++        /// &lt;summary&gt;
++        /// Current teleport status
++        /// &lt;/summary&gt;
++        public enum TeleportStatus
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            None,
++            /// &lt;summary&gt;Teleport Start&lt;/summary&gt;
++            Start,
++            /// &lt;summary&gt;Teleport in Progress&lt;/summary&gt;
++            Progress,
++            /// &lt;summary&gt;Teleport Failed&lt;/summary&gt;
++            Failed,
++            /// &lt;summary&gt;Teleport Completed&lt;/summary&gt;
++            Finished
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Triggered when a script pops up a dialog box
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;message&quot;&gt;The dialog box message&lt;/param&gt;
+-    /// &lt;param name=&quot;objectName&quot;&gt;Name of the object that sent the dialog&lt;/param&gt;
+-    /// &lt;param name=&quot;imageID&quot;&gt;Image to be displayed in the dialog&lt;/param&gt;
+-    /// &lt;param name=&quot;objectID&quot;&gt;ID of the object that sent the dialog&lt;/param&gt;
+-    /// &lt;param name=&quot;firstName&quot;&gt;First name of the object owner&lt;/param&gt;
+-    /// &lt;param name=&quot;lastName&quot;&gt;Last name of the object owner&lt;/param&gt;
+-    /// &lt;param name=&quot;chatChannel&quot;&gt;Chat channel that the object is communicating on&lt;/param&gt;
+-    /// &lt;param name=&quot;buttons&quot;&gt;List of button labels&lt;/param&gt;
+-    public delegate void ScriptDialogCallback(string message, string objectName, LLUUID imageID,
+-        LLUUID objectID, string firstName, string lastName, int chatChannel, List&lt;string&gt; buttons);
++        /// &lt;summary&gt;
++        /// Special commands used in Instant Messages
++        /// &lt;/summary&gt;
++        public enum InstantMessageDialog
++        {
++            /// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
++            MessageFromAgent = 0,
++            /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
++            GiveInventory = 4,
++            /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
++            GiveNotecard = 9,
++            /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
++            MessageFromObject = 19,
++            /// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
++            RequestTeleport = 22,
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++            AcceptTeleport = 23,
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
++            DenyTeleport = 24,
++            /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
++            StartTyping = 41,
++            /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
++            StopTyping = 42
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Triggered when the L$ account balance for this avatar changes
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;balance&quot;&gt;The new account balance&lt;/param&gt;
+-    public delegate void BalanceCallback(int balance);
++        /// &lt;summary&gt;
++        /// Conversion type to denote Chat Packet types in an easier-to-understand format
++        /// &lt;/summary&gt;
++        public enum ChatType
++        {
++            /// &lt;summary&gt;Whispers (5m radius)&lt;/summary&gt;
++            Whisper = 0,
++            /// &lt;summary&gt;Normal chat (10/20m radius), what the official viewer typically sends&lt;/summary&gt;
++            Normal = 1,
++            /// &lt;summary&gt;Shouting! (100m radius)&lt;/summary&gt;
++            Shout = 2,
++            /// &lt;summary&gt;Say chat (10/20m radius) - The official viewer will 
++            /// print &quot;[4:15] You say, hey&quot; instead of &quot;[4:15] You: hey&quot;&lt;/summary&gt;
++            Say = 3,
++            /// &lt;summary&gt;Event message when an Avatar has begun to type&lt;/summary&gt;
++            StartTyping = 4,
++            /// &lt;summary&gt;Event message when an Avatar has stopped typing&lt;/summary&gt;
++            StopTyping = 5
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Tiggered on incoming instant messages
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;fromAgentID&quot;&gt;Key of sender&lt;/param&gt;
+-    /// &lt;param name=&quot;fromAgentName&quot;&gt;Name of sender&lt;/param&gt;
+-    /// &lt;param name=&quot;toAgentID&quot;&gt;Key of destination Avatar&lt;/param&gt;
+-    /// &lt;param name=&quot;parentEstateID&quot;&gt;ID of originating Estate&lt;/param&gt;
+-    /// &lt;param name=&quot;regionID&quot;&gt;Key of originating Region&lt;/param&gt;
+-    /// &lt;param name=&quot;position&quot;&gt;Coordinates in originating Region&lt;/param&gt;
+-    /// &lt;param name=&quot;dialog&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;groupIM&quot;&gt;Group IM session toggle&lt;/param&gt;
+-    /// &lt;param name=&quot;imSessionID&quot;&gt;Key of IM Session&lt;/param&gt;
+-    /// &lt;param name=&quot;timestamp&quot;&gt;Timestamp of message&lt;/param&gt;
+-    /// &lt;param name=&quot;message&quot;&gt;Text of message&lt;/param&gt;
+-    /// &lt;param name=&quot;offline&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;binaryBucket&quot;&gt;&lt;/param&gt;
+-    public delegate void InstantMessageCallback(LLUUID fromAgentID, string fromAgentName,
+-        LLUUID toAgentID, uint parentEstateID, LLUUID regionID, LLVector3 position,
+-        byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, string message,
+-        byte offline, byte[] binaryBucket);
+ 
+-    /// &lt;summary&gt;
+-    /// Triggered for any status updates of a teleport (progress, failed, succeeded)
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;currentSim&quot;&gt;The simulator the avatar is currently residing in&lt;/param&gt;
+-    /// &lt;param name=&quot;message&quot;&gt;A message about the current teleport status&lt;/param&gt;
+-    /// &lt;param name=&quot;status&quot;&gt;The current status of the teleport&lt;/param&gt;
+-    public delegate void TeleportCallback(Simulator currentSim, string message, TeleportStatus status);
++        /// &lt;summary&gt;
++        /// Triggered on incoming chat messages
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Message&quot;&gt;Text of chat message&lt;/param&gt;
++        /// &lt;param name=&quot;Audible&quot;&gt;Is this normal audible chat or not.&lt;/param&gt;
++        /// &lt;param name=&quot;Type&quot;&gt;Type of chat (whisper,shout,status,etc)&lt;/param&gt;
++        /// &lt;param name=&quot;Sourcetype&quot;&gt;Type of source (Agent / Object / ???)&lt;/param&gt;
++        /// &lt;param name=&quot;FromName&quot;&gt;Text name of sending Avatar/Object&lt;/param&gt;
++        /// &lt;param name=&quot;ID&quot;&gt;&lt;/param&gt;
++        public delegate void ChatCallback(string message, byte audible, byte type, byte sourcetype,
++            string fromName, LLUUID id, LLUUID ownerid, LLVector3 position);
+ 
+-    /// &lt;summary&gt;
+-    /// Current teleport status
+-    /// &lt;/summary&gt;
+-    public enum TeleportStatus
+-    {
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        None,
+-        /// &lt;summary&gt;Teleport Start&lt;/summary&gt;
+-        Start,
+-        /// &lt;summary&gt;Teleport in Progress&lt;/summary&gt;
+-        Progress,
+-        /// &lt;summary&gt;Teleport Failed&lt;/summary&gt;
+-        Failed,
+-        /// &lt;summary&gt;Teleport Completed&lt;/summary&gt;
+-        Finished
+-    }
++        /// &lt;summary&gt;
++        /// Triggered when a script pops up a dialog box
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;message&quot;&gt;The dialog box message&lt;/param&gt;
++        /// &lt;param name=&quot;objectName&quot;&gt;Name of the object that sent the dialog&lt;/param&gt;
++        /// &lt;param name=&quot;imageID&quot;&gt;Image to be displayed in the dialog&lt;/param&gt;
++        /// &lt;param name=&quot;objectID&quot;&gt;ID of the object that sent the dialog&lt;/param&gt;
++        /// &lt;param name=&quot;firstName&quot;&gt;First name of the object owner&lt;/param&gt;
++        /// &lt;param name=&quot;lastName&quot;&gt;Last name of the object owner&lt;/param&gt;
++        /// &lt;param name=&quot;chatChannel&quot;&gt;Chat channel that the object is communicating on&lt;/param&gt;
++        /// &lt;param name=&quot;buttons&quot;&gt;List of button labels&lt;/param&gt;
++        public delegate void ScriptDialogCallback(string message, string objectName, LLUUID imageID,
++            LLUUID objectID, string firstName, string lastName, int chatChannel, List&lt;string&gt; buttons);
+ 
+-    /// &lt;summary&gt;
+-    /// Special commands used in Instant Messages
+-    /// &lt;/summary&gt;
+-    public enum InstantMessageDialog
+-    {
+-        /// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
+-        MessageFromAgent = 0,
+-        /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
+-        GiveInventory = 4,
+-        /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
+-        GiveNotecard = 9,
+-        /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
+-        MessageFromObject = 19,
+-        /// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
+-        RequestTeleport = 22,
+-        /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-        AcceptTeleport = 23,
+-        /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-        DenyTeleport = 24,
+-        /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+-        StartTyping = 41,
+-        /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+-        StopTyping = 42
+-    }
++        /// &lt;summary&gt;
++        /// Triggered when the L$ account balance for this avatar changes
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;balance&quot;&gt;The new account balance&lt;/param&gt;
++        public delegate void BalanceCallback(int balance);
+ 
+-    /// &lt;summary&gt;
+-    /// Class to hold Client Avatar's data
+-    /// &lt;/summary&gt;
+-    public partial class MainAvatar
+-    {
++        /// &lt;summary&gt;
++        /// Tiggered on incoming instant messages
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;fromAgentID&quot;&gt;Key of sender&lt;/param&gt;
++        /// &lt;param name=&quot;fromAgentName&quot;&gt;Name of sender&lt;/param&gt;
++        /// &lt;param name=&quot;toAgentID&quot;&gt;Key of destination Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;parentEstateID&quot;&gt;ID of originating Estate&lt;/param&gt;
++        /// &lt;param name=&quot;regionID&quot;&gt;Key of originating Region&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Coordinates in originating Region&lt;/param&gt;
++        /// &lt;param name=&quot;dialog&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;groupIM&quot;&gt;Group IM session toggle&lt;/param&gt;
++        /// &lt;param name=&quot;imSessionID&quot;&gt;Key of IM Session&lt;/param&gt;
++        /// &lt;param name=&quot;timestamp&quot;&gt;Timestamp of message&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text of message&lt;/param&gt;
++        /// &lt;param name=&quot;offline&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;binaryBucket&quot;&gt;&lt;/param&gt;
++        public delegate void InstantMessageCallback(LLUUID fromAgentID, string fromAgentName,
++            LLUUID toAgentID, uint parentEstateID, LLUUID regionID, LLVector3 position,
++            byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, string message,
++            byte offline, byte[] binaryBucket);
++
++        /// &lt;summary&gt;
++        /// Triggered for any status updates of a teleport (progress, failed, succeeded)
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;currentSim&quot;&gt;The simulator the avatar is currently residing in&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;A message about the current teleport status&lt;/param&gt;
++        /// &lt;param name=&quot;status&quot;&gt;The current status of the teleport&lt;/param&gt;
++        public delegate void TeleportCallback(Simulator currentSim, string message, TeleportStatus status);
++
++
+         /// &lt;summary&gt;Callback for incoming chat packets&lt;/summary&gt;
+         public event ChatCallback OnChat;
+         /// &lt;summary&gt;Callback for pop-up dialogs from scripts&lt;/summary&gt;
+@@ -156,11 +178,23 @@
+         /// &lt;summary&gt;Your (client) Avatar ID, local to Region/sim&lt;/summary&gt;
+         public uint LocalID;
+         /// &lt;summary&gt;Avatar First Name (i.e. Philip)&lt;/summary&gt;
+-        public string FirstName = &quot;&quot;;
++        public string FirstName = String.Empty;
+         /// &lt;summary&gt;Avatar Last Name (i.e. Linden)&lt;/summary&gt;
+-        public string LastName = &quot;&quot;;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public string TeleportMessage;
++        public string LastName = String.Empty;
++        /// &lt;summary&gt;Positive and negative ratings&lt;/summary&gt;
++        /// &lt;remarks&gt;This information is read-only and any changes will not be
++        /// reflected on the server&lt;/remarks&gt;
++        public Avatar.Statistics ProfileStatistics = new Avatar.Statistics();
++        /// &lt;summary&gt;Avatar properties including about text, profile URL, image IDs and 
++        /// publishing settings&lt;/summary&gt;
++        /// &lt;remarks&gt;If you change fields in this struct, the changes will not
++        /// be reflected on the server until you call SetAvatarInformation&lt;/remarks&gt;
++        public Avatar.Properties ProfileProperties = new Avatar.Properties();
++        /// &lt;summary&gt;Avatar interests including spoken languages, skills, and &quot;want to&quot;
++        /// choices&lt;/summary&gt;
++        /// &lt;remarks&gt;If you change fields in this struct, the changes will not
++        /// be reflected on the server until you call SetAvatarInformation&lt;/remarks&gt;
++        public Avatar.Interests ProfileInterests = new Avatar.Interests();
+         /// &lt;summary&gt;Current position of avatar&lt;/summary&gt;
+         public LLVector3 Position = LLVector3.Zero;
+         /// &lt;summary&gt;Current rotation of avatar&lt;/summary&gt;
+@@ -198,6 +232,9 @@
+             get { return sittingOn; }
+         }
+ 
++        internal uint sittingOn = 0;
++        internal string teleportMessage = String.Empty;
++
+         private SecondLife Client;
+         private TeleportCallback OnBeginTeleport;
+         private TeleportStatus TeleportStat;
+@@ -207,17 +244,14 @@
+         private float health = 0.0f;
+         private int balance = 0;
+ 
+-        internal uint sittingOn = 0;
+-
+         /// &lt;summary&gt;
+-        /// Constructor, aka 'CallBack Central' - Setup callbacks for packets related to our avatar
++        /// Constructor, setup callbacks for packets related to our avatar
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         public MainAvatar(SecondLife client)
+         {
+             NetworkManager.PacketCallback callback;
+             Client = client;
+-            TeleportMessage = &quot;&quot;;
+ 
+             Status = new MainAvatarStatus(Client);
+ 
+@@ -240,7 +274,8 @@
+             // Script dialog callback
+             Client.Network.RegisterCallback(PacketType.ScriptDialog, new NetworkManager.PacketCallback(ScriptDialogHandler));
+ 
+-            TeleportTimer = new Timer(18000);
++            // Teleport timeout timer
++            TeleportTimer = new Timer(Client.Settings.TELEPORT_TIMEOUT);
+             TeleportTimer.Elapsed += new ElapsedEventHandler(TeleportTimerEvent);
+             TeleportTimeout = false;
+ 
+@@ -292,17 +327,14 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Generate an Instant Message (full arguments)
++        /// Send an Instant Message
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
++        /// &lt;param name=&quot;fromName&quot;&gt;The name this IM will show up as being from&lt;/param&gt;
++        /// &lt;param name=&quot;sessionID&quot;&gt;Session ID of current connection to grid&lt;/param&gt;
+         /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text message being sent&lt;/param&gt;
+         /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IMSessionID&quot;&gt;IM Session ID&lt;/param&gt;
+-        /// 
+-        /// TODO: Have fromName grabbed from elsewhere and remove argument, to prevent inadvertant spoofing.
+-        /// 
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;IM session ID (to differentiate between IM windows)&lt;/param&gt;
+         public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message,
+             LLUUID[] conferenceIDs, LLUUID IMSessionID)
+         {
+@@ -335,33 +367,51 @@
+             //TODO: Allow region id to be correctly set by caller or fetched from Client.*
+             im.MessageBlock.RegionID = LLUUID.Zero;
+ 
+-
+             // Send the message
+             Client.Network.SendPacket(im);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Conversion type to denote Chat Packet types in an easier-to-understand format
++        /// Synchronize the local profile and interests information to the server
+         /// &lt;/summary&gt;
+-        public enum ChatType
++        public void SetAvatarInformation()
+         {
+-            /// &lt;summary&gt;Whispers (5m radius)&lt;/summary&gt;
+-            Whisper = 0,
+-            /// &lt;summary&gt;Normal chat (10/20m radius), what the official viewer typically sends&lt;/summary&gt;
+-            Normal = 1,
+-            /// &lt;summary&gt;Shouting! (100m radius)&lt;/summary&gt;
+-            Shout = 2,
+-            /// &lt;summary&gt;Say chat (10/20m radius) - The official viewer will 
+-            /// print &quot;[4:15] You say, hey&quot; instead of &quot;[4:15] You: hey&quot;&lt;/summary&gt;
+-            Say = 3,
+-            /// &lt;summary&gt;Event message when an Avatar has begun to type&lt;/summary&gt;
+-            StartTyping = 4,
+-            /// &lt;summary&gt;Event message when an Avatar has stopped typing&lt;/summary&gt;
+-            StopTyping = 5
++            // Basic profile properties
++            AvatarPropertiesUpdatePacket apup = new AvatarPropertiesUpdatePacket();
++
++            apup.AgentData = new AvatarPropertiesUpdatePacket.AgentDataBlock();
++            apup.AgentData.AgentID = this.ID;
++            apup.AgentData.SessionID = Client.Network.SessionID;
++
++            apup.PropertiesData = new AvatarPropertiesUpdatePacket.PropertiesDataBlock();
++            apup.PropertiesData.AllowPublish = this.ProfileProperties.AllowPublish;
++            apup.PropertiesData.FLAboutText = Helpers.StringToField(this.ProfileProperties.FirstLifeText);
++            apup.PropertiesData.FLImageID = this.ProfileProperties.FirstLifeImage;
++            apup.PropertiesData.ImageID = this.ProfileProperties.ProfileImage;
++            apup.PropertiesData.MaturePublish = this.ProfileProperties.MaturePublish;
++            apup.PropertiesData.ProfileURL = Helpers.StringToField(this.ProfileProperties.ProfileURL);
++
++            // Interests
++            AvatarInterestsUpdatePacket aiup = new AvatarInterestsUpdatePacket();
++
++            aiup.AgentData = new AvatarInterestsUpdatePacket.AgentDataBlock();
++            aiup.AgentData.AgentID = this.ID;
++            aiup.AgentData.SessionID = Client.Network.SessionID;
++
++            aiup.PropertiesData = new AvatarInterestsUpdatePacket.PropertiesDataBlock();
++            aiup.PropertiesData.LanguagesText = Helpers.StringToField(this.ProfileInterests.LanguagesText);
++            aiup.PropertiesData.SkillsMask = this.ProfileInterests.SkillsMask;
++            aiup.PropertiesData.SkillsText = Helpers.StringToField(this.ProfileInterests.SkillsText);
++            aiup.PropertiesData.WantToMask = this.ProfileInterests.WantToMask;
++            aiup.PropertiesData.WantToText = Helpers.StringToField(this.ProfileInterests.WantToText);
++
++            //Send packets
++            Client.Network.SendPacket(apup);
++            Client.Network.SendPacket(aiup);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Send a Chat message.
++        /// Send a chat message
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;message&quot;&gt;The Message you're sending out.&lt;/param&gt;
+         /// &lt;param name=&quot;channel&quot;&gt;Channel number (0 would be default 'Say' message, other numbers 
+@@ -655,14 +705,14 @@
+ 
+             if (TeleportTimeout)
+             {
+-                TeleportMessage = &quot;Teleport timed out.&quot;;
++                teleportMessage = &quot;Teleport timed out.&quot;;
+                 TeleportStat = TeleportStatus.Failed;
+ 
+-                if (OnTeleport != null) { OnTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat); }
++                if (OnTeleport != null) { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
+             }
+             else
+             {
+-                if (OnTeleport != null) { OnTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat); }
++                if (OnTeleport != null) { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
+             }
+ 
+             return (TeleportStat == TeleportStatus.Finished);
+@@ -722,9 +772,9 @@
+ 
+             if (OnTeleport != null)
+             {
+-                TeleportMessage = &quot;Unable to resolve name: &quot; + simName;
++                teleportMessage = &quot;Unable to resolve name: &quot; + simName;
+                 TeleportStat = TeleportStatus.Failed;
+-                OnTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat);
++                OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
+             }
+ 
+             return false;
+@@ -1035,36 +1085,36 @@
+             {
+                 Client.DebugLog(&quot;TeleportStart received from &quot; + simulator.ToString());
+ 
+-                TeleportMessage = &quot;Teleport started&quot;;
++                teleportMessage = &quot;Teleport started&quot;;
+                 TeleportStat = TeleportStatus.Start;
+ 
+                 if (OnBeginTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat);
++                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
+                 }
+             }
+             else if (packet.Type == PacketType.TeleportProgress)
+             {
+                 Client.DebugLog(&quot;TeleportProgress received from &quot; + simulator.ToString());
+ 
+-                TeleportMessage = Helpers.FieldToString(((TeleportProgressPacket)packet).Info.Message);
++                teleportMessage = Helpers.FieldToString(((TeleportProgressPacket)packet).Info.Message);
+                 TeleportStat = TeleportStatus.Progress;
+ 
+                 if (OnBeginTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat);
++                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
+                 }
+             }
+             else if (packet.Type == PacketType.TeleportFailed)
+             {
+                 Client.DebugLog(&quot;TeleportFailed received from &quot; + simulator.ToString());
+ 
+-                TeleportMessage = Helpers.FieldToString(((TeleportFailedPacket)packet).Info.Reason);
++                teleportMessage = Helpers.FieldToString(((TeleportFailedPacket)packet).Info.Reason);
+                 TeleportStat = TeleportStatus.Failed;
+ 
+                 if (OnBeginTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat);
++                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
+                 }
+ 
+                 OnBeginTeleport = null;
+@@ -1082,7 +1132,7 @@
+ 
+                 if (sim != null)
+                 {
+-                    TeleportMessage = &quot;Teleport finished&quot;;
++                    teleportMessage = &quot;Teleport finished&quot;;
+                     TeleportStat = TeleportStatus.Finished;
+ 
+                     // Move the avatar in to the new sim
+@@ -1099,7 +1149,7 @@
+ 
+                     if (OnBeginTeleport != null)
+                     {
+-                        OnBeginTeleport(sim, TeleportMessage, TeleportStat);
++                        OnBeginTeleport(sim, teleportMessage, TeleportStat);
+                     }
+                     else
+                     {
+@@ -1110,16 +1160,16 @@
+                 }
+                 else
+                 {
+-                    TeleportMessage = &quot;Failed to connect to the new sim after a teleport&quot;;
++                    teleportMessage = &quot;Failed to connect to the new sim after a teleport&quot;;
+                     TeleportStat = TeleportStatus.Failed;
+ 
+                     // FIXME: Set the previous CurrentSim to the current simulator again
+ 
+-                    Client.Log(TeleportMessage, Helpers.LogLevel.Warning);
++                    Client.Log(teleportMessage, Helpers.LogLevel.Warning);
+ 
+                     if (OnBeginTeleport != null)
+                     {
+-                        OnBeginTeleport(Client.Network.CurrentSim, TeleportMessage, TeleportStat);
++                        OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
+                     }
+                 }
+ 
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/SecondLife.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -33,20 +33,21 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// Callback used for client apps to receive log messages from
+-    /// libsecondlife
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;level&quot;&gt;&lt;/param&gt;
+-    public delegate void LogCallback(string message, Helpers.LogLevel level);
+-
+-    /// &lt;summary&gt;
+     /// Main class to expose Second Life functionality to clients. All of the
+     /// classes needed for sending and receiving data are accessible through 
+     /// this class.
+     /// &lt;/summary&gt;
+     public class SecondLife
+     {
++        /// &lt;summary&gt;
++        /// Callback used for client apps to receive log messages from
++        /// libsecondlife
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;level&quot;&gt;&lt;/param&gt;
++        public delegate void LogCallback(string message, Helpers.LogLevel level);
++
++
+         /// &lt;summary&gt;Networking Subsystem&lt;/summary&gt;
+         public NetworkManager Network;
+         /// &lt;summary&gt;Parcel (subdivided simulator lots) Subsystem&lt;/summary&gt;
+@@ -61,14 +62,12 @@
+         public ObjectManager Objects;
+         /// &lt;summary&gt;Group Subsystem&lt;/summary&gt;
+         public GroupManager Groups;
+-
+         /// &lt;summary&gt;Asset Subsystem&lt;/summary&gt;
+         public AssetManager Assets;
+         /// &lt;summary&gt;Inventory Subsystem&lt;/summary&gt;
+         public InventoryManager Inventory;
+         /// &lt;summary&gt;Image Subsystem&lt;/summary&gt;
+         public ImageManager Images;
+-
+         /// &lt;summary&gt;Throttling Subsystem&lt;/summary&gt;
+         public AgentThrottle Throttle;
+         /// &lt;summary&gt;Settings Subsystem&lt;/summary&gt;
+@@ -86,20 +85,19 @@
+         /// &lt;/summary&gt;
+         public SecondLife()
+         {
++            // These are order-dependant
+             Network = new NetworkManager(this);
++            Settings = new Settings(this);
+             Parcels = new ParcelManager(this);
+             Self = new MainAvatar(this);
+             Avatars = new AvatarManager(this);
+             Grid = new GridManager(this);
+             Objects = new ObjectManager(this);
+             Groups = new GroupManager(this);
+-
+             Assets = new AssetManager(this);
+             Images = new ImageManager(this);
+             Inventory = new InventoryManager(this);
+-
+             Throttle = new AgentThrottle(this);
+-            Settings = new Settings(this);
+         }
+ 
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/Settings.cs
+===================================================================
+--- trunk/libsecondlife-cs/Settings.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/Settings.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -47,6 +47,9 @@
+         /// we assume the sequence number just rolls over? Or maybe the 
+         /// protocol isn't able to sustain a connection past that&lt;/summary&gt;
+         public readonly int MAX_SEQUENCE = 0xFFFFFF;
++        /// &lt;summary&gt;Number of milliseconds before a teleport attempt will time
++        /// out&lt;/summary&gt;
++        public readonly int TELEPORT_TIMEOUT = 18 * 1000;
+ 
+         /// &lt;summary&gt;The maximum size of the sequence number inbox, used to
+         /// check for resent and/or duplicate packets&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -60,7 +60,7 @@
+             {
+                 _Client = new SecondLife();
+                 _Client.Network.OnConnected += new NetworkManager.ConnectedCallback(Network_OnConnected);
+-                _Client.Self.OnTeleport += new TeleportCallback(Self_OnTeleport);
++                _Client.Self.OnTeleport += new MainAvatar.TeleportCallback(Self_OnTeleport);
+             }
+             catch (Exception e)
+             {
+@@ -212,7 +212,7 @@
+             
+         }
+ 
+-        void Self_OnTeleport(Simulator currentSim, string message, TeleportStatus status)
++        void Self_OnTeleport(Simulator currentSim, string message, MainAvatar.TeleportStatus status)
+         {
+             Console.WriteLine(&quot;Teleport Completed&quot;);
+             StandUpStraight();
+
+Modified: trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/IA_TestAsyncImage/IA_TestAsyncImage.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -57,19 +57,19 @@
+ 
+         private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+         {
+-            if (avatar.FirstLifeImage != null)
++            if (avatar.ProfileProperties.FirstLifeImage != null)
+             {
+-                if (_Client.Images.isCachedImage(avatar.FirstLifeImage) == false)
++                if (_Client.Images.isCachedImage(avatar.ProfileProperties.FirstLifeImage) == false)
+                 {
+-                    _Client.Images.RequestImageAsync(avatar.FirstLifeImage);
++                    _Client.Images.RequestImageAsync(avatar.ProfileProperties.FirstLifeImage);
+                 }
+             }
+ 
+-            if (avatar.ProfileImage != null)
++            if (avatar.ProfileProperties.ProfileImage != null)
+             {
+-                if (_Client.Images.isCachedImage(avatar.FirstLifeImage) == false)
++                if (_Client.Images.isCachedImage(avatar.ProfileProperties.FirstLifeImage) == false)
+                 {
+-                    _Client.Images.RequestImageAsync(avatar.ProfileImage);
++                    _Client.Images.RequestImageAsync(avatar.ProfileProperties.ProfileImage);
+                 }
+             }
+ 
+
+Modified: trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -136,7 +136,7 @@
+                 }
+             }
+ 
+-            Client.Self.OnTeleport += new TeleportCallback(Self_OnTeleport);
++            Client.Self.OnTeleport += new MainAvatar.TeleportCallback(Self_OnTeleport);
+ 
+             DoneTeleporting = false;
+             Client.Self.Teleport(RegionHandle, coords);
+@@ -147,11 +147,11 @@
+             }
+         }
+ 
+-        void Self_OnTeleport(Simulator currentSim, string message, TeleportStatus status)
++        void Self_OnTeleport(Simulator currentSim, string message, MainAvatar.TeleportStatus status)
+         {
+             Console.WriteLine(message);
+ 
+-            if (status == TeleportStatus.Finished || status == TeleportStatus.Failed)
++            if (status == MainAvatar.TeleportStatus.Finished || status == MainAvatar.TeleportStatus.Failed)
+             {
+                 DoneTeleporting = true;
+             }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -24,13 +24,13 @@
+ 			if (!Active)
+ 			{
+ 				Active = true;
+-				Client.Self.OnChat += new ChatCallback(Self_OnChat);
++                Client.Self.OnChat += new MainAvatar.ChatCallback(Self_OnChat);
+ 				return &quot;Echoing is now on.&quot;;
+ 			}
+ 			else
+ 			{
+ 				Active = false;
+-				Client.Self.OnChat -= new ChatCallback(Self_OnChat);
++                Client.Self.OnChat -= new MainAvatar.ChatCallback(Self_OnChat);
+ 				return &quot;Echoing is now off.&quot;;
+ 			}
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -99,6 +99,7 @@
+ 					XmlWriterSettings settings = new XmlWriterSettings();
+ 					settings.Indent = true;
+                     XmlWriter writer = XmlWriter.Create(file, settings);
++
+ 					try
+ 					{
+ 						List&lt;PrimObject&gt; prims = new List&lt;PrimObject&gt;();
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -74,9 +74,9 @@
+                     prims.Add(prim.LocalID, prim);
+                 }
+             }
+-            catch (Exception ex)
++            catch (Exception)
+             {
+-                return &quot;Deserialize failed: &quot; + ex.ToString();
++                return &quot;Failed to import the object XML file, maybe it doesn't exist or is in the wrong format?&quot;;
+             }
+ 
+             if (!registeredCreateEvent)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -32,6 +32,7 @@
+                 XmlReader reader = XmlReader.Create(args[0]);
+                 XmlSerializer serializer = new XmlSerializer(typeof(Packet));
+                 AvatarAppearancePacket appearance = (AvatarAppearancePacket)serializer.Deserialize(reader);
++                reader.Close();
+ 
+                 AgentSetAppearancePacket set = new AgentSetAppearancePacket();
+ 
+@@ -58,9 +59,9 @@
+ 
+                 Client.Network.SendPacket(set);
+             }
+-            catch (Exception e)
++            catch (Exception)
+             {
+-                return e.ToString();
++                return &quot;Failed to import the appearance XML file, maybe it doesn't exist or is in the wrong format?&quot;;
+             }
+ 
+             return &quot;Imported &quot; + args[0] + &quot; and sent an AgentSetAppearance packet&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -54,7 +54,7 @@
+             Objects.OnObjectKilled += new ObjectManager.KillObjectCallback(Objects_OnObjectKilled);
+ 			Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+ 			Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+-            Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
++            Self.OnInstantMessage += new MainAvatar.InstantMessageCallback(Self_OnInstantMessage);
+ 
+             Network.RegisterCallback(PacketType.AvatarAppearance, new NetworkManager.PacketCallback(AvatarAppearanceHandler));
+ 
+
+Modified: trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.Designer.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.Designer.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.Designer.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -731,7 +731,6 @@
+             this.ShowInTaskbar = false;
+             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+             this.Text = &quot;Group Information&quot;;
+-            this.Load += new System.EventHandler(this.frmGroupInfo_Load);
+             this.tabs.ResumeLayout(false);
+             this.tabGeneral.ResumeLayout(false);
+             this.tabGeneral.PerformLayout();
+
+Modified: trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/groupmanager/frmGroupInfo.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -11,29 +11,44 @@
+ 
+ namespace groupmanager
+ {
++    public class GroupMemberData
++    {
++        public LLUUID ID;
++        public string Name;
++        public string Title;
++        public string LastOnline;
++        public ulong Powers;
++        public bool IsOwner;
++        public int Contribution;
++    }
++
+     public partial class frmGroupInfo : Form
+     {
+         Group Group;
+         SecondLife Client;
+-        GroupProfile Profile;
+-        Dictionary&lt;LLUUID, GroupMember&gt; Members;
+-        Dictionary&lt;LLUUID, GroupTitle&gt; Titles;
+-        Dictionary&lt;LLUUID, GroupMemberData&gt; MemberData;
+-        Dictionary&lt;LLUUID, string&gt; Names;
++        GroupProfile Profile = new GroupProfile();
++        Dictionary&lt;LLUUID, GroupMember&gt; Members = new Dictionary&lt;LLUUID,GroupMember&gt;();
++        Dictionary&lt;LLUUID, GroupTitle&gt; Titles = new Dictionary&lt;LLUUID,GroupTitle&gt;();
++        Dictionary&lt;LLUUID, GroupMemberData&gt; MemberData = new Dictionary&lt;LLUUID, GroupMemberData&gt;();
++        Dictionary&lt;LLUUID, string&gt; Names = new Dictionary&lt;LLUUID, string&gt;();
+         
+         public frmGroupInfo(Group group, SecondLife client)
+         {
++            InitializeComponent();
++
++            while (!IsHandleCreated)
++            {
++                // Force handle creation
++                IntPtr temp = Handle;
++            }
++
+             Group = group;
+             Client = client;
+-            Profile = new GroupProfile();
+-            MemberData = new Dictionary&lt;LLUUID, GroupMemberData&gt;();
+-            Names = new Dictionary&lt;LLUUID, string&gt;();
+ 
+-            InitializeComponent();
+-        }
++            Client.Avatars.OnAvatarNames += new AvatarManager.AvatarNamesCallback(AvatarNamesHandler);
+ 
+-        private void frmGroupInfo_Load(object sender, EventArgs e)
+-        {
++            // Request the group information
++
+             Client.Groups.BeginGetGroupProfile(Group.ID,
+                 new GroupManager.GroupProfileCallback(GroupProfileHandler));
+ 
+@@ -50,8 +65,6 @@
+ 
+             Invoke(new MethodInvoker(UpdateProfile));
+ 
+-            // Waterdrop: new LLUUID(&quot;c77a1c21-e604-7d2c-2c89-5539ce853466&quot;)
+-
+             byte[] j2cdata;
+             if (Group.InsigniaID != null)
+             {
+@@ -59,7 +72,7 @@
+             }
+             else
+             {
+-                // TODO: Add somekind of 
++                // ???
+                 j2cdata = Client.Images.RequestImage(&quot;c77a1c21-e604-7d2c-2c89-5539ce853466&quot;);
+             }
+ 
+@@ -84,10 +97,10 @@
+             numFee.Value = Profile.MembershipFee;
+             chkMature.Checked = Profile.MaturePublish;
+ 
+-            Client.Avatars.BeginGetAvatarName(Profile.FounderID, new AvatarManager.AgentNamesCallback(AgentNamesHandler));
++            Client.Avatars.RequestAvatarName(Profile.FounderID);
+         }
+ 
+-        private void AgentNamesHandler(Dictionary&lt;LLUUID, string&gt; names)
++        private void AvatarNamesHandler(Dictionary&lt;LLUUID, string&gt; names)
+         {
+             lock (Names)
+             {
+@@ -102,8 +115,6 @@
+ 
+         private void UpdateNames()
+         {
+-            GroupMemberData member;
+-
+             lock (Names)
+             {
+                 if (Profile.FounderID != null &amp;&amp; Names.ContainsKey(Profile.FounderID))
+@@ -120,8 +131,7 @@
+                             MemberData[name.Key] = new GroupMemberData();
+                         }
+ 
+-                        member = MemberData[name.Key];
+-                        member.Name = name.Value;
++                        MemberData[name.Key].Name = name.Value;
+                     }
+                 }
+             }
+@@ -209,7 +219,7 @@
+                 }
+             }
+ 
+-            Client.Avatars.BeginGetAvatarNames(requestids, new AvatarManager.AgentNamesCallback(AgentNamesHandler));
++            Client.Avatars.RequestAvatarNames(requestids);
+         }
+ 
+         private void GroupTitlesHandler(Dictionary&lt;LLUUID, GroupTitle&gt; titles)
+@@ -223,25 +233,5 @@
+         {
+             ;
+         }
+-
+-        //private void BytesToFile(byte[] bytes, string filename)
+-        //{
+-        //    FileStream filestream = new FileStream(filename, FileMode.Create);
+-        //    BinaryWriter writer = new BinaryWriter(filestream);
+-        //    writer.Write(bytes);
+-        //    writer.Close();
+-        //    filestream.Close();
+-        //}
+     }
+-
+-    public class GroupMemberData
+-    {
+-        public LLUUID ID;
+-        public string Name;
+-        public string Title;
+-        public string LastOnline;
+-        public ulong Powers;
+-        public bool IsOwner;
+-        public int Contribution;
+-    }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/examples/primexport/frmPrimExport.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -299,7 +299,7 @@
+             InitializeComponent();
+ 
+             client = new SecondLife();
+-            client.OnLogMessage += new LogCallback(client_OnLogMessage);
++            client.OnLogMessage += new SecondLife.LogCallback(client_OnLogMessage);
+             client.Objects.RequestAllObjects = true;
+             client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(PrimSeen);
+             client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(AvatarSeen);
+
+Added: trunk/libsecondlife-cs/libsecondlife.Tests/NetworkTests.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Tests/NetworkTests.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/libsecondlife.Tests/NetworkTests.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -0,0 +1,225 @@
++using System;
++using System.Collections.Generic;
++using System.Net;
++using libsecondlife;
++using libsecondlife.Packets;
++using libsecondlife.Utilities;
++using NUnit.Framework;
++
++namespace libsecondlife.Tests
++{
++    [TestFixture]
++    public class NetworkTests : Assert
++    {
++        SecondLife Client;
++
++        ulong CurrentRegionHandle = 0;
++        ulong AhernRegionHandle = 1096213093149184;
++        ulong MorrisRegionHandle = 1096213093149183;
++        bool DetectedObject = false;
++        bool DoneTeleporting = false;
++        MainAvatar.TeleportStatus tpStatus = MainAvatar.TeleportStatus.None;
++        string tpMessage = &quot;&quot;;
++
++        LLUUID LookupKey1 = new LLUUID(&quot;25472683cb324516904a6cd0ecabf128&quot;);
++        string LookupName1 = &quot;Bot Ringo&quot;;
++
++        public NetworkTests()
++        {
++            Client = new SecondLife();
++
++            string startLoc = NetworkManager.StartLocation(&quot;hooper&quot;, 128, 128, 32);
++
++            // Register callbacks
++            Client.Network.RegisterCallback(PacketType.ObjectUpdate, new NetworkManager.PacketCallback(ObjectUpdateHandler));
++            Client.Self.OnTeleport += new MainAvatar.TeleportCallback(OnTeleportHandler);
++
++            Client.Network.Login(&quot;Testing&quot;, &quot;Anvil&quot;, &quot;testinganvil&quot;, &quot;Unit Test Framework&quot;, startLoc,
++                &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;, false);
++        }
++
++        ~NetworkTests()
++        {
++            Client.Network.Logout();
++        }
++
++        [SetUp]
++        public void Init()
++        {
++            Assert.IsTrue(Client.Network.Connected, &quot;Client is not connected to the grid: &quot; + Client.Network.LoginError);
++
++            int start = Environment.TickCount;
++            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
++            {
++                if (Environment.TickCount - start &gt; 5000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
++                }
++            }
++
++            //Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(), &quot;Logged in to sim &quot; + 
++            //    Client.Network.CurrentSim.Region.Name + &quot; instead of Ahern&quot;);
++        }
++
++        [Test]
++        public void DetectObjects()
++        {
++            int start = Environment.TickCount;
++            while (!DetectedObject)
++            {
++                if (Environment.TickCount - start &gt; 10000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
++                    return;
++                }
++            }
++        }
++
++        [Test]
++        public void U64Receive()
++        {
++            int start = Environment.TickCount;
++            while (CurrentRegionHandle == 0)
++            {
++                if (Environment.TickCount - start &gt; 10000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
++                    return;
++                }
++            }
++
++            Assert.IsTrue(CurrentRegionHandle == AhernRegionHandle, &quot;Current region is &quot; +
++                CurrentRegionHandle + &quot; when we were expecting &quot; + AhernRegionHandle + &quot;, possible endian issue&quot;);
++        }
++
++        [Test]
++        public void NameLookup()
++        {
++            AvatarTracker tracker = new AvatarTracker(Client);
++
++            string name = tracker.GetAvatarName(LookupKey1);
++
++            Assert.IsTrue(name == LookupName1, &quot;AvatarTracker.GetAvatarName() returned &quot; + name +
++                &quot; instead of &quot; + LookupName1);
++        }
++
++        [Test]
++        public void Teleport()
++        {
++            DoneTeleporting = false;
++            tpStatus = MainAvatar.TeleportStatus.None;
++
++            Client.Self.Teleport(MorrisRegionHandle, new LLVector3(128, 128, 32));
++
++            int start = Environment.TickCount;
++
++            while (!DoneTeleporting)
++            {
++                System.Threading.Thread.Sleep(100);
++
++                if (Environment.TickCount - start &gt; 10000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for the first teleport to finish&quot;);
++                    return;
++                }
++            }
++
++            Assert.IsTrue(tpStatus == MainAvatar.TeleportStatus.Finished, 
++                &quot;Teleport status is &quot; + tpStatus.ToString() + &quot;, message=&quot; + tpMessage);
++
++            // Wait for the region information to come in
++            start = Environment.TickCount;
++            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
++            {
++                if (Environment.TickCount - start &gt; 5000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
++                }
++            }
++
++            // Assert that we really did make it to our scheduled destination
++            Assert.AreEqual(&quot;morris&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
++                &quot;Expected to teleport to Morris, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
++                &quot;. Possibly region full or offline?&quot;);
++
++            ///////////////////////////////////////////////////////////////////
++
++            // TODO: Add a local region teleport
++
++            ///////////////////////////////////////////////////////////////////
++
++            DoneTeleporting = false;
++            tpStatus = MainAvatar.TeleportStatus.None;
++
++            Client.Self.Teleport(AhernRegionHandle, new LLVector3(128, 128, 32));
++
++            start = Environment.TickCount;
++
++            while (!DoneTeleporting)
++            {
++                System.Threading.Thread.Sleep(100);
++
++                if (Environment.TickCount - start &gt; 10000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for the second teleport to finish&quot;);
++                    return;
++                }
++            }
++
++            Assert.IsTrue(tpStatus == MainAvatar.TeleportStatus.Finished, &quot;Teleport status is &quot; + 
++                tpStatus.ToString() + &quot;, message=&quot; + tpMessage);
++
++            // Wait for the region information to come in
++            start = Environment.TickCount;
++            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
++            {
++                if (Environment.TickCount - start &gt; 5000)
++                {
++                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
++                }
++            }
++
++            // Assert that we really did make it to our scheduled destination
++            Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
++                &quot;Expected to teleport to Ahern, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
++                &quot;. Possibly region full or offline?&quot;);
++        }
++
++        private void ObjectUpdateHandler(Packet packet, Simulator sim)
++        {
++            ObjectUpdatePacket update = (ObjectUpdatePacket)packet;
++
++            DetectedObject = true;
++            CurrentRegionHandle = update.RegionData.RegionHandle;
++        }
++
++        private void OnTeleportHandler(Simulator currentSim, string message, MainAvatar.TeleportStatus status)
++        {
++            switch (status)
++            {
++                case MainAvatar.TeleportStatus.None:
++                    break;
++                case MainAvatar.TeleportStatus.Start:
++                    break;
++                case MainAvatar.TeleportStatus.Progress:
++                    break;
++                case MainAvatar.TeleportStatus.Failed:
++                    DoneTeleporting = true;
++                    break;
++                case MainAvatar.TeleportStatus.Finished:
++                    DoneTeleporting = true;
++                    break;
++            }
++
++            tpMessage = message;
++            tpStatus = status;
++        }
++
++        [TearDown]
++        public void Shutdown()
++        {
++            //Client.Network.Logout();
++            //Client = null;
++        }
++    }
++}
+
+Deleted: trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -1,209 +0,0 @@
+-using System;
+-using System.Collections.Generic;
+-using System.Net;
+-using libsecondlife;
+-using libsecondlife.Packets;
+-using NUnit.Framework;
+-
+-namespace libsecondlife.Tests
+-{
+-    [TestFixture]
+-    public class NetworkTests : Assert
+-    {
+-        SecondLife Client;
+-        ulong CurrentRegionHandle = 0;
+-        ulong AhernRegionHandle = 1096213093149184;
+-        ulong MorrisRegionHandle = 1096213093149183;
+-        bool DetectedObject = false;
+-        bool DoneTeleporting = false;
+-        TeleportStatus tpStatus = TeleportStatus.None;
+-        string tpMessage = &quot;&quot;;
+-
+-        public NetworkTests()
+-        {
+-            Client = new SecondLife();
+-
+-            //string startLoc = NetworkManager.StartLocation(&quot;hooper&quot;, 128, 128, 32);
+-
+-            // Register callbacks
+-            Client.Network.RegisterCallback(PacketType.ObjectUpdate, new NetworkManager.PacketCallback(ObjectUpdateHandler));
+-            Client.Self.OnTeleport += new TeleportCallback(OnTeleportHandler);
+-
+-            Client.Network.Login(&quot;Testing&quot;, &quot;Anvil&quot;, &quot;testinganvil&quot;, &quot;Unit Test Framework&quot;, //startLoc,
+-                &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;/*, false*/);
+-        }
+-
+-        ~NetworkTests()
+-        {
+-            Client.Network.Logout();
+-        }
+-
+-        [SetUp]
+-        public void Init()
+-        {
+-            Assert.IsTrue(Client.Network.Connected, &quot;Client is not connected to the grid: &quot; + Client.Network.LoginError);
+-
+-            int start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            //Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(), &quot;Logged in to sim &quot; + 
+-            //    Client.Network.CurrentSim.Region.Name + &quot; instead of Ahern&quot;);
+-        }
+-
+-        [Test]
+-        public void DetectObjects()
+-        {
+-            int start = Environment.TickCount;
+-            while (!DetectedObject)
+-            {
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
+-                    return;
+-                }
+-            }
+-        }
+-
+-        [Test]
+-        public void U64Receive()
+-        {
+-            int start = Environment.TickCount;
+-            while (CurrentRegionHandle == 0)
+-            {
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(CurrentRegionHandle == AhernRegionHandle, &quot;Current region is &quot; +
+-                CurrentRegionHandle + &quot; when we were expecting &quot; + AhernRegionHandle + &quot;, possible endian issue&quot;);
+-        }
+-
+-        [Test]
+-        public void Teleport()
+-        {
+-            DoneTeleporting = false;
+-            tpStatus = TeleportStatus.None;
+-
+-            Client.Self.Teleport(MorrisRegionHandle, new LLVector3(128, 128, 32));
+-
+-            int start = Environment.TickCount;
+-
+-            while (!DoneTeleporting)
+-            {
+-                System.Threading.Thread.Sleep(100);
+-
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for the first teleport to finish&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(tpStatus == TeleportStatus.Finished, &quot;Teleport status is &quot; + tpStatus.ToString() +
+-                &quot;, message=&quot; + tpMessage);
+-
+-            // Wait for the region information to come in
+-            start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            // Assert that we really did make it to our scheduled destination
+-            Assert.AreEqual(&quot;morris&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
+-                &quot;Expected to teleport to Morris, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
+-                &quot;. Possibly region full or offline?&quot;);
+-
+-            ///////////////////////////////////////////////////////////////////
+-
+-            // TODO: Add a local region teleport
+-
+-            ///////////////////////////////////////////////////////////////////
+-
+-            DoneTeleporting = false;
+-            tpStatus = TeleportStatus.None;
+-
+-            Client.Self.Teleport(AhernRegionHandle, new LLVector3(128, 128, 32));
+-
+-            start = Environment.TickCount;
+-
+-            while (!DoneTeleporting)
+-            {
+-                System.Threading.Thread.Sleep(100);
+-
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for the second teleport to finish&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(tpStatus == TeleportStatus.Finished, &quot;Teleport status is &quot; + tpStatus.ToString() +
+-                &quot;, message=&quot; + tpMessage);
+-
+-            // Wait for the region information to come in
+-            start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            // Assert that we really did make it to our scheduled destination
+-            Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
+-                &quot;Expected to teleport to Ahern, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
+-                &quot;. Possibly region full or offline?&quot;);
+-        }
+-
+-        private void ObjectUpdateHandler(Packet packet, Simulator sim)
+-        {
+-            ObjectUpdatePacket update = (ObjectUpdatePacket)packet;
+-
+-            DetectedObject = true;
+-            CurrentRegionHandle = update.RegionData.RegionHandle;
+-        }
+-
+-        private void OnTeleportHandler(Simulator currentSim, string message, TeleportStatus status)
+-        {
+-            switch (status)
+-            {
+-                case TeleportStatus.None:
+-                    break;
+-                case TeleportStatus.Start:
+-                    break;
+-                case TeleportStatus.Progress:
+-                    break;
+-                case TeleportStatus.Failed:
+-                    DoneTeleporting = true;
+-                    break;
+-                case TeleportStatus.Finished:
+-                    DoneTeleporting = true;
+-                    break;
+-            }
+-
+-            tpMessage = message;
+-            tpStatus = status;
+-        }
+-
+-        [TearDown]
+-        public void Shutdown()
+-        {
+-            //Client.Network.Logout();
+-            //Client = null;
+-        }
+-    }
+-}
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj	2006-12-22 15:28:33 UTC (rev 754)
+@@ -40,13 +40,17 @@
+     &lt;Compile Include=&quot;PacketTests.cs&quot; /&gt;
+     &lt;Compile Include=&quot;PrimObjectTests.cs&quot; /&gt;
+     &lt;Compile Include=&quot;TypeTests.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Tests.cs&quot; /&gt;
++    &lt;Compile Include=&quot;NetworkTests.cs&quot; /&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
+     &lt;ProjectReference Include=&quot;..\libsecondlife.csproj&quot;&gt;
+       &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
+       &lt;Name&gt;libsecondlife&lt;/Name&gt;
+     &lt;/ProjectReference&gt;
++    &lt;ProjectReference Include=&quot;..\libsecondlife.Utilities\libsecondlife.Utilities.csproj&quot;&gt;
++      &lt;Project&gt;{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife.Utilities&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
+     &lt;Folder Include=&quot;Properties\&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2006-12-22 15:24:20 UTC (rev 753)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2006-12-22 15:28:33 UTC (rev 754)
+@@ -1,6 +1,8 @@
+ using System;
+ using System.Collections.Generic;
++using System.Threading;
+ using libsecondlife;
++using libsecondlife.Packets;
+ 
+ namespace libsecondlife.Utilities
+ {
+@@ -8,19 +10,174 @@
+     /// Keeps an up to date inventory of the currently seen objects in each
+     /// simulator
+     /// &lt;/summary&gt;
+-    public class ObjectTracker
++    //public class ObjectTracker
++    //{
++    //    private SecondLife Client;
++    //    private Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt;();
++
++    //    /// &lt;summary&gt;
++    //    /// Default constructor
++    //    /// &lt;/summary&gt;
++    //    /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client to track
++    //    /// objects for&lt;/param&gt;
++    //    public ObjectTracker(SecondLife client)
++    //    {
++    //        Client = client;
++    //    }
++    //}
++
++    /// &lt;summary&gt;
++    /// Maintains a cache of avatars and does blocking lookups for avatar data
++    /// &lt;/summary&gt;
++    public class AvatarTracker
+     {
+-        private SecondLife Client;
+-        private Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt;();
++        protected SecondLife Client;
++        protected Dictionary&lt;LLUUID, Avatar&gt; avatars = new Dictionary&lt;LLUUID,Avatar&gt;();
++        protected Dictionary&lt;LLUUID, ManualResetEvent&gt; NameLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
+ 
++        public AvatarTracker(SecondLife client)
++        {
++            Client = client;
++
++            Client.Avatars.OnAvatarNames += new AvatarManager.AvatarNamesCallback(Avatars_OnAvatarNames);
++        }
++
+         /// &lt;summary&gt;
+-        /// Default constructor
++        /// Check if a particular avatar is in the local cache
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client to track
+-        /// objects for&lt;/param&gt;
+-        public ObjectTracker(SecondLife client)
++        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public bool Contains(LLUUID id)
+         {
+-            Client = client;
++            return avatars.ContainsKey(id);
+         }
++
++        /// &lt;summary&gt;
++        /// Get an avatar's name, either from the cache or request it.
++        /// This function is blocking
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;key&quot;&gt;Avatar key to look up&lt;/param&gt;
++        /// &lt;returns&gt;The avatar name, or String.Empty if the lookup failed&lt;/returns&gt;
++        public string GetAvatarName(LLUUID id)
++        {
++            // Short circuit the cache lookup in GetAvatarNames
++            if (Contains(id))
++                return LocalAvatarNameLookup(id);
++
++            // Add to the dictionary
++            lock (NameLookupEvents)
++                NameLookupEvents.Add(id, new ManualResetEvent(false));
++
++            // Call function
++            Client.Avatars.RequestAvatarName(id);
++
++            // Start blocking while we wait for this name to be fetched
++            NameLookupEvents[id].WaitOne(5000, false);
++
++            // Clean up
++            lock (NameLookupEvents)
++                NameLookupEvents.Remove(id);
++
++            // Return
++            return LocalAvatarNameLookup(id);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
++        //public void BeginGetAvatarName(LLUUID id)
++        //{
++        //    // TODO: BeginGetAvatarNames is pretty bulky, rewrite a simple version here
++
++        //    List&lt;LLUUID&gt; ids = new List&lt;LLUUID&gt;();
++        //    ids.Add(id);
++        //    BeginGetAvatarNames(ids);
++        //}
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;ids&quot;&gt;&lt;/param&gt;
++        //public void BeginGetAvatarNames(List&lt;LLUUID&gt; ids)
++        //{
++        //    Dictionary&lt;LLUUID, string&gt; havenames = new Dictionary&lt;LLUUID, string&gt;();
++        //    List&lt;LLUUID&gt; neednames = new List&lt;LLUUID&gt;();
++
++        //    // Fire callbacks for the ones we already have cached
++        //    foreach (LLUUID id in ids)
++        //    {
++        //        if (Avatars.ContainsKey(id))
++        //        {
++        //            havenames[id] = Avatars[id].Name;
++        //            //Short circuit the lookup process
++        //            if (ManualResetEvents.ContainsKey(id))
++        //            {
++        //                ManualResetEvents[id].Set();
++        //                return;
++        //            }
++        //        }
++        //        else
++        //        {
++        //            neednames.Add(id);
++        //        }
++        //    }
++
++        //    if (havenames.Count &gt; 0 &amp;&amp; OnAgentNames != null)
++        //    {
++        //        OnAgentNames(havenames);
++        //    }
++
++        //    if (neednames.Count &gt; 0)
++        //    {
++        //        UUIDNameRequestPacket request = new UUIDNameRequestPacket();
++
++        //        request.UUIDNameBlock = new UUIDNameRequestPacket.UUIDNameBlockBlock[neednames.Count];
++
++        //        for (int i = 0; i &lt; neednames.Count; i++)
++        //        {
++        //            request.UUIDNameBlock[i] = new UUIDNameRequestPacket.UUIDNameBlockBlock();
++        //            request.UUIDNameBlock[i].ID = neednames[i];
++        //        }
++
++        //        Client.Network.SendPacket(request);
++        //    }
++        //}
++
++        /// &lt;summary&gt;
++        /// This function will only check if the avatar name exists locally,
++        /// it will not do any networking calls to fetch the name
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;The avatar name, or an empty string if it's not found&lt;/returns&gt;
++        protected string LocalAvatarNameLookup(LLUUID id)
++        {
++            lock (avatars)
++            {
++                if (avatars.ContainsKey(id))
++                    return avatars[id].Name;
++                else
++                    return String.Empty;
++            }
++        }
++
++        private void Avatars_OnAvatarNames(Dictionary&lt;LLUUID, string&gt; names)
++        {
++            lock (avatars)
++            {
++                foreach (KeyValuePair&lt;LLUUID, string&gt; kvp in names)
++                {
++                    if (!avatars.ContainsKey(kvp.Key) || avatars[kvp.Key] == null)
++                        avatars[kvp.Key] = new Avatar();
++
++                    avatars[kvp.Key].Name = kvp.Value;
++
++                    lock (NameLookupEvents)
++                    {
++                        if (NameLookupEvents.ContainsKey(kvp.Key))
++                            NameLookupEvents[kvp.Key].Set();
++                    }
++                }
++            }
++        }
+     }
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000121.html">[Libsecondlife-commits] r753 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+	<LI>Next message: <A HREF="000123.html">[Libsecondlife-commits] r755 - trunk/SLProxy
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#122">[ date ]</a>
+              <a href="thread.html#122">[ thread ]</a>
+              <a href="subject.html#122">[ subject ]</a>
+              <a href="author.html#122">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

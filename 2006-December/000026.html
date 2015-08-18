@@ -1,0 +1,1061 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r675 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r675%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands&In-Reply-To=%3C200612030150.kB31o1CU011954%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000025.html">
+   <LINK REL="Next"  HREF="000027.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r675 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r675%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient/Commands&In-Reply-To=%3C200612030150.kB31o1CU011954%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r675 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec  3 02:50:01 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000025.html">[Libsecondlife-commits] r674 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000027.html">[Libsecondlife-commits] r676 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#26">[ date ]</a>
+              <a href="thread.html#26">[ thread ]</a>
+              <a href="subject.html#26">[ subject ]</a>
+              <a href="author.html#26">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-03 02:50:00 +0100 (Sun, 03 Dec 2006)
+New Revision: 675
+
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+Log:
+Packets are exported as a List with Helpers.PacketListToXml() now to make deserialization easier
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2006-12-02 22:32:24 UTC (rev 674)
++++ trunk/libsecondlife-cs/Helpers.cs	2006-12-03 01:50:00 UTC (rev 675)
+@@ -25,489 +25,506 @@
+  */
+ 
+ using System;
++using System.Collections.Generic;
++using System.Xml;
++using System.Xml.Serialization;
+ using System.Text;
++using libsecondlife.Packets;
+ 
+ namespace libsecondlife
+ {
+-/// &lt;summary&gt;
+-/// Static helper functions and global variables
+-/// &lt;/summary&gt;
+-public class Helpers
+-{
+-    /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
+-    public readonly static string VERSION = &quot;libsecondlife 0.0.9&quot;;
+-    /// &lt;summary&gt;This header flag signals that ACKs are appended to the packet&lt;/summary&gt;
+-    public const byte MSG_APPENDED_ACKS = 0x10;
+-    /// &lt;summary&gt;This header flag signals that this packet has been sent before&lt;/summary&gt;
+-    public const byte MSG_RESENT = 0x20;
+-    /// &lt;summary&gt;This header flags signals that an ACK is expected for this packet&lt;/summary&gt;
+-    public const byte MSG_RELIABLE = 0x40;
+-    /// &lt;summary&gt;This header flag signals that the message is compressed using zerocoding&lt;/summary&gt;
+-    public const byte MSG_ZEROCODED = 0x80;
+-
+     /// &lt;summary&gt;
+-    /// Passed to SecondLife.Log() to identify the severity of a log entry
++    /// Static helper functions and global variables
+     /// &lt;/summary&gt;
+-    public enum LogLevel
++    public class Helpers
+     {
+-        /// &lt;summary&gt;Non-noisy useful information, may be helpful in 
+-        /// debugging a problem&lt;/summary&gt;
+-        Info,
+-        /// &lt;summary&gt;A non-critical error occurred. A warning will not 
+-        /// prevent the rest of libsecondlife from operating as usual, 
+-        /// although it may be indicative of an underlying issue&lt;/summary&gt;
+-        Warning,
+-        /// &lt;summary&gt;A critical error has occurred. Generally this will 
+-        /// be followed by the network layer shutting down, although the 
+-        /// stability of libsecondlife after an error is uncertain&lt;/summary&gt;
+-        Error,
+-        /// &lt;summary&gt;Used for internal testing, this logging level can 
+-        /// generate very noisy (long and/or repetitive) messages. Don't
+-        /// pass this to the Log() function, use DebugLog() instead.
++        /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
++        public readonly static string VERSION = &quot;libsecondlife 0.0.9&quot;;
++        /// &lt;summary&gt;This header flag signals that ACKs are appended to the packet&lt;/summary&gt;
++        public const byte MSG_APPENDED_ACKS = 0x10;
++        /// &lt;summary&gt;This header flag signals that this packet has been sent before&lt;/summary&gt;
++        public const byte MSG_RESENT = 0x20;
++        /// &lt;summary&gt;This header flags signals that an ACK is expected for this packet&lt;/summary&gt;
++        public const byte MSG_RELIABLE = 0x40;
++        /// &lt;summary&gt;This header flag signals that the message is compressed using zerocoding&lt;/summary&gt;
++        public const byte MSG_ZEROCODED = 0x80;
++
++        /// &lt;summary&gt;
++        /// Passed to SecondLife.Log() to identify the severity of a log entry
+         /// &lt;/summary&gt;
+-        Debug
+-    };
++        public enum LogLevel
++        {
++            /// &lt;summary&gt;Non-noisy useful information, may be helpful in 
++            /// debugging a problem&lt;/summary&gt;
++            Info,
++            /// &lt;summary&gt;A non-critical error occurred. A warning will not 
++            /// prevent the rest of libsecondlife from operating as usual, 
++            /// although it may be indicative of an underlying issue&lt;/summary&gt;
++            Warning,
++            /// &lt;summary&gt;A critical error has occurred. Generally this will 
++            /// be followed by the network layer shutting down, although the 
++            /// stability of libsecondlife after an error is uncertain&lt;/summary&gt;
++            Error,
++            /// &lt;summary&gt;Used for internal testing, this logging level can 
++            /// generate very noisy (long and/or repetitive) messages. Don't
++            /// pass this to the Log() function, use DebugLog() instead.
++            /// &lt;/summary&gt;
++            Debug
++        };
+ 
+-    /// &lt;summary&gt;
+-    /// 
+-    /// &lt;/summary&gt;
+-    [Flags]
+-    public enum PermissionWho
+-    {
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Group = 4,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Everyone = 8,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        NextOwner = 16
+-    }
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        [Flags]
++        public enum PermissionWho
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Group = 4,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Everyone = 8,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            NextOwner = 16
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// 
+-    /// &lt;/summary&gt;
+-    [Flags]
+-    public enum PermissionType
+-    {
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Copy = 0x00008000,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Modify = 0x00004000,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Move = 0x00080000,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        Transfer = 0x00002000
+-    }
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        [Flags]
++        public enum PermissionType
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Copy = 0x00008000,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Modify = 0x00004000,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Move = 0x00080000,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Transfer = 0x00002000
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Packs to 32-bit unsigned integers in to a 64-bit unsigned integer
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;a&quot;&gt;The left-hand (or X) value&lt;/param&gt;
+-    /// &lt;param name=&quot;b&quot;&gt;The right-hand (or Y) value&lt;/param&gt;
+-    /// &lt;returns&gt;A 64-bit integer containing the two 32-bit input values&lt;/returns&gt;
+-    public static ulong UIntsToLong(uint a, uint b)
+-    {
+-        return (ulong)(((ulong)a &lt;&lt; 32) + (ulong)b);
+-    }
++        /// &lt;summary&gt;
++        /// Packs to 32-bit unsigned integers in to a 64-bit unsigned integer
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;a&quot;&gt;The left-hand (or X) value&lt;/param&gt;
++        /// &lt;param name=&quot;b&quot;&gt;The right-hand (or Y) value&lt;/param&gt;
++        /// &lt;returns&gt;A 64-bit integer containing the two 32-bit input values&lt;/returns&gt;
++        public static ulong UIntsToLong(uint a, uint b)
++        {
++            return (ulong)(((ulong)a &lt;&lt; 32) + (ulong)b);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Unpacks two 32-bit unsigned integers from a 64-bit unsigned integer
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;a&quot;&gt;The 64-bit input integer&lt;/param&gt;
+-    /// &lt;param name=&quot;b&quot;&gt;The left-hand (or X) output value&lt;/param&gt;
+-    /// &lt;param name=&quot;c&quot;&gt;The right-hand (or Y) output value&lt;/param&gt;
+-    public static void LongToUInts(ulong a, out uint b, out uint c)
+-    {
+-        b = (uint)(a &gt;&gt; 32);
+-        c = (uint)(a &amp; 0x00000000FFFFFFFF);
+-    }
++        /// &lt;summary&gt;
++        /// Unpacks two 32-bit unsigned integers from a 64-bit unsigned integer
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;a&quot;&gt;The 64-bit input integer&lt;/param&gt;
++        /// &lt;param name=&quot;b&quot;&gt;The left-hand (or X) output value&lt;/param&gt;
++        /// &lt;param name=&quot;c&quot;&gt;The right-hand (or Y) output value&lt;/param&gt;
++        public static void LongToUInts(ulong a, out uint b, out uint c)
++        {
++            b = (uint)(a &gt;&gt; 32);
++            c = (uint)(a &amp; 0x00000000FFFFFFFF);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Convert a variable length field (byte array) to a string.
+-    /// &lt;/summary&gt;
+-    /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+-    /// hex dump will be put in the string instead&lt;/remarks&gt;
+-    /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
+-    /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
+-    public static string FieldToString(byte[] bytes)
+-    {
+-        return FieldToString(bytes, &quot;&quot;);
+-    }
+-
+-    /// &lt;summary&gt;
+-    /// Convert a variable length field (byte array) to a string, with a
+-    /// field name prepended to each line of the output.
+-    /// &lt;/summary&gt;
+-    /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
+-    /// hex dump will be put in the string instead&lt;/remarks&gt;
+-    /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
+-    /// &lt;param name=&quot;fieldName&quot;&gt;A field name to prepend to each line of output&lt;/param&gt;
+-    /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
+-    public static string FieldToString(byte[] bytes, string fieldName)
+-    {
+-        string output = &quot;&quot;;
+-        bool printable = true;
+-
+-        for (int i = 0; i &lt; bytes.Length; ++i)
++        /// &lt;summary&gt;
++        /// Convert a variable length field (byte array) to a string.
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
++        /// hex dump will be put in the string instead&lt;/remarks&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
++        /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
++        public static string FieldToString(byte[] bytes)
+         {
+-            // Check if there are any unprintable characters in the array
+-            if ((bytes[i] &lt; 0x20 || bytes[i] &gt; 0x7E) &amp;&amp; bytes[i] != 0x09
+-                &amp;&amp; bytes[i] != 0x0D &amp;&amp; bytes[i] != 0x0A &amp;&amp; bytes[i] != 0x00)
+-            {
+-                printable = false;
+-                break;
+-            }
++            return FieldToString(bytes, &quot;&quot;);
+         }
+ 
+-        if (printable)
++        /// &lt;summary&gt;
++        /// Convert a variable length field (byte array) to a string, with a
++        /// field name prepended to each line of the output.
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;If the byte array has unprintable characters in it, a 
++        /// hex dump will be put in the string instead&lt;/remarks&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;The byte array to convert to a string&lt;/param&gt;
++        /// &lt;param name=&quot;fieldName&quot;&gt;A field name to prepend to each line of output&lt;/param&gt;
++        /// &lt;returns&gt;A UTF8 string, minus the null terminator&lt;/returns&gt;
++        public static string FieldToString(byte[] bytes, string fieldName)
+         {
+-            if (fieldName.Length &gt; 0)
++            string output = &quot;&quot;;
++            bool printable = true;
++
++            for (int i = 0; i &lt; bytes.Length; ++i)
+             {
+-                output += fieldName + &quot;: &quot;;
++                // Check if there are any unprintable characters in the array
++                if ((bytes[i] &lt; 0x20 || bytes[i] &gt; 0x7E) &amp;&amp; bytes[i] != 0x09
++                    &amp;&amp; bytes[i] != 0x0D &amp;&amp; bytes[i] != 0x0A &amp;&amp; bytes[i] != 0x00)
++                {
++                    printable = false;
++                    break;
++                }
+             }
+ 
+-            output += System.Text.Encoding.UTF8.GetString(bytes).Replace(&quot;\0&quot;, &quot;&quot;);
+-        }
+-        else
+-        {
+-            for (int i = 0; i &lt; bytes.Length; i += 16)
++            if (printable)
+             {
+-                if (i != 0) { output += &quot;\n&quot;; }
+-                if (fieldName != &quot;&quot;) { output += fieldName + &quot;: &quot;; }
++                if (fieldName.Length &gt; 0)
++                {
++                    output += fieldName + &quot;: &quot;;
++                }
+ 
+-                for (int j = 0; j &lt; 16; j++)
++                output += System.Text.Encoding.UTF8.GetString(bytes).Replace(&quot;\0&quot;, &quot;&quot;);
++            }
++            else
++            {
++                for (int i = 0; i &lt; bytes.Length; i += 16)
+                 {
+-                    if ((i + j) &lt; bytes.Length)
++                    if (i != 0) { output += &quot;\n&quot;; }
++                    if (fieldName != &quot;&quot;) { output += fieldName + &quot;: &quot;; }
++
++                    for (int j = 0; j &lt; 16; j++)
+                     {
+-                        string s = String.Format(&quot;{0:X} &quot;, bytes[i + j]);
+-                        if (s.Length == 2)
++                        if ((i + j) &lt; bytes.Length)
+                         {
+-                            s = &quot;0&quot; + s;
++                            string s = String.Format(&quot;{0:X} &quot;, bytes[i + j]);
++                            if (s.Length == 2)
++                            {
++                                s = &quot;0&quot; + s;
++                            }
++
++                            output += s;
+                         }
+-
+-                        output += s;
++                        else
++                        {
++                            output += &quot;   &quot;;
++                        }
+                     }
+-                    else
+-                    {
+-                        output += &quot;   &quot;;
+-                    }
+-                }
+ 
+-                for (int j = 0; j &lt; 16 &amp;&amp; (i + j) &lt; bytes.Length; j++)
+-                {
+-                    if (bytes[i + j] &gt;= 0x20 &amp;&amp; bytes[i + j] &lt; 0x7E)
++                    for (int j = 0; j &lt; 16 &amp;&amp; (i + j) &lt; bytes.Length; j++)
+                     {
+-                        output += (char)bytes[i + j];
++                        if (bytes[i + j] &gt;= 0x20 &amp;&amp; bytes[i + j] &lt; 0x7E)
++                        {
++                            output += (char)bytes[i + j];
++                        }
++                        else
++                        {
++                            output += &quot;.&quot;;
++                        }
+                     }
+-                    else
+-                    {
+-                        output += &quot;.&quot;;
+-                    }
+                 }
+             }
++
++            return output;
+         }
+ 
+-        return output;
+-    }
++        /// &lt;summary&gt;
++        /// Convert a UTF8 string to a byte array
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;str&quot;&gt;The string to convert to a byte array&lt;/param&gt;
++        /// &lt;returns&gt;A null-terminated byte array&lt;/returns&gt;
++        public static byte[] StringToField(string str)
++        {
++            if (!str.EndsWith(&quot;\0&quot;)) { str += &quot;\0&quot;; }
++            return System.Text.UTF8Encoding.UTF8.GetBytes(str);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Convert a UTF8 string to a byte array
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;str&quot;&gt;The string to convert to a byte array&lt;/param&gt;
+-    /// &lt;returns&gt;A null-terminated byte array&lt;/returns&gt;
+-    public static byte[] StringToField(string str)
+-    {
+-        if (!str.EndsWith(&quot;\0&quot;)) { str += &quot;\0&quot;; }
+-        return System.Text.UTF8Encoding.UTF8.GetBytes(str);
+-    }
++        public static uint GetUnixTime()
++        {
++            return (uint)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
++        }
+ 
+-    public static uint GetUnixTime()
+-    {
+-        return (uint)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
+-    }
++        /// &lt;summary&gt;
++        /// Calculates the distance between two vectors
++        /// &lt;/summary&gt;
++        public static float VecDist(LLVector3 pointA, LLVector3 pointB)
++        {
++            float xd = pointB.X - pointA.X;
++            float yd = pointB.Y - pointA.Y;
++            float zd = pointB.Z - pointA.Z;
++            return (float)Math.Sqrt(xd * xd + yd * yd + zd * zd);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Calculates the distance between two vectors
+-    /// &lt;/summary&gt;
+-    public static float VecDist(LLVector3 pointA, LLVector3 pointB)
+-    {
+-        float xd = pointB.X - pointA.X;
+-        float yd = pointB.Y - pointA.Y;
+-        float zd = pointB.Z - pointA.Z;
+-        return (float)Math.Sqrt(xd * xd + yd * yd + zd * zd);
+-    }
++        /// &lt;summary&gt;
++        /// Calculate the magnitude of the supplied vector
++        /// &lt;/summary&gt;
++        public static float VecMag(LLVector3 vector)
++        {
++            return (float)Math.Sqrt(vector.X * vector.X + vector.Y * vector.Y + vector.Z * vector.Z);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Calculate the magnitude of the supplied vector
+-    /// &lt;/summary&gt;
+-    public static float VecMag(LLVector3 vector)
+-    {
+-        return (float)Math.Sqrt(vector.X * vector.X + vector.Y * vector.Y + vector.Z * vector.Z);
+-    }
++        /// &lt;summary&gt;
++        /// Return the supplied vector in normalized form
++        /// &lt;/summary&gt;
++        public static LLVector3 VecNorm(LLVector3 vector)
++        {
++            float mag = VecMag(vector);
++            return new LLVector3(vector.X / mag, vector.Y / mag, vector.Z / mag);
++        }
+ 
+-    /// &lt;summary&gt;
+-    /// Return the supplied vector in normalized form
+-    /// &lt;/summary&gt;
+-    public static LLVector3 VecNorm(LLVector3 vector)
+-    {
+-        float mag = VecMag(vector);
+-        return new LLVector3(vector.X/mag,vector.Y/mag,vector.Z/mag);
+-    }
++        /// &lt;summary&gt;
++        /// Calculate the rotation between two vectors
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;a&quot;&gt;Directional vector, such as 1,0,0 for the forward face&lt;/param&gt;
++        /// &lt;param name=&quot;b&quot;&gt;Target vector - normalize first with VecNorm&lt;/param&gt;
++        public static LLQuaternion RotBetween(LLVector3 a, LLVector3 b)
++        {
++            //A and B should both be normalized
++            //dotProduct is 0 if a and b are perpendicular. I think that's normal?
++            float dotProduct = (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
+ 
+-    /// &lt;summary&gt;
+-    /// Calculate the rotation between two vectors
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;a&quot;&gt;Directional vector, such as 1,0,0 for the forward face&lt;/param&gt;
+-    /// &lt;param name=&quot;b&quot;&gt;Target vector - normalize first with VecNorm&lt;/param&gt;
+-    public static LLQuaternion RotBetween(LLVector3 a, LLVector3 b)
+-    {
+-        //A and B should both be normalized
+-        //dotProduct is 0 if a and b are perpendicular. I think that's normal?
+-        float dotProduct = (a.X * b.X) + (a.Y * b.Y) + (a.Z * b.Z);
++            LLVector3 crossProduct = new LLVector3();
++            crossProduct.X = a.Y * b.Z - a.Z * b.Y;
++            crossProduct.Y = a.Z * b.X - a.X * b.Z;
++            crossProduct.Z = a.X * b.Y - a.Y * b.X;
+ 
+-        LLVector3 crossProduct = new LLVector3();
+-        crossProduct.X = a.Y * b.Z - a.Z * b.Y;
+-        crossProduct.Y = a.Z * b.X - a.X * b.Z;
+-        crossProduct.Z = a.X * b.Y - a.Y * b.X;
++            //float scalarProduct = (a.X * b.Y) + (a.Y * b.Z) + (a.Z * b.X); //not used?
++            float magProduct = VecMag(a) * VecMag(b);
++            double angle = Math.Acos(dotProduct / magProduct);
+ 
+-        //float scalarProduct = (a.X * b.Y) + (a.Y * b.Z) + (a.Z * b.X); //not used?
+-        float magProduct = VecMag(a) * VecMag(b);
+-        double angle = Math.Acos(dotProduct / magProduct);
++            LLVector3 axis = VecNorm(crossProduct);
++            float s = (float)Math.Sin(angle / 2);
++            return new LLQuaternion(axis.X * s, axis.Y * s, axis.Z * s, (float)Math.Cos(angle / 2));
++        }
+ 
+-        LLVector3 axis = VecNorm(crossProduct);
+-        float s = (float)Math.Sin(angle / 2);
+-        return new LLQuaternion(axis.X * s, axis.Y * s, axis.Z * s, (float)Math.Cos(angle / 2));
+-    }
++        /// &lt;summary&gt;
++        /// Decode a zerocoded byte array, used to decompress packets marked
++        /// with the zerocoded flag
++        /// &lt;/summary&gt;
++        /// &lt;remarks&gt;Any time a zero is encountered, the next byte is a count 
++        /// of how many zeroes to expand. One zero is encoded with 0x00 0x01, 
++        /// two zeroes is 0x00 0x02, three zeroes is 0x00 0x03, etc. The 
++        /// first four bytes are copied directly to the output buffer.
++        /// &lt;/remarks&gt;
++        /// &lt;param name=&quot;src&quot;&gt;The byte array to decode&lt;/param&gt;
++        /// &lt;param name=&quot;srclen&quot;&gt;The length of the byte array to decode&lt;/param&gt;
++        /// &lt;param name=&quot;dest&quot;&gt;The output byte array to decode to&lt;/param&gt;
++        /// &lt;returns&gt;The length of the output buffer&lt;/returns&gt;
++        public static int ZeroDecode(byte[] src, int srclen, byte[] dest)
++        {
++            uint zerolen = 0;
+ 
+-    /// &lt;summary&gt;
+-    /// Decode a zerocoded byte array, used to decompress packets marked
+-    /// with the zerocoded flag
+-    /// &lt;/summary&gt;
+-    /// &lt;remarks&gt;Any time a zero is encountered, the next byte is a count 
+-    /// of how many zeroes to expand. One zero is encoded with 0x00 0x01, 
+-    /// two zeroes is 0x00 0x02, three zeroes is 0x00 0x03, etc. The 
+-    /// first four bytes are copied directly to the output buffer.
+-    /// &lt;/remarks&gt;
+-    /// &lt;param name=&quot;src&quot;&gt;The byte array to decode&lt;/param&gt;
+-    /// &lt;param name=&quot;srclen&quot;&gt;The length of the byte array to decode&lt;/param&gt;
+-    /// &lt;param name=&quot;dest&quot;&gt;The output byte array to decode to&lt;/param&gt;
+-    /// &lt;returns&gt;The length of the output buffer&lt;/returns&gt;
+-    public static int ZeroDecode(byte[] src, int srclen, byte[] dest)
+-    {
+-        uint zerolen = 0;
++            Array.Copy(src, 0, dest, 0, 4);
++            zerolen += 4;
+ 
+-        Array.Copy(src, 0, dest, 0, 4);
+-        zerolen += 4;
++            //int bodylen;
++            //if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
++            //{
++            //    bodylen = srclen;
++            //}
++            //else
++            //{
++            //    bodylen = srclen - src[srclen - 1] * 4 - 1;
++            //}
++            int bodylen = srclen;
+ 
+-        //int bodylen;
+-        //if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
+-        //{
+-        //    bodylen = srclen;
+-        //}
+-        //else
+-        //{
+-        //    bodylen = srclen - src[srclen - 1] * 4 - 1;
+-        //}
+-        int bodylen = srclen;
+-
+-        uint i;
+-        for (i = zerolen; i &lt; bodylen; i++)
+-        {
+-            if (src[i] == 0x00)
++            uint i;
++            for (i = zerolen; i &lt; bodylen; i++)
+             {
+-                for (byte j = 0; j &lt; src[i + 1]; j++)
++                if (src[i] == 0x00)
+                 {
+-                    dest[zerolen++] = 0x00;
++                    for (byte j = 0; j &lt; src[i + 1]; j++)
++                    {
++                        dest[zerolen++] = 0x00;
++                    }
++
++                    i++;
+                 }
++                else
++                {
++                    dest[zerolen++] = src[i];
++                }
++            }
+ 
+-                i++;
++            // HACK: Fix truncated zerocoded messages
++            for (uint j = zerolen; j &lt; zerolen + 16; j++)
++            {
++                dest[j] = 0;
+             }
+-            else
++            zerolen += 16;
++
++            // copy appended ACKs
++            for (; i &lt; srclen; i++)
+             {
+                 dest[zerolen++] = src[i];
+             }
++
++            return (int)zerolen;
+         }
+ 
+-        // HACK: Fix truncated zerocoded messages
+-        for (uint j = zerolen; j &lt; zerolen + 16; j++)
++        /// &lt;summary&gt;
++        /// Decode enough of a byte array to get the packet ID.  Data before and
++        /// after the packet ID is undefined.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;src&quot;&gt;The byte array to decode&lt;/param&gt;
++        /// &lt;param name=&quot;dest&quot;&gt;The output byte array to encode to&lt;/param&gt;
++        public static void ZeroDecodeCommand(byte[] src, byte[] dest)
+         {
+-            dest[j] = 0;
++            for (int srcPos = 4, destPos = 4; destPos &lt; 8; ++srcPos)
++            {
++                if (src[srcPos] == 0x00)
++                {
++                    for (byte j = 0; j &lt; src[srcPos + 1]; ++j)
++                    {
++                        dest[destPos++] = 0x00;
++                    }
++
++                    ++srcPos;
++                }
++                else
++                {
++                    dest[destPos++] = src[srcPos];
++                }
++            }
+         }
+-        zerolen += 16;
+ 
+-        // copy appended ACKs
+-        for (; i &lt; srclen; i++)
++        /// &lt;summary&gt;
++        /// Encode a byte array with zerocoding. Used to compress packets marked
++        /// with the zerocoded flag. Any zeroes in the array are compressed down
++        /// to a single zero byte followed by a count of how many zeroes to expand
++        /// out. A single zero becomes 0x00 0x01, two zeroes becomes 0x00 0x02,
++        /// three zeroes becomes 0x00 0x03, etc. The first four bytes are copied
++        /// directly to the output buffer.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;src&quot;&gt;The byte array to encode&lt;/param&gt;
++        /// &lt;param name=&quot;srclen&quot;&gt;The length of the byte array to encode&lt;/param&gt;
++        /// &lt;param name=&quot;dest&quot;&gt;The output byte array to encode to&lt;/param&gt;
++        /// &lt;returns&gt;The length of the output buffer&lt;/returns&gt;
++        public static int ZeroEncode(byte[] src, int srclen, byte[] dest)
+         {
+-            dest[zerolen++] = src[i];
+-        }
++            uint zerolen = 0;
++            byte zerocount = 0;
+ 
+-        return (int)zerolen;
+-    }
++            Array.Copy(src, 0, dest, 0, 4);
++            zerolen += 4;
+ 
+-    /// &lt;summary&gt;
+-    /// Decode enough of a byte array to get the packet ID.  Data before and
+-    /// after the packet ID is undefined.
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;src&quot;&gt;The byte array to decode&lt;/param&gt;
+-    /// &lt;param name=&quot;dest&quot;&gt;The output byte array to encode to&lt;/param&gt;
+-    public static void ZeroDecodeCommand(byte[] src, byte[] dest)
+-    {
+-        for (int srcPos = 4, destPos = 4; destPos &lt; 8; ++srcPos)
+-        {
+-            if (src[srcPos] == 0x00)
++            int bodylen;
++            if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
+             {
+-                for (byte j = 0; j &lt; src[srcPos + 1]; ++j)
+-                {
+-                    dest[destPos++] = 0x00;
+-                }
+-
+-                ++srcPos;
++                bodylen = srclen;
+             }
+             else
+             {
+-                dest[destPos++] = src[srcPos];
++                bodylen = srclen - src[srclen - 1] * 4 - 1;
+             }
+-        }
+-    }
+ 
+-    /// &lt;summary&gt;
+-    /// Encode a byte array with zerocoding. Used to compress packets marked
+-    /// with the zerocoded flag. Any zeroes in the array are compressed down
+-    /// to a single zero byte followed by a count of how many zeroes to expand
+-    /// out. A single zero becomes 0x00 0x01, two zeroes becomes 0x00 0x02,
+-    /// three zeroes becomes 0x00 0x03, etc. The first four bytes are copied
+-    /// directly to the output buffer.
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;src&quot;&gt;The byte array to encode&lt;/param&gt;
+-    /// &lt;param name=&quot;srclen&quot;&gt;The length of the byte array to encode&lt;/param&gt;
+-    /// &lt;param name=&quot;dest&quot;&gt;The output byte array to encode to&lt;/param&gt;
+-    /// &lt;returns&gt;The length of the output buffer&lt;/returns&gt;
+-    public static int ZeroEncode(byte[] src, int srclen, byte[] dest)
+-    {
+-        uint zerolen = 0;
+-        byte zerocount = 0;
+-
+-        Array.Copy(src, 0, dest, 0, 4);
+-        zerolen += 4;
+-
+-        int bodylen;
+-        if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
+-        {
+-            bodylen = srclen;
+-        }
+-        else
+-        {
+-            bodylen = srclen - src[srclen - 1] * 4 - 1;
+-        }
+-
+-        uint i;
+-        for (i = zerolen; i &lt; bodylen; i++)
+-        {
+-            if (src[i] == 0x00)
++            uint i;
++            for (i = zerolen; i &lt; bodylen; i++)
+             {
+-                zerocount++;
+-
+-                if (zerocount == 0)
++                if (src[i] == 0x00)
+                 {
+-                    dest[zerolen++] = 0x00;
+-                    dest[zerolen++] = 0xff;
+                     zerocount++;
++
++                    if (zerocount == 0)
++                    {
++                        dest[zerolen++] = 0x00;
++                        dest[zerolen++] = 0xff;
++                        zerocount++;
++                    }
+                 }
+-            }
+-            else
+-            {
+-                if (zerocount != 0)
++                else
+                 {
+-                    dest[zerolen++] = 0x00;
+-                    dest[zerolen++] = (byte)zerocount;
+-                    zerocount = 0;
++                    if (zerocount != 0)
++                    {
++                        dest[zerolen++] = 0x00;
++                        dest[zerolen++] = (byte)zerocount;
++                        zerocount = 0;
++                    }
++
++                    dest[zerolen++] = src[i];
+                 }
++            }
+ 
++            if (zerocount != 0)
++            {
++                dest[zerolen++] = 0x00;
++                dest[zerolen++] = (byte)zerocount;
++            }
++
++            // copy appended ACKs
++            for (; i &lt; srclen; i++)
++            {
+                 dest[zerolen++] = src[i];
+             }
+-        }
+ 
+-        if (zerocount != 0)
+-        {
+-            dest[zerolen++] = 0x00;
+-            dest[zerolen++] = (byte)zerocount;
++            return (int)zerolen;
+         }
+ 
+-        // copy appended ACKs
+-        for (; i &lt; srclen; i++)
++        /// &lt;summary&gt;
++        /// Calculates the CRC (cyclic redundancy check) needed to upload inventory.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;creationDate&quot;&gt;Creation date&lt;/param&gt;
++        /// &lt;param name=&quot;saleType&quot;&gt;Sale type&lt;/param&gt;
++        /// &lt;param name=&quot;invType&quot;&gt;Inventory type&lt;/param&gt;
++        /// &lt;param name=&quot;type&quot;&gt;Type&lt;/param&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;Asset ID&lt;/param&gt;
++        /// &lt;param name=&quot;groupID&quot;&gt;Group ID&lt;/param&gt;
++        /// &lt;param name=&quot;salePrice&quot;&gt;Sale price&lt;/param&gt;
++        /// &lt;param name=&quot;ownerID&quot;&gt;Owner ID&lt;/param&gt;
++        /// &lt;param name=&quot;creatorID&quot;&gt;Creator ID&lt;/param&gt;
++        /// &lt;param name=&quot;itemID&quot;&gt;Item ID&lt;/param&gt;
++        /// &lt;param name=&quot;folderID&quot;&gt;Folder ID&lt;/param&gt;
++        /// &lt;param name=&quot;everyoneMask&quot;&gt;Everyone mask (permissions)&lt;/param&gt;
++        /// &lt;param name=&quot;flags&quot;&gt;Flags&lt;/param&gt;
++        /// &lt;param name=&quot;nextOwnerMask&quot;&gt;Next owner mask (permissions)&lt;/param&gt;
++        /// &lt;param name=&quot;groupMask&quot;&gt;Group mask (permissions)&lt;/param&gt;
++        /// &lt;param name=&quot;ownerMask&quot;&gt;Owner mask (permisions)&lt;/param&gt;
++        /// &lt;returns&gt;The calculated CRC&lt;/returns&gt;
++        public static uint InventoryCRC(int creationDate, byte saleType, sbyte invType, sbyte type,
++            LLUUID assetID, LLUUID groupID, int salePrice, LLUUID ownerID, LLUUID creatorID,
++            LLUUID itemID, LLUUID folderID, uint everyoneMask, uint flags, uint nextOwnerMask,
++            uint groupMask, uint ownerMask)
+         {
+-            dest[zerolen++] = src[i];
+-        }
++            uint CRC = 0;
+ 
+-        return (int)zerolen;
+-    }
++            // IDs
++            CRC += assetID.CRC(); // AssetID
++            CRC += folderID.CRC(); // FolderID
++            CRC += itemID.CRC(); // ItemID
+ 
+-    /// &lt;summary&gt;
+-    /// Calculates the CRC (cyclic redundancy check) needed to upload inventory.
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;creationDate&quot;&gt;Creation date&lt;/param&gt;
+-    /// &lt;param name=&quot;saleType&quot;&gt;Sale type&lt;/param&gt;
+-    /// &lt;param name=&quot;invType&quot;&gt;Inventory type&lt;/param&gt;
+-    /// &lt;param name=&quot;type&quot;&gt;Type&lt;/param&gt;
+-    /// &lt;param name=&quot;assetID&quot;&gt;Asset ID&lt;/param&gt;
+-    /// &lt;param name=&quot;groupID&quot;&gt;Group ID&lt;/param&gt;
+-    /// &lt;param name=&quot;salePrice&quot;&gt;Sale price&lt;/param&gt;
+-    /// &lt;param name=&quot;ownerID&quot;&gt;Owner ID&lt;/param&gt;
+-    /// &lt;param name=&quot;creatorID&quot;&gt;Creator ID&lt;/param&gt;
+-    /// &lt;param name=&quot;itemID&quot;&gt;Item ID&lt;/param&gt;
+-    /// &lt;param name=&quot;folderID&quot;&gt;Folder ID&lt;/param&gt;
+-    /// &lt;param name=&quot;everyoneMask&quot;&gt;Everyone mask (permissions)&lt;/param&gt;
+-    /// &lt;param name=&quot;flags&quot;&gt;Flags&lt;/param&gt;
+-    /// &lt;param name=&quot;nextOwnerMask&quot;&gt;Next owner mask (permissions)&lt;/param&gt;
+-    /// &lt;param name=&quot;groupMask&quot;&gt;Group mask (permissions)&lt;/param&gt;
+-    /// &lt;param name=&quot;ownerMask&quot;&gt;Owner mask (permisions)&lt;/param&gt;
+-    /// &lt;returns&gt;The calculated CRC&lt;/returns&gt;
+-    public static uint InventoryCRC(int creationDate, byte saleType, sbyte invType, sbyte type,
+-        LLUUID assetID, LLUUID groupID, int salePrice, LLUUID ownerID, LLUUID creatorID,
+-        LLUUID itemID, LLUUID folderID, uint everyoneMask, uint flags, uint nextOwnerMask,
+-        uint groupMask, uint ownerMask)
+-    {
+-        uint CRC = 0;
++            // Permission stuff
++            CRC += creatorID.CRC(); // CreatorID
++            CRC += ownerID.CRC(); // OwnerID
++            CRC += groupID.CRC(); // GroupID
+ 
+-        // IDs
+-        CRC += assetID.CRC(); // AssetID
+-        CRC += folderID.CRC(); // FolderID
+-        CRC += itemID.CRC(); // ItemID
++            // CRC += another 4 words which always seem to be zero -- unclear if this is a LLUUID or what
++            CRC += ownerMask;
++            CRC += nextOwnerMask;
++            CRC += everyoneMask;
++            CRC += groupMask;
+ 
+-        // Permission stuff
+-        CRC += creatorID.CRC(); // CreatorID
+-        CRC += ownerID.CRC(); // OwnerID
+-        CRC += groupID.CRC(); // GroupID
++            // The rest of the CRC fields
++            CRC += flags; // Flags
++            CRC += (uint)invType; // InvType
++            CRC += (uint)type; // Type 
++            CRC += (uint)creationDate; // CreationDate
++            CRC += (uint)salePrice;    // SalePrice
++            CRC += (uint)((uint)saleType * 0x07073096); // SaleType
+ 
+-        // CRC += another 4 words which always seem to be zero -- unclear if this is a LLUUID or what
+-        CRC += ownerMask;
+-        CRC += nextOwnerMask;
+-        CRC += everyoneMask;
+-        CRC += groupMask;
++            return CRC;
++        }
+ 
+-        // The rest of the CRC fields
+-        CRC += flags; // Flags
+-        CRC += (uint)invType; // InvType
+-        CRC += (uint)type; // Type 
+-        CRC += (uint)creationDate; // CreationDate
+-        CRC += (uint)salePrice;    // SalePrice
+-        CRC += (uint)((uint)saleType * 0x07073096); // SaleType
++        /// &lt;summary&gt;
++        /// Calculate the MD5 hash of a given string
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;password&quot;&gt;The password to hash&lt;/param&gt;
++        /// &lt;returns&gt;An MD5 hash in string format, with $1$ prepended&lt;/returns&gt;
++        public static string MD5(string password)
++        {
++            StringBuilder digest = new StringBuilder();
++            System.Security.Cryptography.MD5 md5 = new System.Security.Cryptography.MD5CryptoServiceProvider();
++            byte[] hash = md5.ComputeHash(Encoding.ASCII.GetBytes(password));
+ 
+-        return CRC;
+-    }
++            // Convert the hash to a hex string
++            foreach (byte b in hash)
++            {
++                digest.AppendFormat(&quot;{0:x2}&quot;, b);
++            }
+ 
+-    public static string MD5(string password)
+-    {
+-        StringBuilder digest = new StringBuilder();
+-        System.Security.Cryptography.MD5 md5 = new System.Security.Cryptography.MD5CryptoServiceProvider();
+-        byte[] hash = md5.ComputeHash(Encoding.ASCII.GetBytes(password));
++            return &quot;$1$&quot; + digest.ToString();
++        }
+ 
+-        // Convert the hash to a hex string
+-        foreach (byte b in hash)
++        public static void PacketListToXml(List&lt;Packet&gt; packets, XmlWriter xmlWriter)
+         {
+-            digest.AppendFormat(&quot;{0:x2}&quot;, b);
++            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
++            ns.Add(&quot;&quot;, &quot;&quot;);
++            XmlSerializer serializer = new XmlSerializer(typeof(List&lt;Packet&gt;));
++            serializer.Serialize(xmlWriter, packets, ns);
+         }
+-
+-        return &quot;$1$&quot; + digest.ToString();
+     }
+ }
+-}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2006-12-02 22:32:24 UTC (rev 674)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2006-12-03 01:50:00 UTC (rev 675)
+@@ -8,7 +8,7 @@
+ {
+     public class PacketLogCommand : Command
+     {
+-        XmlWriter Writer;
++        List&lt;Packet&gt; Packets = new List&lt;Packet&gt;();
+         bool Done = false;
+         int Count = 0;
+         int Total = 0;
+@@ -24,21 +24,23 @@
+             if (args.Length != 2)
+                 return &quot;Usage: packetlog 10 tenpackets.xml&quot;;
+ 
++            XmlWriter writer;
++            NetworkManager.PacketCallback callback = new NetworkManager.PacketCallback(OnPacket);
++
++            Packets.Clear();
+             Done = false;
+             Count = 0;
+-            NetworkManager.PacketCallback callback = new NetworkManager.PacketCallback(OnPacket);
+ 
+             try
+             {
+                 Total = Int32.Parse(args[0]);
+-                Writer = XmlWriter.Create(args[1]);
+-                Writer.WriteStartElement(&quot;packets&quot;);
++                writer = XmlWriter.Create(args[1]);
+ 
+                 Client.Network.RegisterCallback(PacketType.Default, callback);
+             }
+             catch (Exception e)
+             {
+-                return &quot;Usage: packetlog 10 tenpackets.xml&quot; + Environment.NewLine + e;
++                return &quot;Usage: packetlog 10 tenpackets.xml (&quot; + e + &quot;)&quot;;
+             }
+ 
+             while (!Done)
+@@ -48,30 +50,32 @@
+ 
+             Client.Network.UnregisterCallback(PacketType.Default, callback);
+ 
+-            lock (Writer)
++            try
+             {
+-                Writer.WriteEndElement();
+-                Writer.Close();
++                Helpers.PacketListToXml(Packets, writer);
+             }
++            catch (Exception e)
++            {
++                return &quot;Serialization failed: &quot; + e.ToString();
++            }
+ 
++            writer.Close();
++            Packets.Clear();
++
+             return &quot;Exported &quot; + Count + &quot; packets to &quot; + args[1];
+         }
+ 
+         private void OnPacket(Packet packet, Simulator simulator)
+         {
+-            lock (Writer)
++            lock (Packets)
+             {
+-                if (Writer.WriteState == WriteState.Error)
++                if (Count &gt;= Total)
+                 {
+                     Done = true;
+                 }
+-                else if (Count &gt;= Total)
+-                {
+-                    Done = true;
+-                }
+                 else
+                 {
+-                    packet.ToXml(Writer);
++                    Packets.Add(packet);
+                     Count++;
+                 }
+             }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000025.html">[Libsecondlife-commits] r674 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000027.html">[Libsecondlife-commits] r676 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#26">[ date ]</a>
+              <a href="thread.html#26">[ thread ]</a>
+              <a href="subject.html#26">[ subject ]</a>
+              <a href="author.html#26">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

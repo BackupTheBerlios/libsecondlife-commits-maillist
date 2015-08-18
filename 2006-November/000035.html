@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r653 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-November/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r653%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611290654.kAT6sFM6006608%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000009.html">
+   <LINK REL="Next"  HREF="000036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r653 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands</H1>
+    <B>lonecoder at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r653%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200611290654.kAT6sFM6006608%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r653 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands">lonecoder at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 29 07:54:15 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000009.html">[Libsecondlife-commits] r652 - branches/aditi/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000036.html">[Libsecondlife-commits] r654 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lonecoder
+Date: 2006-11-29 07:54:12 +0100 (Wed, 29 Nov 2006)
+New Revision: 653
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+Log:
+Updated TestClient to optionally read a master from a file.
+Added option for follow command to follow master if no target given.
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 01:07:04 UTC (rev 652)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-11-29 06:54:12 UTC (rev 653)
+@@ -11,7 +11,7 @@
+ 		public FollowCommand()
+ 		{
+ 			Name = &quot;follow&quot;;
+-			Description = &quot;Follow another avatar. (usage: follow FirstName LastName)&quot;;
++			Description = &quot;Follow another avatar. (usage: follow [FirstName LastName])  If no target is set then will follow master.&quot;;
+ 		}
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+@@ -20,6 +20,9 @@
+ 			for (int ct = 0; ct &lt; args.Length;ct++)
+ 				target = target + args[ct] + &quot; &quot;;
+ 			target = target.TrimEnd();
++
++			if (target.Length == 0)
++				target = TestClient.Master;
+ 			
+ 			if (Follow(target))
+ 				return &quot;Following &quot; + target;
+@@ -50,13 +53,13 @@
+ 		{
+             if (vecDist(followAvatar.Position, Client.Self.Position) &gt; DISTANCE_BUFFER)
+             {
+-                if (followAvatar.CurrentRegion.GridRegionData != null)
+-                {
+-                    // move toward target
+-                    ulong x = (ulong)(followAvatar.Position.X + (followAvatar.CurrentRegion.GridRegionData.X * 256));
+-                    ulong y = (ulong)(followAvatar.Position.Y + (followAvatar.CurrentRegion.GridRegionData.Y * 256));
+-                    Client.Self.AutoPilotLocal(Convert.ToInt32(followAvatar.Position.X), Convert.ToInt32(followAvatar.Position.Y), followAvatar.Position.Z);
+-                }
++                //move toward target
++				if (followAvatar.CurrentRegion.GridRegionData != null)
++				{
++					ulong x = (ulong)(followAvatar.Position.X + (followAvatar.CurrentRegion.GridRegionData.X * 256));
++					ulong y = (ulong)(followAvatar.Position.Y + (followAvatar.CurrentRegion.GridRegionData.Y * 256));
++					Client.Self.AutoPilotLocal(Convert.ToInt32(followAvatar.Position.X), Convert.ToInt32(followAvatar.Position.Y), followAvatar.Position.Z);
++				}
+             }
+ 			//else
+ 			//{
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-29 01:07:04 UTC (rev 652)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-11-29 06:54:12 UTC (rev 653)
+@@ -41,7 +41,7 @@
+                             lineNumber++;
+                             string[] tokens = line.Trim().Split(new char[] { ' ', ',' });
+ 
+-                            if (tokens.Length == 3)
++                            if (tokens.Length &gt;= 3)
+                             {
+                                 account = new LoginDetails();
+                                 account.FirstName = tokens[0];
+@@ -49,6 +49,11 @@
+                                 account.Password = tokens[2];
+ 
+                                 accounts.Add(account);
++
++								if (tokens.Length == 5)
++								{
++									master = tokens[3] + &quot; &quot; + tokens[4];
++								}
+                             }
+                             else
+                             {
+@@ -58,11 +63,12 @@
+                         }
+                     }
+                 }
+-                catch (Exception)
+-                {
+-                    Console.WriteLine(&quot;Error reading from &quot; + args[1]);
+-                    return;
+-                }
++				catch (Exception e)
++				{
++				    Console.WriteLine(&quot;Error reading from &quot; + args[1]);
++					Console.WriteLine(e.ToString());
++				    return;
++				}
+ 
+                 if (args.Length == 4)
+                 {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000009.html">[Libsecondlife-commits] r652 - branches/aditi/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000036.html">[Libsecondlife-commits] r654 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

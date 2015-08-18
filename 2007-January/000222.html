@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r818 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r818%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701080341.l083fcJw025766%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000221.html">
+   <LINK REL="Next"  HREF="000223.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r818 - trunk/libsecondlife-cs</H1>
+    <B>bushing at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r818%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701080341.l083fcJw025766%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r818 - trunk/libsecondlife-cs">bushing at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  8 04:41:38 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000221.html">[Libsecondlife-commits] r817 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000223.html">[Libsecondlife-commits] r819 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#222">[ date ]</a>
+              <a href="thread.html#222">[ thread ]</a>
+              <a href="subject.html#222">[ subject ]</a>
+              <a href="author.html#222">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bushing
+Date: 2007-01-08 04:41:37 +0100 (Mon, 08 Jan 2007)
+New Revision: 818
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+Log:
+added CoarseLocationUpdate handler
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-08 00:47:39 UTC (rev 817)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-08 03:41:37 UTC (rev 818)
+@@ -1028,7 +1028,16 @@
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void CoarseLocationHandler(Packet packet, Simulator simulator)
+         {
+-            // TODO: This will be useful one day
++            if (packet.Type == PacketType.CoarseLocationUpdate)
++	    {
++                CoarseLocationUpdatePacket p = (CoarseLocationUpdatePacket) packet;
++
++                if (p.Index.You &lt; 0 || p.Index.You &gt;= p.Location.Length) return;
++                /* 1.5 and 6 represent a 50% fudge factor (hysteresis) -- bushing */
++                if (Math.Abs(Position.X-p.Location[p.Index.You].X) &gt; 1.5) Position.X=p.Location[p.Index.You].X;
++                if (Math.Abs(Position.Y-p.Location[p.Index.You].Y) &gt; 1.5) Position.Y=p.Location[p.Index.You].Y;
++                if (Math.Abs(Position.Z-(p.Location[p.Index.You].Z*4)) &gt; 6) Position.Z=p.Location[p.Index.You].Z*4;
++            }
+         }
+ 
+         /// &lt;summary&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000221.html">[Libsecondlife-commits] r817 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000223.html">[Libsecondlife-commits] r819 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#222">[ date ]</a>
+              <a href="thread.html#222">[ thread ]</a>
+              <a href="subject.html#222">[ subject ]</a>
+              <a href="author.html#222">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

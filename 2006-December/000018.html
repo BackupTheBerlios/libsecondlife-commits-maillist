@@ -1,0 +1,540 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r667 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r667%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612012332.kB1NWDGU003830%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000017.html">
+   <LINK REL="Next"  HREF="000019.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r667 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r667%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612012332.kB1NWDGU003830%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r667 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  2 00:32:13 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000017.html">[Libsecondlife-commits] r666 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000019.html">[Libsecondlife-commits] r668 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-02 00:32:12 +0100 (Sat, 02 Dec 2006)
+New Revision: 667
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+Modified:
+   trunk/libsecondlife-cs/Prims.cs
+   trunk/libsecondlife-cs/SerializableDictionary.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+* Added ImpotCommand and IMCommand to TestClient (neither are working yet)
+* Added documentation to TextureEntry and renamed SetFace() to CreateFace()
+
+Modified: trunk/libsecondlife-cs/Prims.cs
+===================================================================
+--- trunk/libsecondlife-cs/Prims.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/Prims.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -176,7 +176,7 @@
+         [XmlElement(&quot;particles&quot;)] public ParticleSystem ParticleSys = new ParticleSystem();
+ 
+         /// &lt;summary&gt;
+-        /// Default constructor
++        /// Default constructor, zeroes out or sets default prim parameters
+         /// &lt;/summary&gt;
+         public PrimObject()
+         {
+
+Modified: trunk/libsecondlife-cs/SerializableDictionary.cs
+===================================================================
+--- trunk/libsecondlife-cs/SerializableDictionary.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/SerializableDictionary.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -80,18 +80,20 @@
+     {
+         XmlSerializer keySerializer = new XmlSerializer(typeof(TKey));
+         XmlSerializer valueSerializer = new XmlSerializer(typeof(TValue));
++        XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
++        ns.Add(&quot;&quot;, &quot;&quot;);
+ 
+         foreach (TKey key in this.Keys)
+         {
+             writer.WriteStartElement(&quot;item&quot;);
+ 
+             writer.WriteStartElement(&quot;key&quot;);
+-            keySerializer.Serialize(writer, key);
++            keySerializer.Serialize(writer, key, ns);
+             writer.WriteEndElement();
+ 
+             writer.WriteStartElement(&quot;value&quot;);
+             TValue value = this[key];
+-            valueSerializer.Serialize(writer, value);
++            valueSerializer.Serialize(writer, value, ns);
+             writer.WriteEndElement();
+             writer.WriteEndElement();
+         }
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/Textures.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -32,7 +32,7 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// 
++    /// The type of bump-mapping applied to a face
+     /// &lt;/summary&gt;
+     public enum Bumpiness
+     {
+@@ -75,7 +75,7 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// The level of shininess applied to a face
+     /// &lt;/summary&gt;
+     public enum Shininess
+     {
+@@ -90,7 +90,7 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// The texture mapping style used for a face
+     /// &lt;/summary&gt;
+     public enum Mapping
+     {
+@@ -132,8 +132,13 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// Represents all of the texturable faces for an object
+     /// &lt;/summary&gt;
++    /// &lt;remarks&gt;Objects in Second Life have infinite faces, with each face
++    /// using the properties of the default face unless set otherwise. So if
++    /// you have a TextureEntry with a default texture uuid of X, and face 72
++    /// has a texture UUID of Y, every face would be textured with X except for
++    /// face 72 that uses Y.&lt;/remarks&gt;
+     public class TextureEntry
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -143,28 +148,44 @@
+             new SerializableDictionary&lt;uint,TextureEntryFace&gt;();
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor, DefaultTexture will remain null
+         /// &lt;/summary&gt;
+         public TextureEntry()
+         {
+         }
+ 
+-        public TextureEntry(LLUUID textureID)
++        /// &lt;summary&gt;
++        /// Constructor that takes a default texture UUID
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;textureID&quot;&gt;Texture UUID to use as the default texture&lt;/param&gt;
++        public TextureEntry(LLUUID defaultTextureID)
+         {
+             DefaultTexture = new TextureEntryFace(null);
+-            DefaultTexture.TextureID = textureID;
++            DefaultTexture.TextureID = defaultTextureID;
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor that creates the TextureEntry class from a byte array
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;data&quot;&gt;Byte array containing the TextureEntry field&lt;/param&gt;
++        /// &lt;param name=&quot;pos&quot;&gt;Starting position of the TextureEntry field in 
++        /// the byte array&lt;/param&gt;
++        /// &lt;param name=&quot;length&quot;&gt;Length of the TextureEntry field, in bytes&lt;/param&gt;
+         public TextureEntry(byte[] data, int pos, int length)
+         {
+             FromBytes(data, pos, length);
+         }
+ 
++        /// &lt;summary&gt;
++        /// Returns the TextureEntryFace that is applied to the specified 
++        /// index. If a custom texture is not set for this face that would be
++        /// the default texture for this TextureEntry. Do not modify the 
++        /// returned TextureEntryFace, it will have undefined results. Use 
++        /// CreateFace() to get a TextureEntryFace that is safe for writing
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;index&quot;&gt;The index number of the face to retrieve&lt;/param&gt;
++        /// &lt;returns&gt;A TextureEntryFace containing all the properties for that
++        /// face, suitable for read-only operations&lt;/returns&gt;
+         public TextureEntryFace GetFace(uint index)
+         {
+             if (FaceTextures.ContainsKey(index))
+@@ -174,11 +195,15 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// This will either create a new face if a custom face for the given
++        /// index is not defined, or return the custom face for that index if
++        /// it already exists
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;index&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public TextureEntryFace SetFace(uint index)
++        /// &lt;param name=&quot;index&quot;&gt;The index number of the face to create or 
++        /// retrieve&lt;/param&gt;
++        /// &lt;returns&gt;A TextureEntryFace containing all the properties for that
++        /// face&lt;/returns&gt;
++        public TextureEntryFace CreateFace(uint index)
+         {
+             if (!FaceTextures.ContainsKey(index))
+                 FaceTextures[index] = new TextureEntryFace(this.DefaultTexture);
+@@ -190,7 +215,7 @@
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public byte[] GetBytes()
++        public byte[] ToBytes()
+         {
+             if (DefaultTexture == null)
+             {
+@@ -482,7 +507,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).TextureID = tmpUUID;
++                        CreateFace(face).TextureID = tmpUUID;
+             }
+             //Read RGBA --------------------------------------------
+             DefaultTexture.RGBA = (uint)(data[i] + (data[i + 1] &lt;&lt; 8) + (data[i + 2] &lt;&lt; 16) + (data[i + 3] &lt;&lt; 24));
+@@ -495,7 +520,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).RGBA = tmpUint;
++                        CreateFace(face).RGBA = tmpUint;
+             }
+             //Read RepeatU -----------------------------------------
+             DefaultTexture.RepeatU = RepeatFloat(data, i);
+@@ -508,7 +533,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).RepeatU = tmpFloat;
++                        CreateFace(face).RepeatU = tmpFloat;
+             }
+             //Read RepeatV -----------------------------------------
+             DefaultTexture.RepeatV = RepeatFloat(data, i);
+@@ -521,7 +546,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).RepeatV = tmpFloat;
++                        CreateFace(face).RepeatV = tmpFloat;
+             }
+             //Read OffsetU -----------------------------------------
+             DefaultTexture.OffsetU = OffsetFloat(data, i);
+@@ -534,7 +559,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).OffsetU = tmpFloat;
++                        CreateFace(face).OffsetU = tmpFloat;
+             }
+             //Read OffsetV -----------------------------------------
+             DefaultTexture.OffsetV = OffsetFloat(data, i);
+@@ -547,7 +572,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).OffsetV = tmpFloat;
++                        CreateFace(face).OffsetV = tmpFloat;
+             }
+             //Read Rotation ----------------------------------------
+             DefaultTexture.Rotation = RotationFloat(data, i);
+@@ -560,7 +585,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).Rotation = tmpFloat;
++                        CreateFace(face).Rotation = tmpFloat;
+             }
+             //Read Flags1 ------------------------------------------
+             DefaultTexture.Flags1 = data[i];
+@@ -573,7 +598,7 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).Flags1 = tmpByte;
++                        CreateFace(face).Flags1 = tmpByte;
+             }
+             //Read Flags2 ------------------------------------------
+             DefaultTexture.Flags2 = data[i];
+@@ -586,14 +611,16 @@
+ 
+                 for (uint face = 0, bit = 1; face &lt; BitfieldSize; face++, bit &lt;&lt;= 1)
+                     if ((faceBits &amp; bit) != 0)
+-                        SetFace(face).Flags2 = tmpByte;
++                        CreateFace(face).Flags2 = tmpByte;
+             }
+         }
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A single textured face. Don't instantiate this class yourself, use the
++    /// methods in TextureEntry
+     /// &lt;/summary&gt;
++    [XmlRoot(&quot;face&quot;)]
+     public class TextureEntryFace
+     {
+         [XmlAttribute(&quot;rgba&quot;)] private uint rgba;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -34,20 +34,23 @@
+                 return &quot;Usage: export uuid outputfile.xml&quot;;
+             }
+ 
+-            foreach (PrimObject prim in TestClient.Prims.Values)
++            lock (TestClient.Prims)
+             {
+-                if (prim.ID == id)
++                foreach (PrimObject prim in TestClient.Prims.Values)
+                 {
+-                    if (prim.ParentID != 0)
++                    if (prim.ID == id)
+                     {
+-                        localid = prim.ParentID;
++                        if (prim.ParentID != 0)
++                        {
++                            localid = prim.ParentID;
++                        }
++                        else
++                        {
++                            localid = prim.LocalID;
++                        }
++
++                        break;
+                     }
+-                    else
+-                    {
+-                        localid = prim.LocalID;
+-                    }
+-
+-                    break;
+                 }
+             }
+ 
+@@ -58,12 +61,15 @@
+                     XmlWriter writer = XmlWriter.Create(file);
+                     writer.WriteStartElement(&quot;primitives&quot;);
+ 
+-                    foreach (PrimObject prim in TestClient.Prims.Values)
++                    lock (TestClient.Prims)
+                     {
+-                        if (prim.LocalID == localid || prim.ParentID == localid)
++                        foreach (PrimObject prim in TestClient.Prims.Values)
+                         {
+-                            prim.ToXml(writer);
+-                            count++;
++                            if (prim.LocalID == localid || prim.ParentID == localid)
++                            {
++                                prim.ToXml(writer);
++                                count++;
++                            }
+                         }
+                     }
+ 
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -0,0 +1,81 @@
++using System;
++using System.Collections.Generic;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ImCommand : Command
++    {
++        bool DirLookupComplete = false;
++
++        public ImCommand()
++        {
++            Name = &quot;im&quot;;
++            Description = &quot;Instant message someone. Usage: im [firstname] [lastname] [message]&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            return &quot;FIXME&quot;;
++            // How do we register the callback only once for each client?
++
++            if (args.Length &lt; 3)
++                return &quot;Usage: im [firstname] [lastname] [message]&quot;;
++
++            string toAgentName = args[0] + &quot; &quot; + args[1];
++
++            string message = String.Empty;
++            for (int ct = 2; ct &lt; args.Length; ct++)
++                message += args[ct] + &quot; &quot;;
++            message = message.TrimEnd();
++            if (message.Length &gt; 1023) message = message.Remove(1023);
++
++            if (!TestClient.SharedValues.ContainsKey(&quot;name2key&quot;))
++            {
++                // Initialize the shared name2key dictionary
++                TestClient.SharedValues[&quot;name2key&quot;] = new Dictionary&lt;string, LLUUID&gt;();
++            }
++
++            Dictionary&lt;string, LLUUID&gt; name2key = (Dictionary&lt;string, LLUUID&gt;)TestClient.SharedValues[&quot;name2key&quot;];
++
++            if (name2key.ContainsKey(toAgentName))
++            {
++                if (name2key[toAgentName] != LLUUID.Zero)
++                {
++                    Client.Self.InstantMessage(name2key[toAgentName], message);
++                    return &quot;IM sent to &quot; + name2key[toAgentName].ToStringHyphenated();
++                }
++                else
++                {
++                    return &quot;Lookup failed for &quot; + toAgentName;
++                }
++            }
++            else
++            {
++                // Send the Query
++                DirFindQueryPacket find = new DirFindQueryPacket();
++                find.AgentData.AgentID = Client.Network.AgentID;
++                find.AgentData.SessionID = Client.Network.SessionID;
++                find.QueryData.QueryFlags = 1;
++                find.QueryData.QueryText = Helpers.StringToField(toAgentName);
++                find.QueryData.QueryID = new LLUUID(&quot;00000000000000000000000000000001&quot;);
++                find.QueryData.QueryStart = 0;
++
++                Client.Network.SendPacket(find);
++
++                while (!DirLookupComplete)
++                {
++                    // Wait for 
++                }
++            }
++
++            return &quot;ERROR: IM TERMINATED&quot;;
++        }
++
++        private void OnDirFindReply(Simulator simulator, Packet packet)
++        {
++            ;
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -0,0 +1,22 @@
++using System;
++using System.Collections.Generic;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ImportCommand : Command
++    {
++        public ImportCommand()
++        {
++            Name = &quot;import&quot;;
++            Description = &quot;Import prims from an exported xml file. Usage: import [filename.xml]&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            // How do we deserialize multiple PrimObject classes from an xml file anyways?
++            return &quot;FIXME&quot;;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-01 23:32:12 UTC (rev 667)
+@@ -22,6 +22,7 @@
+         public Dictionary&lt;uint, PrimObject&gt; Prims = new Dictionary&lt;uint,PrimObject&gt;();
+         public Dictionary&lt;uint, Avatar&gt; Avatars = new Dictionary&lt;uint,Avatar&gt;();
+         public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
++        public Dictionary&lt;string, object&gt; SharedValues = new Dictionary&lt;string, object&gt;();
+         public bool Running = true;
+ 	    public string Master = &quot;&quot;;
+ 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-01 00:28:53 UTC (rev 666)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-01 23:32:12 UTC (rev 667)
+@@ -37,6 +37,8 @@
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\IMCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\ImportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoadCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000017.html">[Libsecondlife-commits] r666 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000019.html">[Libsecondlife-commits] r668 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,690 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r711 - in trunk/libsecondlife-cs: .	AssetSystem examples/ParcelDownload examples/Teleport	examples/groupmanager examples/name2key
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r711%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/ParcelDownload%20examples/Teleport%0A%09examples/groupmanager%20examples/name2key&In-Reply-To=%3C200612111246.kBBCkwVd028530%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000068.html">
+   <LINK REL="Next"  HREF="000070.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r711 - in trunk/libsecondlife-cs: .	AssetSystem examples/ParcelDownload examples/Teleport	examples/groupmanager examples/name2key</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r711%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/ParcelDownload%20examples/Teleport%0A%09examples/groupmanager%20examples/name2key&In-Reply-To=%3C200612111246.kBBCkwVd028530%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r711 - in trunk/libsecondlife-cs: .	AssetSystem examples/ParcelDownload examples/Teleport	examples/groupmanager examples/name2key">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 13:46:58 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000068.html">[Libsecondlife-commits] r710 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000070.html">[Libsecondlife-commits] r712 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-11 13:46:58 +0100 (Mon, 11 Dec 2006)
+New Revision: 711
+
+Added:
+   trunk/libsecondlife-cs/Settings.cs
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs
+   trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+   trunk/libsecondlife-cs/examples/groupmanager/frmGroupManager.cs
+   trunk/libsecondlife-cs/examples/name2key/name2key.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Added a Settings class
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -85,7 +85,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Handle the appropriate sink fee assoiacted with an asset upload
++        /// Handle the appropriate sink fee associated with an asset upload
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;sinkType&quot;&gt;&lt;/param&gt;
+         public void SinkFee(int sinkType)
+@@ -93,7 +93,7 @@
+ 			switch( sinkType )
+ 			{
+ 				case SINK_FEE_IMAGE:
+-					slClient.Self.GiveMoney( LLUUID.Zero, 10, &quot;Image Upload&quot; );
++					slClient.Self.GiveMoney( LLUUID.Zero, slClient.Settings.UPLOAD_COST, &quot;Image Upload&quot; );
+ 					break;
+ 				default:
+ 					throw new Exception(&quot;AssetManager: Unknown sinktype (&quot; + sinkType + &quot;)&quot;);
+@@ -119,7 +119,7 @@
+                 LLUUID assetID = curUploadRequest.DoUpload();
+                 if (asset.Type == Asset.ASSET_TYPE_IMAGE)
+                 {
+-                    //SinkFee(SINK_FEE_IMAGE);
++                    SinkFee(SINK_FEE_IMAGE);
+                 }
+                 return assetID;
+             }
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/Helpers.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -38,8 +38,6 @@
+     /// &lt;/summary&gt;
+     public class Helpers
+     {
+-        /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
+-        public readonly static string VERSION = &quot;libsecondlife 0.0.9&quot;;
+         /// &lt;summary&gt;This header flag signals that ACKs are appended to the packet&lt;/summary&gt;
+         public const byte MSG_APPENDED_ACKS = 0x10;
+         /// &lt;summary&gt;This header flag signals that this packet has been sent before&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -167,7 +167,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Generate an Instant Message (Full Arguments).
++        /// Generate an Instant Message (full arguments)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
+         /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
+@@ -288,6 +288,46 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Request the list of muted things for this avatar
++        /// &lt;/summary&gt;
++        public void RequestMuteList()
++        {
++            MuteListRequestPacket mute = new MuteListRequestPacket();
++            mute.AgentData.AgentID = Client.Network.AgentID;
++            mute.AgentData.SessionID = Client.Network.SessionID;
++            mute.MuteData.MuteCRC = 0;
++
++            Client.Network.SendPacket(mute);
++        }
++
++        /// &lt;summary&gt;
++        /// Request the current L$ balance
++        /// &lt;/summary&gt;
++        public void RequestBalance()
++        {
++            MoneyBalanceRequestPacket money = new MoneyBalanceRequestPacket();
++            money.AgentData.AgentID = Client.Network.AgentID;
++            money.AgentData.SessionID = Client.Network.SessionID;
++            money.MoneyData.TransactionID = LLUUID.Zero;
++
++            Client.Network.SendPacket(money);
++        }
++
++        /// &lt;summary&gt;
++        /// Set the always running toggle on the server
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;alwaysRun&quot;&gt;Whether the avatar should always run or not&lt;/param&gt;
++        public void SetAlwaysRun(bool alwaysRun)
++        {
++            SetAlwaysRunPacket run = new SetAlwaysRunPacket();
++            run.AgentData.AgentID = Client.Network.AgentID;
++            run.AgentData.SessionID = Client.Network.SessionID;
++            run.AgentData.AlwaysRun = alwaysRun;
++
++            Client.Network.SendPacket(run);
++        }
++
++        /// &lt;summary&gt;
+         /// Follows a call to RequestSit() to actually sit on the object
+         /// &lt;/summary&gt;
+         public void Sit()
+@@ -312,18 +352,6 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Toggle running on or off
+-        /// &lt;/summary&gt;
+-        public void SetAlwaysRun(bool running)
+-        {
+-            SetAlwaysRunPacket run = new SetAlwaysRunPacket();
+-            run.AgentData.AgentID = Client.Network.AgentID;
+-            run.AgentData.SessionID = Client.Network.SessionID;
+-            run.AgentData.AlwaysRun = running;
+-            Client.Network.SendPacket(run);
+-        }
+-
+-        /// &lt;summary&gt;
+         /// Give Money to destionation Object or Avatar
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;target&quot;&gt;UUID of the Target Object/Avatar&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -57,6 +57,12 @@
+         public Region Region;
+ 
+         /// &lt;summary&gt;
++        /// Used internally to track sim disconnections, do not modify this 
++        /// variable.
++        /// &lt;/summary&gt;
++        public bool DisconnectCandidate = false;
++
++        /// &lt;summary&gt;
+         /// The ID number associated with this particular connection to the 
+         /// simulator, used to emulate TCP connections. This is used 
+         /// internally for packets that have a CircuitCode field.
+@@ -84,12 +90,6 @@
+             get { return connected; }
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// Used internally to track sim disconnections, do not modify this 
+-        /// variable.
+-        /// &lt;/summary&gt;
+-        public bool DisconnectCandidate = false;
+-
+         private NetworkManager Network;
+         private Dictionary&lt;PacketType, List&lt;NetworkManager.PacketCallback&gt;&gt; Callbacks;
+         private uint Sequence = 0;
+@@ -101,7 +101,7 @@
+         // Packets we sent out that need ACKs from the simulator
+         private Dictionary&lt;uint, Packet&gt; NeedAck = new Dictionary&lt;uint, Packet&gt;();
+         // Sequence numbers of packets we've received from the simulator
+-        private Queue&lt;uint&gt; Inbox = new Queue&lt;uint&gt;(InboxSize);
++        private Queue&lt;uint&gt; Inbox;
+         // ACKs that are queued up to be sent to the simulator
+         private Dictionary&lt;uint, uint&gt; PendingAcks = new Dictionary&lt;uint, uint&gt;();
+         private bool connected = false;
+@@ -109,24 +109,6 @@
+         private IPEndPoint ipEndPoint;
+         private EndPoint endPoint;
+         private System.Timers.Timer AckTimer;
+-        // The maximum value of a packet sequence number. After that we assume the 
+-        // sequence number just rolls over? Or maybe the protocol isn't able to 
+-        // sustain a connection past that
+-        private const int MaxSequence = 0xFFFFFF;
+-        // The maximum size of the sequence number inbox, used to 
+-        // check for resent and/or duplicate packets
+-        private const int InboxSize = 100;
+-        // Millisecond interval between ticks, where all ACKs are sent out and the age of 
+-        // unACKed packets is checked
+-        private const int TickLength = 500;
+-        // Milliseconds before a packet is assumed lost and resent
+-        private const int ResendTimeout = 4000;
+-        // Milliseconds before the connection to a simulator is assumed lost
+-        private const int SimConnectTimeout = 15000;
+-        // Maximum number of queued ACKs to be sent before SendAcks() is forced
+-        private const int MaxPendingAcks = 10;
+-        // Maximum number of ACKs to append to a packet
+-        private const int MaxAppendedAcks = 10;
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -144,7 +126,8 @@
+             Callbacks = callbacks;
+             Region = new Region(client);
+             circuitCode = circuit;
+-            AckTimer = new System.Timers.Timer(TickLength);
++            Inbox = new Queue&lt;uint&gt;(Client.Settings.INBOX_SIZE);
++            AckTimer = new System.Timers.Timer(Client.Settings.NETWORK_TICK_LENGTH);
+             AckTimer.Elapsed += new ElapsedEventHandler(AckTimer_Elapsed);
+ 
+             // Initialize the callback for receiving a new packet
+@@ -180,7 +163,7 @@
+ 
+                 while (true)
+                 {
+-                    if (connected || Environment.TickCount - start &gt; SimConnectTimeout)
++                    if (connected || Environment.TickCount - start &gt; Client.Settings.SIMULATOR_TIMEOUT)
+                     {
+                         return;
+                     }
+@@ -253,7 +236,7 @@
+             if (incrementSequence)
+             {
+                 // Set the sequence number
+-                if (Sequence &gt; MaxSequence)
++                if (Sequence &gt; Client.Settings.MAX_SEQUENCE)
+                     Sequence = 1;
+                 else
+                     Sequence++;
+@@ -285,7 +268,7 @@
+                         // Append any ACKs that need to be sent out to this packet
+                         lock (PendingAcks)
+                         {
+-                            if (PendingAcks.Count &gt; 0 &amp;&amp; PendingAcks.Count &lt; MaxAppendedAcks &amp;&amp;
++                            if (PendingAcks.Count &gt; 0 &amp;&amp; PendingAcks.Count &lt; Client.Settings.MAX_APPENDED_ACKS &amp;&amp;
+                                 packet.Type != PacketType.PacketAck &amp;&amp;
+                                 packet.Type != PacketType.LogoutRequest)
+                             {
+@@ -421,7 +404,7 @@
+             {
+                 foreach (Packet packet in NeedAck.Values)
+                 {
+-                    if (now - packet.TickCount &gt; ResendTimeout)
++                    if (now - packet.TickCount &gt; Client.Settings.RESEND_TIMEOUT)
+                     {
+                         Client.Log(&quot;Resending &quot; + packet.Type.ToString() + &quot; packet, &quot; + 
+                             (now - packet.TickCount) + &quot;ms have passed&quot;, Helpers.LogLevel.Info);
+@@ -477,7 +460,7 @@
+             // Track the sequence number for this packet if it's marked as reliable
+             if (packet.Header.Reliable)
+             {
+-                if (PendingAcks.Count &gt; MaxPendingAcks)
++                if (PendingAcks.Count &gt; Client.Settings.MAX_PENDING_ACKS)
+                 {
+                     SendAcks();
+                 }
+@@ -516,7 +499,7 @@
+             // Add this packet to our inbox
+             lock (Inbox)
+             {
+-                if (Inbox.Count &gt;= InboxSize)
++                while (Inbox.Count &gt;= Client.Settings.INBOX_SIZE)
+                 {
+                     Inbox.Dequeue();
+                 }
+@@ -797,6 +780,7 @@
+                 throw new NotConnectedException();
+             }
+         }
++
+         /// &lt;summary&gt;
+         /// Use this if you want to login to a specific location
+         /// &lt;/summary&gt;
+@@ -805,7 +789,6 @@
+         /// &lt;param name=&quot;y&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;z&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;string with a value that can be used in the start field in .DefaultLoginValues()&lt;/returns&gt;
+-
+         public static string StartLocation(string sim, int x, int y, int z)
+         {
+             //uri:sim&amp;x&amp;y&amp;z
+@@ -821,8 +804,8 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public static Dictionary&lt;string, object&gt; DefaultLoginValues(
+-            string firstName, string lastName, string password, string userAgent, string author)
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++            string password, string userAgent, string author)
+         {
+             return DefaultLoginValues(firstName, lastName, password, &quot;00:00:00:00:00:00&quot;, &quot;last&quot;,
+                 1, 50, 50, 50, &quot;Win&quot;, &quot;0&quot;, userAgent, author, false);
+@@ -837,9 +820,8 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public static Dictionary&lt;string, object&gt; DefaultLoginValues(
+-            string firstName, string lastName, string password, string startLocation, string userAgent, string author,
+-            bool md5pass)
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++            string password, string startLocation, string userAgent, string author, bool md5pass)
+         {
+             return DefaultLoginValues(firstName, lastName, password, &quot;00:00:00:00:00:00&quot;, startLocation,
+                 1, 50, 50, 50, &quot;Win&quot;, &quot;0&quot;, userAgent, author, md5pass);
+@@ -858,8 +840,8 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public static Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName,
+-            string lastName, string password, string mac, string startLocation, string platform,
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++            string password, string mac, string startLocation, string platform, 
+             string viewerDigest, string userAgent, string author)
+         {
+             return DefaultLoginValues(firstName, lastName, password, mac, startLocation,
+@@ -883,9 +865,10 @@
+         /// &lt;param name=&quot;userAgent&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;author&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public static Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName,
+-            string lastName, string password, string mac, string startLocation, int major, int minor,
+-            int patch, int build, string platform, string viewerDigest, string userAgent, string author, bool md5pass)
++        public Dictionary&lt;string, object&gt; DefaultLoginValues(string firstName, string lastName, 
++            string password, string mac, string startLocation, int major, int minor, int patch, 
++            int build, string platform, string viewerDigest, string userAgent, string author, 
++            bool md5pass)
+         {
+             Dictionary&lt;string, object&gt; values = new Dictionary&lt;string, object&gt;();
+ 
+@@ -902,7 +885,7 @@
+             values[&quot;agree_to_tos&quot;] = &quot;true&quot;;
+             values[&quot;read_critical&quot;] = &quot;true&quot;;
+             values[&quot;viewer_digest&quot;] = viewerDigest;
+-            values[&quot;user-agent&quot;] = userAgent + &quot; (&quot; + Helpers.VERSION + &quot;)&quot;;
++            values[&quot;user-agent&quot;] = userAgent + &quot; (&quot; + Client.Settings.VERSION + &quot;)&quot;;
+             values[&quot;author&quot;] = author;
+ 
+             // Build the options array
+@@ -950,7 +933,7 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Login(string firstName, string lastName, string password, string userAgent, string author)
+         {
+-            Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(firstName, lastName,
++            Dictionary&lt;string, object&gt; loginParams = DefaultLoginValues(firstName, lastName,
+                 password, &quot;last&quot;, userAgent, author, false);
+             return Login(loginParams);
+         }
+@@ -969,7 +952,7 @@
+         public bool Login(string firstName, string lastName, string password, string userAgent, string start,
+             string author, bool md5pass)
+         {
+-            Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(firstName, lastName,
++            Dictionary&lt;string, object&gt; loginParams = DefaultLoginValues(firstName, lastName,
+                 password, start, userAgent, author, md5pass);
+             return Login(loginParams);
+         }
+@@ -981,7 +964,7 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Login(Dictionary&lt;string, object&gt; loginParams)
+         {
+-            return Login(loginParams, SecondLife.LOGIN_SERVER);
++            return Login(loginParams, Client.Settings.LOGIN_SERVER);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -1307,10 +1290,10 @@
+             // Request the economy data
+             SendPacket(new EconomyDataRequestPacket());
+ 
+-            // TODO: We should be setting the initial avatar height/width around here 
++            // TODO: Should the appearance manager be handling this?
+             //Client.Avatar.SetHeightWidth(676, 909);
+ 
+-            // Set the initial avatar camera position
++            // TODO: A movement class should be handling this
+             Avatar.AgentUpdateFlags controlFlags = Avatar.AgentUpdateFlags.AGENT_CONTROL_FINISH_ANIM;
+             LLVector3 position = new LLVector3(128, 128, 32);
+             LLVector3 forwardAxis = new LLVector3(0, 0.999999f, 0);
+@@ -1319,32 +1302,8 @@
+             Client.Self.UpdateCamera(controlFlags, position, forwardAxis, leftAxis, upAxis, LLQuaternion.Identity,
+                 LLQuaternion.Identity, 384.0f, true);
+ 
+-            // TODO: Do we ever want to set this to true?
+-            SetAlwaysRunPacket run = new SetAlwaysRunPacket();
+-            run.AgentData.AgentID = AgentID;
+-            run.AgentData.SessionID = SessionID;
+-            run.AgentData.AlwaysRun = false;
+-            SendPacket(run);
+-
+-            // TODO: This information is currently unused
+-            MuteListRequestPacket mute = new MuteListRequestPacket();
+-            mute.AgentData.AgentID = AgentID;
+-            mute.AgentData.SessionID = SessionID;
+-            mute.MuteData.MuteCRC = 0;
+-            SendPacket(mute);
+-
+-            // Get the current avatar balance
+-            MoneyBalanceRequestPacket money = new MoneyBalanceRequestPacket();
+-            money.AgentData.AgentID = AgentID;
+-            money.AgentData.SessionID = SessionID;
+-            money.MoneyData.TransactionID = LLUUID.Zero;
+-            SendPacket(money);
+-
+-            // FIXME: MainAvatar can request the info if it wants to use it
+-            //AgentDataUpdateRequestPacket update = new AgentDataUpdateRequestPacket();
+-            //update.AgentData.AgentID = AgentID;
+-            //update.AgentData.SessionID = SessionID;
+-            //SendPacket(update);
++            // TODO: A movement class should be handling this
++            Client.Self.SetAlwaysRun(false);
+         }
+ 
+         private void DisconnectTimer_Elapsed(object sender, ElapsedEventArgs ev)
+@@ -1441,7 +1400,7 @@
+ 
+             simulator.Region.ID = handshake.RegionInfo.CacheID;
+ 
+-            // FIXME:
++            // TODO: What do we need these for? RegionFlags probably contains good stuff
+             //handshake.RegionInfo.BillableFactor;
+             //handshake.RegionInfo.RegionFlags;
+             //handshake.RegionInfo.SimAccess;
+@@ -1519,7 +1478,8 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// Throttles the network traffic for various different traffic types.
++    /// Access this class through SecondLife.Throttle
+     /// &lt;/summary&gt;
+     public class AgentThrottle
+     {
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/SecondLife.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -46,8 +46,6 @@
+     /// &lt;/summary&gt;
+     public class SecondLife
+     {
+-        public const string LOGIN_SERVER = &quot;<A HREF="https://login.agni.lindenlab.com/cgi-bin/login.cgi">https://login.agni.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
+-
+         /// &lt;summary&gt;Networking Subsystem&lt;/summary&gt;
+         public NetworkManager Network;
+         /// &lt;summary&gt;Parcel (subdivided simulator lots) Subsystem&lt;/summary&gt;
+@@ -64,6 +62,8 @@
+         public GroupManager Groups;
+         /// &lt;summary&gt;Throttling Subsystem&lt;/summary&gt;
+         public AgentThrottle Throttle;
++        /// &lt;summary&gt;Settings Subsystem&lt;/summary&gt;
++        public Settings Settings;
+ 
+         private ImageManager _ImageManager;
+         /// &lt;summary&gt;Image Subsystem&lt;/summary&gt;
+@@ -108,6 +108,7 @@
+             Objects = new ObjectManager(this);
+             Groups = new GroupManager(this);
+             Throttle = new AgentThrottle(this);
++            Settings = new Settings(this);
+         }
+ 
+         /// &lt;summary&gt;
+
+Added: trunk/libsecondlife-cs/Settings.cs
+===================================================================
+--- trunk/libsecondlife-cs/Settings.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/Settings.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -0,0 +1,81 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++using libsecondlife.Packets;
++
++namespace libsecondlife
++{
++    public class Settings
++    {
++        /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
++        public string VERSION = &quot;libsecondlife 0.0.9&quot;;
++        /// &lt;summary&gt;XML-RPC login server to connect to&lt;/summary&gt;
++        public string LOGIN_SERVER = &quot;<A HREF="https://login.agni.lindenlab.com/cgi-bin/login.cgi">https://login.agni.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
++
++        /// &lt;summary&gt;Millisecond interval between ticks, where all ACKs are 
++        /// sent out and the age of unACKed packets is checked&lt;/summary&gt;
++        public readonly int NETWORK_TICK_LENGTH = 500;
++        /// &lt;summary&gt;The maximum value of a packet sequence number. After that 
++        /// we assume the sequence number just rolls over? Or maybe the 
++        /// protocol isn't able to sustain a connection past that&lt;/summary&gt;
++        public readonly int MAX_SEQUENCE = 0xFFFFFF;
++
++        /// &lt;summary&gt;The maximum size of the sequence number inbox, used to
++        /// check for resent and/or duplicate packets&lt;/summary&gt;
++        public int INBOX_SIZE = 100;
++        /// &lt;summary&gt;Milliseconds before a packet is assumed lost and resent&lt;/summary&gt;
++        public int RESEND_TIMEOUT = 4000;
++        /// &lt;summary&gt;Milliseconds before the connection to a simulator is 
++        /// assumed lost&lt;/summary&gt;
++        public int SIMULATOR_TIMEOUT = 15000;
++        /// &lt;summary&gt;Maximum number of queued ACKs to be sent before SendAcks()
++        /// is forced&lt;/summary&gt;
++        public int MAX_PENDING_ACKS = 10;
++        /// &lt;summary&gt;Maximum number of ACKs to append to a packet&lt;/summary&gt;
++        public int MAX_APPENDED_ACKS = 10;
++        /// &lt;summary&gt;Cost of uploading an asset&lt;/summary&gt;
++        public int UPLOAD_COST { get { return priceUpload; } }
++
++        private SecondLife Client;
++        private int priceUpload = 0;
++
++        public Settings(SecondLife client)
++        {
++            Client = client;
++
++            Client.Network.RegisterCallback(Packets.PacketType.EconomyData, new NetworkManager.PacketCallback(EconomyDataHandler));
++        }
++
++        private void EconomyDataHandler(Packet packet, Simulator simulator)
++        {
++            EconomyDataPacket econ = (EconomyDataPacket)packet;
++
++            priceUpload = econ.Info.PriceUpload;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -52,7 +52,7 @@
+ 
+ 			client = new SecondLife();
+ 
+-            Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(args[0], args[1], args[2], 
++            Dictionary&lt;string, object&gt; loginParams = client.Network.DefaultLoginValues(args[0], args[1], args[2], 
+                 &quot;00:00:00:00:00:00&quot;, &quot;last&quot;, &quot;Win&quot;, &quot;0&quot;, &quot;ParcelDownload&quot;, &quot;Adam \&quot;Zaius\&quot; Frisby &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">adam at gwala.net</A>&gt;&quot;);
+ 
+ 			if (!client.Network.Login(loginParams))
+
+Modified: trunk/libsecondlife-cs/examples/Teleport/Teleport.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/examples/Teleport/Teleport.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -83,7 +83,7 @@
+             Console.WriteLine(&quot;Attempting to connect and login to Second Life.&quot;);
+ 
+             // Setup Login to Second Life
+-            Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(FirstName, 
++            Dictionary&lt;string, object&gt; loginParams = Client.Network.DefaultLoginValues(FirstName, 
+                 LastName, Password, &quot;00:00:00:00:00:00&quot;, &quot;last&quot;, &quot;Win&quot;, &quot;0&quot;, &quot;createnotecard&quot;, 
+                 &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>&quot;);
+             Dictionary&lt;string, object&gt; loginReply = new Dictionary&lt;string,object&gt;();
+
+Modified: trunk/libsecondlife-cs/examples/groupmanager/frmGroupManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/groupmanager/frmGroupManager.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/examples/groupmanager/frmGroupManager.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -59,7 +59,7 @@
+                 cmdConnect.Text = &quot;Disconnect&quot;;
+                 txtFirstName.Enabled = txtLastName.Enabled = txtPassword.Enabled = false;
+ 
+-                Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(txtFirstName.Text,
++                Dictionary&lt;string, object&gt; loginParams = Client.Network.DefaultLoginValues(txtFirstName.Text,
+                     txtLastName.Text, txtPassword.Text, &quot;00:00:00:00:00:00&quot;, &quot;last&quot;, 
+                     &quot;Win&quot;, &quot;0&quot;, &quot;groupmanager&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">jhurliman at wsu.edu</A>&quot;);
+ 
+
+Modified: trunk/libsecondlife-cs/examples/name2key/name2key.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/name2key/name2key.cs	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/examples/name2key/name2key.cs	2006-12-11 12:46:58 UTC (rev 711)
+@@ -76,7 +76,7 @@
+             client.Network.RegisterCallback(PacketType.DirPeopleReply, new NetworkManager.PacketCallback(QueryHandler));
+ 
+ 			// Setup the login values
+-            Dictionary&lt;string, object&gt; loginParams = NetworkManager.DefaultLoginValues(args[0], args[1], args[2], 
++            Dictionary&lt;string, object&gt; loginParams = client.Network.DefaultLoginValues(args[0], args[1], args[2], 
+                 &quot;00:00:00:00:00:00&quot;, &quot;last&quot;, &quot;Win&quot;, &quot;0&quot;, &quot;name2key&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">jhurliman at wsu.edu</A>&quot;);
+ 
+ 			if (!client.Network.Login(loginParams))
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-11 11:38:50 UTC (rev 710)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-11 12:46:58 UTC (rev 711)
+@@ -160,6 +160,7 @@
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;SerializableDictionary.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Settings.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Textures.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000068.html">[Libsecondlife-commits] r710 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000070.html">[Libsecondlife-commits] r712 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

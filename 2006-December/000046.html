@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r688 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r688%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612062340.kB6Nej9K014443%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000045.html">
+   <LINK REL="Next"  HREF="000047.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r688 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r688%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612062340.kB6Nej9K014443%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r688 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  7 00:40:45 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000045.html">[Libsecondlife-commits] r687 - branches
+</A></li>
+        <LI>Next message: <A HREF="000047.html">[Libsecondlife-commits] r689 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-07 00:40:44 +0100 (Thu, 07 Dec 2006)
+New Revision: 688
+
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+Buffer size for zerodecoding increased, and appended ACKs are accounted for in ZeroDecode() now. More testing needed
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2006-12-06 03:48:01 UTC (rev 687)
++++ trunk/libsecondlife-cs/Helpers.cs	2006-12-06 23:40:44 UTC (rev 688)
+@@ -298,23 +298,22 @@
+         public static int ZeroDecode(byte[] src, int srclen, byte[] dest)
+         {
+             uint zerolen = 0;
+-            int bodylen = srclen;
+-            uint i;
++            int bodylen = 0;
++            uint i = 0;
+ 
+             try
+             {
+                 Array.Copy(src, 0, dest, 0, 4);
+                 zerolen += 4;
+ 
+-                //int bodylen;
+-                //if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
+-                //{
+-                //    bodylen = srclen;
+-                //}
+-                //else
+-                //{
+-                //    bodylen = srclen - src[srclen - 1] * 4 - 1;
+-                //}
++                if ((src[0] &amp; MSG_APPENDED_ACKS) == 0)
++                {
++                    bodylen = srclen;
++                }
++                else
++                {
++                    bodylen = srclen - src[srclen - 1] * 4 - 1;
++                }
+ 
+                 for (i = zerolen; i &lt; bodylen; i++)
+                 {
+@@ -333,14 +332,7 @@
+                     }
+                 }
+ 
+-                // HACK: Fix truncated zerocoded messages
+-                //for (uint j = zerolen; j &lt; zerolen + 16; j++)
+-                //{
+-                //    dest[j] = 0;
+-                //}
+-                //zerolen += 16;
+-
+-                // copy appended ACKs
++                // Copy appended ACKs
+                 for (; i &lt; srclen; i++)
+                 {
+                     dest[zerolen++] = src[i];
+@@ -351,7 +343,7 @@
+             catch (Exception e)
+             {
+                 Console.WriteLine(&quot;Zerodecoding error: &quot; + Environment.NewLine +
+-                    &quot;srclen=&quot; + srclen + &quot;, bodylen=&quot; + bodylen + &quot;, zerolen=&quot; + zerolen + Environment.NewLine +
++                    &quot;i=&quot; + i + &quot;srclen=&quot; + srclen + &quot;, bodylen=&quot; + bodylen + &quot;, zerolen=&quot; + zerolen + Environment.NewLine +
+                     FieldToString(src, &quot;src&quot;) + Environment.NewLine + 
+                     e.ToString());
+             }
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-06 03:48:01 UTC (rev 687)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-06 23:40:44 UTC (rev 688)
+@@ -97,9 +97,9 @@
+         private NetworkManager Network;
+         private Dictionary&lt;PacketType, List&lt;NetworkManager.PacketCallback&gt;&gt; Callbacks;
+         private ushort Sequence = 0;
+-        private byte[] RecvBuffer = new byte[4092];
+-        private byte[] ZeroBuffer = new byte[4092];
+-        private byte[] ZeroOutBuffer = new byte[4092];
++        private byte[] RecvBuffer = new byte[4096];
++        private byte[] ZeroBuffer = new byte[8192];
++        private byte[] ZeroOutBuffer = new byte[4096];
+         private Socket Connection = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+         private AsyncCallback ReceivedData;
+         private Dictionary&lt;int, Packet&gt; NeedAck = new Dictionary&lt;int, Packet&gt;();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000045.html">[Libsecondlife-commits] r687 - branches
+</A></li>
+	<LI>Next message: <A HREF="000047.html">[Libsecondlife-commits] r689 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

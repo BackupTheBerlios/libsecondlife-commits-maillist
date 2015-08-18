@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r709 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r709%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS&In-Reply-To=%3C200612110936.kBB9ar9i025538%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000066.html">
+   <LINK REL="Next"  HREF="000068.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r709 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS</H1>
+    <B>bushing at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r709%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS&In-Reply-To=%3C200612110936.kBB9ar9i025538%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r709 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS">bushing at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 10:36:53 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000066.html">[Libsecondlife-commits] r708 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+        <LI>Next message: <A HREF="000068.html">[Libsecondlife-commits] r710 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#67">[ date ]</a>
+              <a href="thread.html#67">[ thread ]</a>
+              <a href="subject.html#67">[ subject ]</a>
+              <a href="author.html#67">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: bushing
+Date: 2006-12-11 10:36:52 +0100 (Mon, 11 Dec 2006)
+New Revision: 709
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/Textures.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs
+Log:
+cleaned up warnings
+
+Modified: trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -344,7 +344,7 @@
+             ImageDataPacket reply = (ImageDataPacket)packet;
+ 
+ 			LLUUID ImageID = reply.ImageID.ID;
+-			ushort Packets = reply.ImageID.Packets;
++// unused?		ushort Packets = reply.ImageID.Packets;
+ 			uint   Size    = reply.ImageID.Size;
+ 			byte[] Data    = reply.ImageData.Data;
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -537,7 +537,7 @@
+                 String name = System.Text.Encoding.UTF8.GetString(folderBlock.Name).Trim().Replace(&quot;\0&quot;, &quot;&quot;);
+                 LLUUID folderid = folderBlock.FolderID;
+                 LLUUID parentid = folderBlock.ParentID;
+-                sbyte type = folderBlock.Type;
++// unused?      sbyte type = folderBlock.Type;
+ 
+                 // There is always an folder block, even if there isn't any folders
+                 // the &quot;filler&quot; block will not have a name
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -361,7 +361,7 @@
+             return Region.Name + &quot; (&quot; + ipEndPoint.ToString() + &quot;)&quot;;
+         }
+ 
+-        private void SendAck(uint id)
++/*        private void SendAck(uint id)
+         {
+             PacketAckPacket ack = new PacketAckPacket();
+ 
+@@ -379,7 +379,7 @@
+             }
+ 
+             SendPacket(ack, true);
+-        }
++        } */
+ 
+         private void SendAcks()
+         {
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -478,8 +478,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;The target simulator&lt;/param&gt;
+         /// &lt;param name=&quot;prim&quot;&gt;The prim object to rez&lt;/param&gt;
+-        /// &lt;param name=&quot;nearPosition&quot;&gt;An approximation of the position to rez
+-        /// the prim at&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;An approximation of the position at which to rez the prim&lt;/param&gt;
+         /// &lt;remarks&gt;Due to the way client prim rezzing is done on the server,
+         /// the requested position for an object is only close to where the prim
+         /// actually ends up. If you desire exact placement you'll need to 
+@@ -841,7 +840,7 @@
+         /// &lt;summary&gt;
+         /// Request additional properties for an object
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;sim&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;objectID&quot;&gt;&lt;/param&gt;
+         public void RequestObjectPropertiesFamily(Simulator simulator, LLUUID objectID)
+         {
+@@ -1150,6 +1149,7 @@
+             }
+         }
+ 
++#pragma warning disable 0219 // disable &quot;value assigned but never used&quot; while this function is incomplete
+         private void CompressedUpdateHandler(Packet packet, Simulator simulator)
+         {
+             if (OnNewPrim != null || OnNewAvatar != null || OnNewAttachment != null || OnNewFoliage != null)
+@@ -1383,6 +1383,7 @@
+                 }
+             }
+         }
++#pragma warning restore 0219
+ 
+         private void CachedUpdateHandler(Packet packet, Simulator simulator)
+         {
+
+Modified: trunk/libsecondlife-cs/Textures.cs
+===================================================================
+--- trunk/libsecondlife-cs/Textures.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/Textures.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -160,7 +160,7 @@
+         /// &lt;summary&gt;
+         /// Constructor that takes a default texture UUID
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;textureID&quot;&gt;Texture UUID to use as the default texture&lt;/param&gt;
++        /// &lt;param name=&quot;defaultTextureID&quot;&gt;Texture UUID to use as the default texture&lt;/param&gt;
+         public TextureEntry(LLUUID defaultTextureID)
+         {
+             DefaultTexture = new TextureEntryFace(null);
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs	2006-12-11 04:31:06 UTC (rev 708)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcServer.cs	2006-12-11 09:36:52 UTC (rev 709)
+@@ -15,6 +15,7 @@
+     /// &lt;/remarks&gt;
+     public class XmlRpcServer : IEnumerable
+     {
++#pragma warning disable 0414 // disable &quot;private field assigned but not used&quot;
+         const int RESPONDER_COUNT = 10;
+         private TcpListener _myListener;
+         private int _port;
+@@ -22,6 +23,7 @@
+         private IDictionary _handlers;
+         private XmlRpcSystemObject _system;
+         private WaitCallback _wc;
++#pragma warning restore 0414
+ 
+         ///&lt;summary&gt;Constructor with port and address.&lt;/summary&gt;
+         ///&lt;remarks&gt;This constructor sets up a TcpListener listening on the
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000066.html">[Libsecondlife-commits] r708 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+	<LI>Next message: <A HREF="000068.html">[Libsecondlife-commits] r710 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#67">[ date ]</a>
+              <a href="thread.html#67">[ thread ]</a>
+              <a href="subject.html#67">[ subject ]</a>
+              <a href="author.html#67">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,921 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r727 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r727%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612160324.kBG3OCWA012781%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000090.html">
+   <LINK REL="Next"  HREF="000092.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r727 - trunk/libsecondlife-cs</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r727%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612160324.kBG3OCWA012781%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r727 - trunk/libsecondlife-cs">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 04:24:12 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000090.html">[Libsecondlife-commits] r726 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000092.html">[Libsecondlife-commits] r728 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-16 04:24:05 +0100 (Sat, 16 Dec 2006)
+New Revision: 727
+
+Modified:
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/EstateTools.cs
+   trunk/libsecondlife-cs/GridManager.cs
+   trunk/libsecondlife-cs/GroupManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/MainAvatarStatus.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/Parcel.cs
+Log:
+It's a thousand pages, give or take a few, I'll be writing more in a week or two.
+I can make it longer if you like the style,I can change it round and I want to be a paperback writer,
+Paperback writer.
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/Avatar.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -128,25 +128,25 @@
+         public LLQuaternion Rotation;
+         /// &lt;summary&gt;Region (aka sim) the Avatar is in&lt;/summary&gt;
+         public Region CurrentRegion;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Date the Avatar was Born into Second Life&lt;/summary&gt;
+         public string BornOn;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key pointing to the Profile Image&lt;/summary&gt;
+         public LLUUID ProfileImage;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of their Partner&lt;/summary&gt;
+         public LLUUID PartnerID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text from the About field in the Profile&lt;/summary&gt;
+         public string AboutText;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Bitmask representing Want To checkboxes&lt;/summary&gt;
+         public uint WantToMask;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text field for Want To&lt;/summary&gt;
+         public string WantToText;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Bitmask representing Skills checkboxes&lt;/summary&gt;
+         public uint SkillsMask;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text field for Skills&lt;/summary&gt;
+         public string SkillsText;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text from the First Life field in the Profile&lt;/summary&gt;
+         public string FirstLifeText;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key pointing to the First Life picture&lt;/summary&gt;
+         public LLUUID FirstLifeImage;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public bool Identified;
+@@ -156,19 +156,19 @@
+         public bool AllowPublish;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public bool MaturePublish;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Charter Member type, if applicable&lt;/summary&gt;
+         public string CharterMember;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Rating for Behavior&lt;/summary&gt;
+         public float Behavior;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Rating for Appearance&lt;/summary&gt;
+         public float Appearance;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Rating for Building&lt;/summary&gt;
+         public float Building;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text from the Languages field in the Profile&lt;/summary&gt;
+         public string LanguagesText;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public TextureEntry Textures;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;URL to load in Web Profile&lt;/summary&gt;
+         public string ProfileURL;
+ 
+         /// &lt;summary&gt;Gets the local ID of the prim the avatar is sitting on,
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -32,7 +32,7 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// 
++    /// Class to manage multiple Avatars
+     /// &lt;/summary&gt;
+     public class AvatarManager
+     {
+@@ -48,7 +48,7 @@
+         /// &lt;param name=&quot;names&quot;&gt;&lt;/param&gt;
+         public delegate void AgentNamesCallback(Dictionary&lt;LLUUID, string&gt; names);
+         /// &lt;summary&gt;
+-        /// 
++        /// Triggered when Avatar properties are received (AvatarPropertiesReply)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;avatar&quot;&gt;&lt;/param&gt;
+         public delegate void AvatarPropertiesCallback(Avatar avatar);
+@@ -114,7 +114,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Used to search all known Avatars for a particular Avatar Key
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+@@ -124,7 +124,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Refresh Avatar Profile information
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;a&quot;&gt;&lt;/param&gt;
+         public void UpdateAvatar(Avatar a)
+@@ -275,7 +275,11 @@
+                 OnAgentNames(names);
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Handle incoming friend notifications
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void FriendNotificationHandler(Packet packet, Simulator simulator)
+         {
+             List&lt;LLUUID&gt; requestids = new List&lt;LLUUID&gt;();
+@@ -336,7 +340,11 @@
+                 BeginGetAvatarNames(requestids, null);
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Handles incoming avatar statistics. What are those ?
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void AvatarStatisticsHandler(Packet packet, Simulator simulator)
+         {
+ 	    AvatarStatisticsReplyPacket asr = (AvatarStatisticsReplyPacket)packet;
+@@ -375,7 +383,11 @@
+ 	                AvatarStatisticsCallbacks[av.ID](av);
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Process incoming Avatar properties (profile data)
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;sim&quot;&gt;&lt;/param&gt;
+         private void AvatarPropertiesHandler(Packet packet, Simulator sim)
+         {
+             Avatar av;
+@@ -413,7 +425,13 @@
+                 AvatarPropertiesCallbacks[av.ID](av);
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Start a request for Avatar Properties
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;avatarid&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;aic&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;asc&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;apc&quot;&gt;&lt;/param&gt;
+         public void BeginAvatarPropertiesRequest(LLUUID avatarid, AvatarPropertiesCallback apc, AvatarStatisticsCallback asc, AvatarInterestsCallback aic)
+         {
+             //Set teh callback!
+@@ -431,7 +449,11 @@
+             //send the packet!
+             Client.Network.SendPacket(aprp);
+         }
+-
++        /// &lt;summary&gt;
++        /// Process incoming Avatar Interests information
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void AvatarInterestsHandler(Packet packet, Simulator simulator)
+         {
+             AvatarInterestsReplyPacket airp = (AvatarInterestsReplyPacket)packet;
+
+Modified: trunk/libsecondlife-cs/EstateTools.cs
+===================================================================
+--- trunk/libsecondlife-cs/EstateTools.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/EstateTools.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -36,7 +36,7 @@
+ 		private SecondLife Client;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor for EstateTools class
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+ 		public EstateTools(SecondLife client)
+@@ -45,9 +45,9 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Kick an Avatar from an estate
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;prey&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;prey&quot;&gt;Key of Avatar to kick&lt;/param&gt;
+ 		public void KickUser(LLUUID prey) 
+ 		{
+             EstateOwnerMessagePacket estate = new EstateOwnerMessagePacket();
+@@ -63,9 +63,9 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Ban an Avatar from an estate
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;prey&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;prey&quot;&gt;Key of Avatar to ban&lt;/param&gt;
+ 		public void BanUser(LLUUID prey) 
+ 		{
+             // FIXME:
+
+Modified: trunk/libsecondlife-cs/GridManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GridManager.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/GridManager.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -189,7 +189,7 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Begin process to get information for a Region
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;name&quot;&gt;Region Name you're requesting data for&lt;/param&gt;
+         /// &lt;param name=&quot;grc&quot;&gt;CallBack being used to process the response&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/GroupManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GroupManager.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/GroupManager.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -31,25 +31,25 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// 
++    /// Avatar group management
+     /// &lt;/summary&gt;
+     public class GroupMember
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Member&lt;/summary&gt;
+         public LLUUID ID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total land contribution&lt;/summary&gt;
+         public int Contribution;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Online status information&lt;/summary&gt;
+         public string OnlineStatus;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Abilities that the Group Member has&lt;/summary&gt;
+         public ulong Powers;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Current group title&lt;/summary&gt;
+         public string Title;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Is a group owner&lt;/summary&gt;
+         public bool IsOwner;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
+         public GroupMember(LLUUID id)
+@@ -59,25 +59,25 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// Role manager for a group
+     /// &lt;/summary&gt;
+     public class GroupRole
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Role&lt;/summary&gt;
+         public LLUUID ID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Name of Role&lt;/summary&gt;
+         public string Name;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Group Title associated with Role&lt;/summary&gt;
+         public string Title;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Description of Role&lt;/summary&gt;
+         public string Description;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Abilities Associated with Role&lt;/summary&gt;
+         public ulong Powers;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor for Group Roles
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;id&quot;&gt;Key associated with Group Role&lt;/param&gt;
+         public GroupRole(LLUUID id)
+         {
+             ID = id;
+@@ -85,13 +85,13 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// Class to represent Group Title
+     /// &lt;/summary&gt;
+     public class GroupTitle
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Group Title&lt;/summary&gt;
+         public string Title;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Whether title is Active&lt;/summary&gt;
+         public bool Selected;
+     }
+ 
+@@ -100,23 +100,23 @@
+     /// &lt;/summary&gt;
+     public class Group
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group&lt;/summary&gt;
+         public LLUUID ID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Insignia&lt;/summary&gt;
+         public LLUUID InsigniaID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Founder&lt;/summary&gt;
+         public LLUUID FounderID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Role for Owners&lt;/summary&gt;
+         public LLUUID OwnerRole;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Name of Group&lt;/summary&gt;
+         public string Name;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text of Group Charter&lt;/summary&gt;
+         public string Charter;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Title of &quot;everyone&quot; role&lt;/summary&gt;
+         public string MemberTitle;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Is the group open for enrolement to everyone&lt;/summary&gt;
+         public bool OpenEnrollment;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Will group show up in search&lt;/summary&gt;
+         public bool ShowInList;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public ulong Powers;
+@@ -124,9 +124,9 @@
+         public bool AcceptNotices;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public bool AllowPublish;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Is the group Mature&lt;/summary&gt;
+         public bool MaturePublish;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Cost of group membership&lt;/summary&gt;
+         public int MembershipFee;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int Money;
+@@ -138,9 +138,9 @@
+         public int GroupRolesCount;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;id&quot;&gt;Key of Group&lt;/param&gt;
+         public Group(LLUUID id)
+         {
+             ID = id;
+@@ -158,21 +158,21 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// Profile of a group
+     /// &lt;/summary&gt;
+     public class GroupProfile
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID ID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Insignia&lt;/summary&gt;
+         public LLUUID InsigniaID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Founder&lt;/summary&gt;
+         public LLUUID FounderID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Group Role for Owners&lt;/summary&gt;
+         public LLUUID OwnerRole;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Name of Group&lt;/summary&gt;
+         public string Name;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text of Group Charter&lt;/summary&gt;
+         public string Charter;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public string MemberTitle;
+@@ -201,15 +201,15 @@
+     }
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A group Vote
+     /// &lt;/summary&gt;
+     public class Vote
+     {
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of Avatar who created Vote&lt;/summary&gt;
+         public LLUUID Candidate;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Text of the Vote proposal&lt;/summary&gt;
+         public string VoteString;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total number of votes&lt;/summary&gt;
+         public int NumVotes;
+     }
+ 
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -100,13 +100,13 @@
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+         None,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Teleport Start&lt;/summary&gt;
+         Start,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Teleport in Progress&lt;/summary&gt;
+         Progress,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Teleport Failed&lt;/summary&gt;
+         Failed,
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Teleport Completed&lt;/summary&gt;
+         Finished
+     }
+ 
+@@ -253,33 +253,33 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Send an Instant Message
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
+         public void InstantMessage(LLUUID target, string message)
+         {
+             InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, LLUUID.Random());
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Send an Instant Message
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;IM Session ID&lt;/param&gt;
+         public void InstantMessage(LLUUID target, string message, LLUUID IMSessionID)
+         {
+             InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, IMSessionID);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Send an Instant Message
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;fromName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;sessionID&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
++        /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
+         /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+         public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message, LLUUID[] conferenceIDs)
+         {
+@@ -291,10 +291,10 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;fromName&quot;&gt;Client's Avatar&lt;/param&gt;
+         /// &lt;param name=&quot;sessionID&quot;&gt;SessionID of current connection to grid&lt;/param&gt;
+-        /// &lt;param name=&quot;target&quot;&gt;UUID of target Av.&lt;/param&gt;
++        /// &lt;param name=&quot;target&quot;&gt;Key of Avatar&lt;/param&gt;
+         /// &lt;param name=&quot;message&quot;&gt;Text Message being sent.&lt;/param&gt;
+         /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;IMSessionID&quot;&gt;IM Session ID&lt;/param&gt;
+         /// 
+         /// TODO: Have fromName grabbed from elsewhere and remove argument, to prevent inadvertant spoofing.
+         /// 
+@@ -568,23 +568,23 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Start a teleport process
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
++        /// &lt;param name=&quot;tc&quot;&gt;Callback ID&lt;/param&gt;
+         public void BeginTeleport(ulong regionHandle, LLVector3 position, TeleportCallback tc)
+         {
+             BeginTeleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z), tc);
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Start a teleport process
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;Target to look at&lt;/param&gt;
++        /// &lt;param name=&quot;tc&quot;&gt;Callback ID&lt;/param&gt;
+         public void BeginTeleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt, TeleportCallback tc)
+         {
+             OnBeginTeleport = tc;
+@@ -602,10 +602,10 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Start a teleport process
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Teleport(ulong regionHandle, LLVector3 position)
+         {
+@@ -613,11 +613,11 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Start a teleport process
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;Target to look at&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Teleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt)
+         {
+@@ -663,10 +663,10 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Generic Teleport Function
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simName&quot;&gt;Region name&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Teleport(string simName, LLVector3 position)
+         {
+@@ -675,11 +675,11 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Teleport Function
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;simName&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;lookAt&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simName&quot;&gt;Region name&lt;/param&gt;
++        /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
++        /// &lt;param name=&quot;lookAt&quot;&gt;Target to look at&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Teleport(string simName, LLVector3 position, LLVector3 lookAt)
+         {
+@@ -1014,10 +1014,10 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Handler for teleport Requests
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Packet&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Simulator&lt;/param&gt;
+         private void TeleportHandler(Packet packet, Simulator simulator)
+         {
+             if (packet.Type == PacketType.TeleportStart)
+@@ -1113,7 +1113,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Teleport Timer Event Handler
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;ea&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/MainAvatarStatus.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatarStatus.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/MainAvatarStatus.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -53,8 +53,13 @@
+                 if (value &amp;&amp; ((agentControls &amp; control) != control)) agentControls ^= control;
+                 else if (!value &amp;&amp; ((agentControls &amp; control) == control)) agentControls ^= control;
+             }
+-
++            /// &lt;summary&gt;
++            /// Holds control flags
++            /// &lt;/summary&gt;
+             public ControlStatus Controls;
++            /// &lt;summary&gt;
++            /// Holds camera flags
++            /// &lt;/summary&gt;
+             public CameraStatus Camera;
+ 
+             /// &lt;summary&gt;Constructor for class MainAvatarStatus&lt;/summary&gt;
+@@ -67,7 +72,9 @@
+             {
+                 get { return agentControls; }
+             }
+-
++            /// &lt;summary&gt;
++            /// Send new AgentUpdate
++            /// &lt;/summary&gt;
+             public void SendUpdate()
+             {
+                 AgentUpdatePacket update = new AgentUpdatePacket();
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -111,7 +111,7 @@
+         private System.Timers.Timer AckTimer;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor for Simulator
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;callbacks&quot;&gt;&lt;/param&gt;
+@@ -178,7 +178,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Disconnect a Simulator
+         /// &lt;/summary&gt;
+         public void Disconnect()
+         {
+@@ -209,10 +209,10 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Sends a packet
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;incrementSequence&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Packet to be sent&lt;/param&gt;
++        /// &lt;param name=&quot;incrementSequence&quot;&gt;Increment sequence number?&lt;/param&gt;
+         public void SendPacket(Packet packet, bool incrementSequence)
+         {
+             byte[] buffer;
+@@ -319,9 +319,9 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Send Packet. Bytes !
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;payload&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;payload&quot;&gt;payload&lt;/param&gt;
+         public void SendPacket(byte[] payload)
+         {
+             if (!connected)
+@@ -338,7 +338,10 @@
+                 Client.Log(e.ToString(), Helpers.LogLevel.Error);
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Returns Simulator Name as a String
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public override string ToString()
+         {
+             return Region.Name + &quot; (&quot; + ipEndPoint.ToString() + &quot;)&quot;;
+@@ -363,7 +366,9 @@
+ 
+             SendPacket(ack, true);
+         } */
+-
++        /// &lt;summary&gt;
++        /// Sends out pending acknowledgements
++        /// &lt;/summary&gt;
+         private void SendAcks()
+         {
+             lock (PendingAcks)
+@@ -395,7 +400,9 @@
+                 }
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Resend unacknowledged packets
++        /// &lt;/summary&gt;
+         private void ResendUnacked()
+         {
+             if (connected)
+@@ -418,7 +425,10 @@
+                 }
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Callback handler for incomming data
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;result&quot;&gt;&lt;/param&gt;
+         private void OnReceivedData(IAsyncResult result)
+         {
+             Packet packet = null;
+
+Modified: trunk/libsecondlife-cs/Parcel.cs
+===================================================================
+--- trunk/libsecondlife-cs/Parcel.cs	2006-12-15 02:46:07 UTC (rev 726)
++++ trunk/libsecondlife-cs/Parcel.cs	2006-12-16 03:24:05 UTC (rev 727)
+@@ -91,15 +91,15 @@
+         public int PublicCount;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int LocalID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of land owner&lt;/summary&gt;
+         public LLUUID OwnerID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Is the land group owned&lt;/summary&gt;
+         public bool IsGroupOwned;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public uint AuctionID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Presumably for first land&lt;/summary&gt;
+         public bool ReservedNewbie;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Date land was claimed&lt;/summary&gt;
+         public int ClaimDate;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int ClaimPrice;
+@@ -109,25 +109,25 @@
+         public LLVector3 AABBMin;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 AABBMax;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Bitmap describing land layout in 4x4m squares across the entire region&lt;/summary&gt;
+         public byte[] Bitmap;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total land area&lt;/summary&gt;
+         public int Area;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public byte Status;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Max objects across region&lt;/summary&gt;
+         public int SimWideMaxObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total objects across region&lt;/summary&gt;
+         public int SimWideTotalObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Max objects for parcel&lt;/summary&gt;
+         public int MaxObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total objects in parcel&lt;/summary&gt;
+         public int TotalObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total objects for owner&lt;/summary&gt;
+         public int OwnerObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total objects for group&lt;/summary&gt;
+         public int GroupObjects;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Total for other objects&lt;/summary&gt;
+         public int OtherObjects;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public float ParcelObjectBonus;
+@@ -137,29 +137,29 @@
+         public uint ParcelFlags;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int SalePrice;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Parcel Name&lt;/summary&gt;
+         public string Name;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Parcel Description&lt;/summary&gt;
+         public string Desc;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;URL For Music Stream&lt;/summary&gt;
+         public string MusicURL;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;URL For other Media&lt;/summary&gt;
+         public string MediaURL;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key to Picture for Media Placeholder&lt;/summary&gt;
+         public LLUUID MediaID;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public byte MediaAutoScale;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID GroupID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Price for a temporary pass&lt;/summary&gt;
+         public int PassPrice;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;How long is pass valid for&lt;/summary&gt;
+         public float PassHours;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public byte Category;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of authorized buyer&lt;/summary&gt;
+         public LLUUID AuthBuyerID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Key of parcel snapshot&lt;/summary&gt;
+         public LLUUID SnapshotID;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public LLVector3 UserLocation;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000090.html">[Libsecondlife-commits] r726 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000092.html">[Libsecondlife-commits] r728 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#91">[ date ]</a>
+              <a href="thread.html#91">[ thread ]</a>
+              <a href="subject.html#91">[ subject ]</a>
+              <a href="author.html#91">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

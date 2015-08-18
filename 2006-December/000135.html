@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20%5BPatch%20%231759%5D%20SLProxy%3A%20acks%20fix%2C%0A%09/inject%20variable%20blocks%2C%20better%20delegates&In-Reply-To=%3C200612241157.kBOBvBGo006178%40unicorn.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000134.html">
+   <LINK REL="Next"  HREF="000136.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates</H1>
+    <B>admin at berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20%5BPatch%20%231759%5D%20SLProxy%3A%20acks%20fix%2C%0A%09/inject%20variable%20blocks%2C%20better%20delegates&In-Reply-To=%3C200612241157.kBOBvBGo006178%40unicorn.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates">admin at berlios.de
+       </A><BR>
+    <I>Sun Dec 24 12:57:11 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000134.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+        <LI>Next message: <A HREF="000136.html">[Libsecondlife-commits] [Patch #1760] SLProxy: initial caps support	(ADITI). FOR TESTING ONLY.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#135">[ date ]</a>
+              <a href="thread.html#135">[ thread ]</a>
+              <a href="subject.html#135">[ subject ]</a>
+              <a href="author.html#135">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Patch #1759 has been updated. 
+
+Project: libsecondlife
+Category: None
+Status: Open
+Submitted by: makomk
+Assigned to : none
+Summary: SLProxy: acks fix, /inject variable blocks, better delegates
+
+Follow-Ups:
+
+Date: 2006-Dec-24 11:57
+By: makomk
+
+Comment:
+SLProxy patch. Fixes a possible bug with appended acks, adds support for variable blocks to /inject, and allows more than one delegate to be installed for the same packet type.
+
+Breaks any SLProxy application that calls RemoveDelegate or attempts to overwrite an existing delegate with a different one i.e. probably not many. Attempting to install the same delegate several times is not a problem.
+-------------------------------------------------------
+
+-------------------------------------------------------
+For more info, visit:
+
+<A HREF="http://developer.berlios.de/patch/?func=detailpatch&amp;patch_id=1759&amp;group_id=7710">http://developer.berlios.de/patch/?func=detailpatch&amp;patch_id=1759&amp;group_id=7710</A>
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000134.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+	<LI>Next message: <A HREF="000136.html">[Libsecondlife-commits] [Patch #1760] SLProxy: initial caps support	(ADITI). FOR TESTING ONLY.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#135">[ date ]</a>
+              <a href="thread.html#135">[ thread ]</a>
+              <a href="subject.html#135">[ subject ]</a>
+              <a href="author.html#135">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

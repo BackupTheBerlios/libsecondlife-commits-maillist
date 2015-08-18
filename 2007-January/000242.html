@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r838 - in trunk/libsecondlife-cs: .	InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r838%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09InventorySystem&In-Reply-To=%3C200701112044.l0BKiKEV004128%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000241.html">
+   <LINK REL="Next"  HREF="000243.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r838 - in trunk/libsecondlife-cs: .	InventorySystem</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r838%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09InventorySystem&In-Reply-To=%3C200701112044.l0BKiKEV004128%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r838 - in trunk/libsecondlife-cs: .	InventorySystem">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 11 21:44:20 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000241.html">[Libsecondlife-commits] r837 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000243.html">[Libsecondlife-commits] r839 - in trunk: . libsecondlife.xcodeproj
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#242">[ date ]</a>
+              <a href="thread.html#242">[ thread ]</a>
+              <a href="subject.html#242">[ subject ]</a>
+              <a href="author.html#242">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-11 21:44:16 +0100 (Thu, 11 Jan 2007)
+New Revision: 838
+
+Modified:
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+Log:
+Added support to Inventory System for attaching/detaching items
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-11 20:42:59 UTC (rev 837)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-11 20:44:16 UTC (rev 838)
+@@ -426,19 +426,52 @@
+ 
+         }
+ 
++        /// &lt;summary&gt;
++        /// Attempt to rez this inventory item at the given point
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;TargetPos&quot;&gt;Region/Sim coordinates&lt;/param&gt;
+         public void RezObject(LLVector3 TargetPos)
+         {
+             RezObject(TargetPos, null);
+         }
+ 
++        /// &lt;summary&gt;
++        /// Attempt to rez this inventory item at the given point, in the given simulator
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;TargetPos&quot;&gt;Region/Sim coords&lt;/param&gt;
++        /// &lt;param name=&quot;TargetSim&quot;&gt;&lt;/param&gt;
+         public void RezObject(LLVector3 TargetPos, Simulator TargetSim)
+         {
+             iManager.ItemRezObject(this, TargetSim, TargetPos);
+         }
+ 
++        /// &lt;summary&gt;
++        /// Attempt to attach this item
++        /// &lt;/summary&gt;
++        public void Attach()
++        {
++            Attach(0); //Use default attach point.
++        }
+ 
+         /// &lt;summary&gt;
++        /// Attempt to attach this item.
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;AttachmentPt&quot;&gt;Where to attach to&lt;/param&gt;
++        public void Attach(ObjectManager.AttachmentPoint AttachmentPt)
++        {
++            iManager.ItemRezAttach(this, 0);
++        }
++
++        /// &lt;summary&gt;
++        /// Attempt to detach this item
++        /// &lt;/summary&gt;
++        public void Detach()
++        {
++            iManager.ItemDetach(this);
++        }
++
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;assetData&quot;&gt;&lt;/param&gt;
+         virtual internal void SetAssetData(byte[] assetData)
+         {
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-11 20:42:59 UTC (rev 837)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-11 20:44:16 UTC (rev 838)
+@@ -589,6 +589,27 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Attempt to rez and attach an inventory item 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Item&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;AttachmentPt&quot;&gt;&lt;/param&gt;
++        internal void ItemRezAttach(InventoryItem Item, ObjectManager.AttachmentPoint AttachmentPt)
++        {
++            Packet p = InvPacketHelper.RezSingleAttachmentFromInv(Item, AttachmentPt);
++            slClient.Network.SendPacket(p);
++        }
++
++        /// &lt;summary&gt;
++        /// Attempt to detach and return an item to your inventory
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Item&quot;&gt;&lt;/param&gt;
++        internal void ItemDetach(InventoryItem Item)
++        {
++            Packet p = InvPacketHelper.DetachAttachmentIntoInv(Item.ItemID);
++            slClient.Network.SendPacket(p);
++        }
++
++        /// &lt;summary&gt;
+         /// Request the download of a folder's contents
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;dr&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2007-01-11 20:42:59 UTC (rev 837)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryPacketHelper.cs	2007-01-11 20:44:16 UTC (rev 838)
+@@ -386,6 +386,41 @@
+             return p;
+         }
+ 
++        public Packet RezSingleAttachmentFromInv(InventoryItem item)
++        {
++            return RezSingleAttachmentFromInv(item, 0); // Use default point
++        }
++
++        public Packet RezSingleAttachmentFromInv(InventoryItem item, ObjectManager.AttachmentPoint AttachmentPt)
++        {
++            RezSingleAttachmentFromInvPacket p = new RezSingleAttachmentFromInvPacket();
++            p.AgentData.AgentID = AgentID;
++            p.AgentData.SessionID = SessionID;
++
++            p.ObjectData.Description = Helpers.StringToField(item.Description);
++            p.ObjectData.EveryoneMask = item.EveryoneMask;
++            p.ObjectData.GroupMask = item.GroupMask;
++            p.ObjectData.ItemFlags = item.Flags;
++            p.ObjectData.ItemID = item.ItemID;
++            p.ObjectData.Name = Helpers.StringToField(item.Name);
++            p.ObjectData.NextOwnerMask = item.NextOwnerMask;
++            p.ObjectData.OwnerID = item.OwnerID;
++
++            p.ObjectData.AttachmentPt = (byte)AttachmentPt; // Default;
++
++
++            return p;
++        }
++
++        public Packet DetachAttachmentIntoInv( LLUUID ItemID )
++        {
++            DetachAttachmentIntoInvPacket p = new DetachAttachmentIntoInvPacket();
++            p.ObjectData.AgentID = AgentID;
++            p.ObjectData.ItemID = ItemID;
++
++            return p;
++        }
++
+ /*
+ 			// Confirm InventoryUpdate CRC
+ 			uint test = libsecondlife.Packets.InventoryPackets.InventoryUpdateCRC
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2007-01-11 20:42:59 UTC (rev 837)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2007-01-11 20:44:16 UTC (rev 838)
+@@ -187,6 +187,8 @@
+         public enum AttachmentPoint
+         {
+             /// &lt;summary&gt;&lt;/summary&gt;
++            Default = 0,
++            /// &lt;summary&gt;&lt;/summary&gt;
+             Chest = 1,
+             /// &lt;summary&gt;&lt;/summary&gt;
+             Skull,
+@@ -223,7 +225,7 @@
+             /// &lt;summary&gt;&lt;/summary&gt;
+             RightUpperArm,
+             /// &lt;summary&gt;&lt;/summary&gt;
+-            RightForarm,
++            RightForearm,
+             /// &lt;summary&gt;&lt;/summary&gt;
+             LeftUpperArm,
+             /// &lt;summary&gt;&lt;/summary&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000241.html">[Libsecondlife-commits] r837 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000243.html">[Libsecondlife-commits] r839 - in trunk: . libsecondlife.xcodeproj
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#242">[ date ]</a>
+              <a href="thread.html#242">[ thread ]</a>
+              <a href="subject.html#242">[ subject ]</a>
+              <a href="author.html#242">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

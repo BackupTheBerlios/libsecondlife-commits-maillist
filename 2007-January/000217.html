@@ -1,0 +1,428 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r813 - in trunk/libsecondlife-cs: .	examples/TestClient
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r813%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient&In-Reply-To=%3C200701071101.l07B1xK3012139%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000216.html">
+   <LINK REL="Next"  HREF="000218.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r813 - in trunk/libsecondlife-cs: .	examples/TestClient</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r813%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient&In-Reply-To=%3C200701071101.l07B1xK3012139%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r813 - in trunk/libsecondlife-cs: .	examples/TestClient">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 12:01:59 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000216.html">[Libsecondlife-commits] r812 - branches/aditi/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000218.html">[Libsecondlife-commits] r814 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#217">[ date ]</a>
+              <a href="thread.html#217">[ thread ]</a>
+              <a href="subject.html#217">[ subject ]</a>
+              <a href="author.html#217">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-07 12:01:59 +0100 (Sun, 07 Jan 2007)
+New Revision: 813
+
+Added:
+   trunk/libsecondlife-cs/DirectoryManager.cs
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Initial check-in of DirectoryManager that will handle all directory searches. Classifieds are currently supported but untested
+
+Added: trunk/libsecondlife-cs/DirectoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-07 11:01:59 UTC (rev 813)
+@@ -0,0 +1,151 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using libsecondlife.Packets;
++
++namespace libsecondlife
++{
++    /// &lt;summary&gt;
++    /// 
++    /// &lt;/summary&gt;
++    public class DirectoryManager
++    {
++        /// &lt;summary&gt;
++        /// The different categories a classified ad can be placed in
++        /// &lt;/summary&gt;
++        public enum ClassifiedCategories
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Any = 0,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Shopping,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            LandRental,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PropertyRental,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            SpecialAttraction,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            NewProducts,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Employment,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Wanted,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Service,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Personal
++        }
++
++        /// &lt;summary&gt;
++        /// A classified ad in Second Life
++        /// &lt;/summary&gt;
++        public struct Classified
++        {
++            /// &lt;summary&gt;UUID for this ad, useful for looking up detailed
++            /// information about it&lt;/summary&gt;
++            public LLUUID ID;
++            /// &lt;summary&gt;The title of this classified ad&lt;/summary&gt;
++            public string Name;
++            /// &lt;summary&gt;Unknown&lt;/summary&gt;
++            public byte Flags;
++            /// &lt;summary&gt;Creation date of the ad&lt;/summary&gt;
++            public DateTime CreationDate;
++            /// &lt;summary&gt;Expiration date of the ad&lt;/summary&gt;
++            public DateTime ExpirationDate;
++            /// &lt;summary&gt;Price that was paid for this ad&lt;/summary&gt;
++            public int Price;
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;classifieds&quot;&gt;&lt;/param&gt;
++        public delegate void ClassifiedReplyCallback(List&lt;Classified&gt; classifieds);
++
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public event ClassifiedReplyCallback OnClassifiedReply;
++
++
++        private SecondLife Client;
++
++
++        public DirectoryManager(SecondLife client)
++        {
++            Client = client;
++
++            Client.Network.RegisterCallback(PacketType.DirClassifiedReply, new NetworkManager.PacketCallback(DirClassifiedReplyHandler));
++        }
++
++        public LLUUID StartClassifiedSearch(string searchText, ClassifiedCategories categories, bool mature)
++        {
++            DirClassifiedQueryPacket query = new DirClassifiedQueryPacket();
++            LLUUID queryID = LLUUID.Random();
++
++            query.AgentData.AgentID = Client.Network.AgentID;
++            query.AgentData.SessionID = Client.Network.SessionID;
++            query.QueryData.Category = (uint)categories;
++            query.QueryData.QueryFlags = (uint)(mature ? 0 : 2);
++            query.QueryData.QueryID = queryID;
++            query.QueryData.QueryText = Helpers.StringToField(searchText);
++
++            Client.Network.SendPacket(query);
++
++            return queryID;
++        }
++
++        private void DirClassifiedReplyHandler(Packet packet, Simulator simulator)
++        {
++            if (OnClassifiedReply != null)
++            {
++                DirClassifiedReplyPacket reply = (DirClassifiedReplyPacket)packet;
++                List&lt;Classified&gt; classifieds = new List&lt;Classified&gt;();
++
++                foreach (DirClassifiedReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
++                {
++                    Classified classified = new Classified();
++
++                    classified.CreationDate = Helpers.UnixTimeToDateTime(block.CreationDate);
++                    classified.ExpirationDate = Helpers.UnixTimeToDateTime(block.ExpirationDate);
++                    classified.Flags = block.ClassifiedFlags;
++                    classified.ID = block.ClassifiedID;
++                    classified.Name = Helpers.FieldToString(block.Name);
++                    classified.Price = block.PriceForListing;
++
++                    classifieds.Add(classified);
++                }
++
++                OnClassifiedReply(classifieds);
++            }
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-07 11:01:59 UTC (rev 813)
+@@ -255,12 +255,34 @@
+         //    return bytes;
+         //}
+ 
++        /// &lt;summary&gt;
++        /// Gets a unix timestamp for the current time
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;An unsigned integer representing a unix timestamp for now&lt;/returns&gt;
+         public static uint GetUnixTime()
+         {
+             return (uint)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
+         }
+ 
+         /// &lt;summary&gt;
++        /// Convert a unix timestamp to a native DateTime format
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;timestamp&quot;&gt;An unsigned integer representing a unix
++        /// timestamp&lt;/param&gt;
++        /// &lt;returns&gt;A DateTime object containing the same time specified in
++        /// the given timestamp&lt;/returns&gt;
++        public static DateTime UnixTimeToDateTime(uint timestamp)
++        {
++            // Make a DateTime equivalent to the UNIX Epoch
++            System.DateTime dateTime = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);
++
++            // Add the number of seconds in our UNIX timestamp
++            dateTime = dateTime.AddSeconds(timestamp);
++
++            return dateTime;
++        }
++
++        /// &lt;summary&gt;
+         /// Calculates the distance between two vectors
+         /// &lt;/summary&gt;
+         public static float VecDist(LLVector3 pointA, LLVector3 pointB)
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/SecondLife.cs	2007-01-07 11:01:59 UTC (rev 813)
+@@ -68,9 +68,14 @@
+         public InventoryManager Inventory;
+         /// &lt;summary&gt;Image Subsystem&lt;/summary&gt;
+         public ImageManager Images;
+-        /// &lt;summary&gt;Throttling Subsystem&lt;/summary&gt;
++        /// &lt;summary&gt;Directory searches including classifieds, people, land 
++        /// sales, etc&lt;/summary&gt;
++        public DirectoryManager Directory;
++        /// &lt;summary&gt;Throttling total bandwidth usage, or allocating bandwidth
++        /// for specific data stream types&lt;/summary&gt;
+         public AgentThrottle Throttle;
+-        /// &lt;summary&gt;Settings Subsystem&lt;/summary&gt;
++        /// &lt;summary&gt;Settings class including constant values and changeable
++        /// parameters for everything&lt;/summary&gt;
+         public Settings Settings;
+ 
+         /// &lt;summary&gt;Triggered whenever a message is logged.
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/Types.cs	2007-01-07 11:01:59 UTC (rev 813)
+@@ -772,15 +772,6 @@
+         /// &lt;summary&gt;W value&lt;/summary&gt;
+         [XmlAttribute(&quot;w&quot;), DefaultValue(0)] public float W;
+ 
+-		///// &lt;summary&gt;
+-		///// Default constructor, initializes to no rotation (0,0,0,1)
+-		///// &lt;/summary&gt;
+-		//public LLQuaternion()
+-		//{
+-		//    X = Y = Z = 0.0f;
+-		//    W = 1.0f;
+-		//}
+-
+         /// &lt;summary&gt;
+         /// Build a quaternion object from a byte array
+         /// &lt;/summary&gt;
+@@ -860,12 +851,12 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Build a quaternion from individual float values
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;x&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;y&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;z&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;w&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;x&quot;&gt;X value&lt;/param&gt;
++        /// &lt;param name=&quot;y&quot;&gt;Y value&lt;/param&gt;
++        /// &lt;param name=&quot;z&quot;&gt;Z value&lt;/param&gt;
++        /// &lt;param name=&quot;w&quot;&gt;W value&lt;/param&gt;
+ 		public LLQuaternion(float x, float y, float z, float w)
+ 		{
+ 			X = x;
+@@ -875,9 +866,10 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Normalize this quaternion and serialize it to a byte array
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A 12 byte array containing normalized X, Y, and Z floating
++        /// point values in order using little endian byte ordering&lt;/returns&gt;
+ 		public byte[] GetBytes()
+ 		{
+             byte[] bytes = new byte[12];
+@@ -932,7 +924,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Comparison operator
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+@@ -956,7 +948,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Not comparison operator
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+@@ -967,7 +959,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Multiplication operator
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-07 11:01:59 UTC (rev 813)
+@@ -30,6 +30,7 @@
+   &lt;ItemGroup&gt;
+     &lt;Reference Include=&quot;System&quot; /&gt;
+     &lt;Reference Include=&quot;System.Data&quot; /&gt;
++    &lt;Reference Include=&quot;System.Speech, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL&quot; /&gt;
+     &lt;Reference Include=&quot;System.Xml&quot; /&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
+@@ -38,6 +39,7 @@
+     &lt;Compile Include=&quot;Commands\AppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\CloneProfileCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\DownloadCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FindSimCommand.cs&quot; /&gt;
+@@ -58,10 +60,12 @@
+     &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
++    &lt;Compile Include=&quot;Commands\ResearchCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\TtsCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhisperCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ImportCommand.cs&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-07 05:47:44 UTC (rev 812)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-07 11:01:59 UTC (rev 813)
+@@ -110,6 +110,7 @@
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;AvatarManager.cs&quot; /&gt;
++    &lt;Compile Include=&quot;DirectoryManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\DownloadRequest_Folder.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\InventoryScript.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\InventoryWearable.cs&quot; /&gt;
+@@ -224,4 +225,4 @@
+     &lt;PostBuildEvent&gt;
+     &lt;/PostBuildEvent&gt;
+   &lt;/PropertyGroup&gt;
+-&lt;/Project&gt;
++&lt;/Project&gt;
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000216.html">[Libsecondlife-commits] r812 - branches/aditi/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000218.html">[Libsecondlife-commits] r814 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#217">[ date ]</a>
+              <a href="thread.html#217">[ thread ]</a>
+              <a href="subject.html#217">[ subject ]</a>
+              <a href="author.html#217">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

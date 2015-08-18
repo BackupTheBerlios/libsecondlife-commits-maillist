@@ -1,0 +1,425 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r789 - trunk/applications/SLProxy
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r789%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200701031822.l03IMMT6028089%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000178.html">
+   <LINK REL="Next"  HREF="000180.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r789 - trunk/applications/SLProxy</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r789%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200701031822.l03IMMT6028089%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r789 - trunk/applications/SLProxy">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  3 19:22:22 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000178.html">[Libsecondlife-commits] [Patch #1772] SLProxy: first pass at a	plugin system. No plugin unloading.
+</A></li>
+        <LI>Next message: <A HREF="000180.html">[Libsecondlife-commits] [Patch #1772] SLProxy: first pass at a	plugin system. No plugin unloading.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-03 19:22:20 +0100 (Wed, 03 Jan 2007)
+New Revision: 789
+
+Modified:
+   trunk/applications/SLProxy/Analyst.cs
+   trunk/applications/SLProxy/SLProxy.build
+Log:
+Merged in patch #1772 (slproxy plugins for the win)
+
+Modified: trunk/applications/SLProxy/Analyst.cs
+===================================================================
+--- trunk/applications/SLProxy/Analyst.cs	2007-01-03 18:17:31 UTC (rev 788)
++++ trunk/applications/SLProxy/Analyst.cs	2007-01-03 18:22:20 UTC (rev 789)
+@@ -42,107 +42,45 @@
+ using System.Net;
+ using System.Text.RegularExpressions;
+ 
+-public class Analyst
++public class Analyst : ProxyPlugin
+ {
+-    private static Proxy proxy;
+-    private static Hashtable commandDelegates = new Hashtable();
+-    private static Hashtable loggedPackets = new Hashtable();
+-    // private static string logGrep = null;
+-    private static Hashtable modifiedPackets = new Hashtable();
+-    private static LLUUID agentID;
+-    private static LLUUID sessionID;
+-    private static bool logLogin = false;
+-    private static Assembly libslAssembly;
++    private ProxyFrame frame;
++    private Proxy proxy;
++    private Hashtable loggedPackets = new Hashtable();
++    // private string logGrep = null;
++    private Hashtable modifiedPackets = new Hashtable();
++    private Assembly libslAssembly;
+ 
+-    public static void Main(string[] args)
++    public Analyst(ProxyFrame frame)
+     {
++	this.frame = frame; this.proxy = frame.proxy;
++    }
++
++    public override void Init()
++    {
+         libslAssembly = Assembly.Load(&quot;libsecondlife&quot;);
+         if (libslAssembly == null) throw new Exception(&quot;Assembly load exception&quot;);
+ 
+-        ProxyConfig proxyConfig = new ProxyConfig(&quot;Analyst V2&quot;, &quot;Austin Jennings / Andrew Ortman&quot;, args);
+-        proxy = new Proxy(proxyConfig);
+ 
+         // build the table of /command delegates
+         InitializeCommandDelegates();
+ 
+-        // add delegates for login
+-        proxy.SetLoginRequestDelegate(new XmlRpcRequestDelegate(LoginRequest));
+-        proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(LoginResponse));
+-
+-        // add a delegate for outgoing chat
+-        proxy.AddDelegate(PacketType.ChatFromViewer, Direction.Outgoing, new PacketDelegate(ChatFromViewerOut));
+-
+         //  handle command line arguments
+-        foreach (string arg in args)
++        foreach (string arg in frame.Args)
+             if (arg == &quot;--log-all&quot;)
+                 LogAll();
+-            else if (arg == &quot;--log-login&quot;)
+-                logLogin = true;
+-
+-        // start the proxy
+-        proxy.Start();
+     }
+ 
+-    // LoginRequest: dump a login request to the console
+-    private static void LoginRequest(XmlRpcRequest request)
+-    {
+-        if (logLogin)
+-        {
+-            Console.WriteLine(&quot;==&gt; Login Request&quot;);
+-            Console.WriteLine(request);
+-        }
+-    }
+-
+-    // Loginresponse: dump a login response to the console
+-    private static void LoginResponse(XmlRpcResponse response)
+-    {
+-        Hashtable values = (Hashtable)response.Value;
+-        if (values.Contains(&quot;agent_id&quot;))
+-            agentID = new LLUUID((string)values[&quot;agent_id&quot;]);
+-        if (values.Contains(&quot;session_id&quot;))
+-            sessionID = new LLUUID((string)values[&quot;session_id&quot;]);
+-
+-        if (logLogin)
+-        {
+-            Console.WriteLine(&quot;&lt;== Login Response&quot;);
+-            Console.WriteLine(response);
+-        }
+-    }
+-
+-    // ChatFromViewerOut: outgoing ChatFromViewer delegate; check for Analyst commands
+-    private static Packet ChatFromViewerOut(Packet packet, IPEndPoint sim)
+-    {
+-        // deconstruct the packet
+-        ChatFromViewerPacket cpacket = (ChatFromViewerPacket)packet;
+-        string message = System.Text.Encoding.UTF8.GetString(cpacket.ChatData.Message).Replace(&quot;\0&quot;, &quot;&quot;);
+-
+-        if (message.Length &gt; 1 &amp;&amp; message[0] == '/')
+-        {
+-            string[] words = message.Split(' ');
+-            if (commandDelegates.Contains(words[0]))
+-            {
+-                // this is an Analyst command; act on it and drop the chat packet
+-                ((CommandDelegate)commandDelegates[words[0]])(words);
+-                return null;
+-            }
+-        }
+-	
+-	return packet;
+-    }
+-
+-    // CommandDelegate: specifies a callback delegate for a /command
+-    private delegate void CommandDelegate(string[] words);
+-
+     // InitializeCommandDelegates: configure Analyst's commands
+-    private static void InitializeCommandDelegates()
++    private void InitializeCommandDelegates()
+     {
+-        commandDelegates[&quot;/log&quot;] = new CommandDelegate(CmdLog);
+-        commandDelegates[&quot;/-log&quot;] = new CommandDelegate(CmdNoLog);
+-        // commandDelegates[&quot;/grep&quot;] = new CommandDelegate(CmdGrep);
+-        commandDelegates[&quot;/set&quot;] = new CommandDelegate(CmdSet);
+-        commandDelegates[&quot;/-set&quot;] = new CommandDelegate(CmdNoSet);
+-        commandDelegates[&quot;/inject&quot;] = new CommandDelegate(CmdInject);
+-        commandDelegates[&quot;/in&quot;] = new CommandDelegate(CmdInject);
++        frame.AddCommand(&quot;/log&quot;,  new ProxyFrame.CommandDelegate(CmdLog));
++        frame.AddCommand(&quot;/-log&quot;, new ProxyFrame.CommandDelegate(CmdNoLog));
++        // frame.AddCommand(&quot;/grep&quot;, new ProxyFrame.CommandDelegate(CmdGrep));
++        frame.AddCommand(&quot;/set&quot;, new ProxyFrame.CommandDelegate(CmdSet));
++        frame.AddCommand(&quot;/-set&quot;, new ProxyFrame.CommandDelegate(CmdNoSet));
++        frame.AddCommand(&quot;/inject&quot;, new ProxyFrame.CommandDelegate(CmdInject));
++        frame.AddCommand(&quot;/in&quot;, new ProxyFrame.CommandDelegate(CmdInject));
+     }
+ 
+     private static PacketType packetTypeFromName(string name)
+@@ -154,7 +92,7 @@
+     }
+ 
+     // CmdLog: handle a /log command
+-    private static void CmdLog(string[] words)
++    private void CmdLog(string[] words)
+     {
+         if (words.Length != 2)
+             SayToUser(&quot;Usage: /log &lt;packet name&gt;&quot;);
+@@ -183,7 +121,7 @@
+     }
+ 
+     // CmdNoLog: handle a /-log command
+-    private static void CmdNoLog(string[] words)
++    private void CmdNoLog(string[] words)
+     {
+         if (words.Length != 2)
+             SayToUser(&quot;Usage: /-log &lt;packet name&gt;&quot;);
+@@ -204,7 +142,7 @@
+     }
+ 
+     /*	// CmdGrep: handle a /grep command
+-        private static void CmdGrep(string[] words) {
++        private void CmdGrep(string[] words) {
+             if (words.Length == 1) {
+                 logGrep = null;
+                 SayToUser(&quot;stopped filtering logs&quot;);
+@@ -217,7 +155,7 @@
+         } */
+ 
+     // CmdSet: handle a /set command
+-    private static void CmdSet(string[] words)
++    private void CmdSet(string[] words)
+     {
+         if (words.Length &lt; 5)
+             SayToUser(&quot;Usage: /set &lt;packet name&gt; &lt;block&gt; &lt;field&gt; &lt;value&gt;&quot;);
+@@ -265,7 +203,7 @@
+     }
+ 
+     // CmdNoSet: handle a /-set command
+-    private static void CmdNoSet(string[] words)
++    private void CmdNoSet(string[] words)
+     {
+         if (words.Length == 2 &amp;&amp; words[1] == &quot;*&quot;)
+         {
+@@ -314,7 +252,7 @@
+ 
+ 
+     // CmdInject: handle an /inject command
+-    private static void CmdInject(string[] words)
++    private void CmdInject(string[] words)
+     {
+         if (words.Length &lt; 2)
+             SayToUser(&quot;Usage: /inject &lt;packet file&gt; [value]&quot;);
+@@ -426,9 +364,9 @@
+                             else if (lineValue == &quot;$UUID&quot;)
+                                 fval = LLUUID.Random();
+                             else if (lineValue == &quot;$AgentID&quot;)
+-                                fval = agentID;
++                                fval = frame.AgentID;
+                             else if (lineValue == &quot;$SessionID&quot;)
+-                                fval = sessionID;
++                                fval = frame.SessionID;
+                             else
+                                 fval = MagicCast(name, block, lineField, lineValue);
+ 
+@@ -470,12 +408,12 @@
+     }
+ 
+     // SayToUser: send a message to the user as in-world chat
+-    private static void SayToUser(string message)
++    private void SayToUser(string message)
+     {
+         ChatFromSimulatorPacket packet = new ChatFromSimulatorPacket();
+         packet.ChatData.FromName = Helpers.StringToField(&quot;Analyst&quot;);
+         packet.ChatData.SourceID = LLUUID.Random();
+-        packet.ChatData.OwnerID = agentID;
++        packet.ChatData.OwnerID = frame.AgentID;
+         packet.ChatData.SourceType = (byte)2;
+         packet.ChatData.ChatType = (byte)1;
+         packet.ChatData.Audible = (byte)1;
+@@ -517,7 +455,7 @@
+     }
+ 
+     // MagicCast: given a packet/block/field name and a string, convert the string to a value of the appropriate type
+-    private static object MagicCast(string name, string block, string field, string value)
++    private object MagicCast(string name, string block, string field, string value)
+     {
+         Type packetClass = libslAssembly.GetType(&quot;libsecondlife.Packets.&quot; + name + &quot;Packet&quot;);
+         if (packetClass == null) throw new Exception(&quot;Couldn't get class &quot; + name + &quot;Packet&quot;);
+@@ -690,19 +628,19 @@
+     }
+ 
+     // ModifyIn: modify an incoming packet
+-    private static Packet ModifyIn(Packet packet, IPEndPoint endPoint)
++    private Packet ModifyIn(Packet packet, IPEndPoint endPoint)
+     {
+         return Modify(packet, endPoint, Direction.Incoming);
+     }
+ 
+     // ModifyOut: modify an outgoing packet
+-    private static Packet ModifyOut(Packet packet, IPEndPoint endPoint)
++    private Packet ModifyOut(Packet packet, IPEndPoint endPoint)
+     {
+         return Modify(packet, endPoint, Direction.Outgoing);
+     }
+ 
+     // Modify: modify a packet
+-    private static Packet Modify(Packet packet, IPEndPoint endPoint, Direction direction)
++    private Packet Modify(Packet packet, IPEndPoint endPoint, Direction direction)
+     {
+         if (modifiedPackets.Contains(packet.Type))
+         {
+@@ -732,21 +670,21 @@
+     }
+ 
+     // LogPacketIn: log an incoming packet
+-    private static Packet LogPacketIn(Packet packet, IPEndPoint endPoint)
++    private Packet LogPacketIn(Packet packet, IPEndPoint endPoint)
+     {
+ 	LogPacket(packet, endPoint, Direction.Incoming);
+         return packet;
+     }
+ 
+     // LogPacketOut: log an outgoing packet
+-    private static Packet LogPacketOut(Packet packet, IPEndPoint endPoint)
++    private Packet LogPacketOut(Packet packet, IPEndPoint endPoint)
+     {
+ 	LogPacket(packet, endPoint, Direction.Outgoing);
+         return packet;
+     }
+ 
+     // LogAll: register logging delegates for all packets
+-    private static void LogAll()
++    private void LogAll()
+     {
+         Type packetTypeType = typeof(PacketType);
+         System.Reflection.MemberInfo[] packetTypes = packetTypeType.GetMembers();
+@@ -776,7 +714,7 @@
+     }
+ 
+     // NoLogAll: unregister logging delegates for all packets
+-    private static void NoLogAll()
++    private void NoLogAll()
+     {
+         Type packetTypeType = typeof(PacketType);
+         System.Reflection.MemberInfo[] packetTypes = packetTypeType.GetMembers();
+@@ -806,7 +744,7 @@
+     }
+ 
+     // LogPacket: dump a packet to the console
+-    private static void LogPacket(Packet packet, IPEndPoint endPoint, Direction direction)
++    private void LogPacket(Packet packet, IPEndPoint endPoint, Direction direction)
+     {
+         /* if (logGrep != null) {
+             bool match = false;
+
+Modified: trunk/applications/SLProxy/SLProxy.build
+===================================================================
+--- trunk/applications/SLProxy/SLProxy.build	2007-01-03 18:17:31 UTC (rev 788)
++++ trunk/applications/SLProxy/SLProxy.build	2007-01-03 18:22:20 UTC (rev 789)
+@@ -43,7 +43,7 @@
+   &lt;/target&gt;
+ 
+   &lt;!-- build tasks --&gt;
+-  &lt;target name=&quot;build&quot; depends=&quot;build-analyst build-chatconsole&quot;
++  &lt;target name=&quot;build&quot; depends=&quot;build-analyst build-chatconsole build-main&quot;
+      description=&quot;build analyst and chatconsole&quot;&gt;
+   &lt;/target&gt;
+ 
+@@ -57,6 +57,7 @@
+       output=&quot;${bin_dir}/SLProxy.dll&quot;&gt;
+       &lt;sources failonempty=&quot;true&quot;&gt;
+         &lt;include name=&quot;SLProxy.cs&quot; /&gt;
++        &lt;include name=&quot;SLProxyLoader.cs&quot; /&gt;
+         &lt;!-- &lt;include name=&quot;legacy/*.cs&quot; /&gt; --&gt;
+       &lt;/sources&gt;
+       &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
+@@ -65,17 +66,36 @@
+     &lt;/csc&gt;
+   &lt;/target&gt;
+ 
+-  &lt;target name=&quot;build-analyst&quot;
++  &lt;target name=&quot;build-analyst&quot; depends=&quot;init build-slproxy&quot;
++    description=&quot;Builds the binaries for the current configuration&quot;&gt;
++    &lt;echo message=&quot;Build Directory is ${bin_dir}/&quot; /&gt;
++    &lt;mkdir dir=&quot;${bin_dir}&quot; failonerror=&quot;false&quot; /&gt;
++    &lt;csc
++      target=&quot;library&quot;
++      debug=&quot;${build.debug}&quot;
++      output=&quot;${bin_dir}/Analyst.dll&quot;&gt;
++      &lt;sources failonempty=&quot;true&quot;&gt;
++        &lt;include name=&quot;Analyst.cs&quot; /&gt;
++        &lt;!-- &lt;include name=&quot;legacy/*.cs&quot; /&gt; --&gt;
++      &lt;/sources&gt;
++      &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
++        &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
++        &lt;include name=&quot;SLProxy.dll&quot;/&gt;
++      &lt;/references&gt;
++    &lt;/csc&gt;
++  &lt;/target&gt;
++
++  &lt;target name=&quot;build-main&quot;
+     depends=&quot;init build-slproxy&quot;
+-    description=&quot;build SLProxy Analyst&quot;&gt;
++    description=&quot;build SLProxy main&quot;&gt;
+     &lt;echo message=&quot;Build Directory is ${bin_dir}/&quot; /&gt;
+     &lt;mkdir dir=&quot;${bin_dir}&quot; failonerror=&quot;false&quot; /&gt;
+     &lt;csc
+       target=&quot;exe&quot;
+       debug=&quot;${build.debug}&quot;
+-      output=&quot;${bin_dir}/Analyst.exe&quot;&gt;
++      output=&quot;${bin_dir}/Proxy.exe&quot;&gt;
+       &lt;sources failonempty=&quot;true&quot;&gt;
+-        &lt;include name=&quot;Analyst.cs&quot; /&gt;
++        &lt;include name=&quot;SLProxyMain.cs&quot; /&gt;
+       &lt;/sources&gt;
+       &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
+         &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000178.html">[Libsecondlife-commits] [Patch #1772] SLProxy: first pass at a	plugin system. No plugin unloading.
+</A></li>
+	<LI>Next message: <A HREF="000180.html">[Libsecondlife-commits] [Patch #1772] SLProxy: first pass at a	plugin system. No plugin unloading.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

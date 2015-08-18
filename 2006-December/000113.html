@@ -1,0 +1,480 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r746 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r746%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200612202350.kBKNobYK032118%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000112.html">
+   <LINK REL="Next"  HREF="000114.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r746 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r746%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200612202350.kBKNobYK032118%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r746 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 21 00:50:37 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000112.html">[Libsecondlife-commits] r745 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+        <LI>Next message: <A HREF="000114.html">[Libsecondlife-commits] r747 - in trunk/libsecondlife-cs:	AssetSystem examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-21 00:50:35 +0100 (Thu, 21 Dec 2006)
+New Revision: 746
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+   trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+* Changed most of the Console.WriteLine() calls to SecondLife.Log() or .DebugLog()
+* Updated the TextureEntry creation to properly display jackets (shoes may still be missing, not sure)
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -84,7 +84,7 @@
+                 AManager.GetInventoryAsset(wearableAsset);
+                 if (wearableAsset.AssetData.Length == 0)
+                 {
+-                    Console.WriteLine(&quot;Retrieval failed&quot;);
++                    Client.Log(&quot;Retrieval failed&quot;, Helpers.LogLevel.Warning);
+                 }
+ 
+                 try
+@@ -101,13 +101,11 @@
+                 }
+                 catch (Exception e)
+                 {
+-                    Console.WriteLine(&quot;ItemID: &quot; + wdb.ItemID);
+-                    Console.WriteLine(&quot;WearableType : &quot; + wdb.WearableType);
+-                    Console.WriteLine(&quot;Retrieving as type: &quot; + wearableAsset.Type);
+-
+-                    Console.WriteLine(e.Message);
+-                    Console.WriteLine(e.StackTrace);
+-                    Console.WriteLine(wearableAsset.AssetDataToString());
++                    Client.Log(&quot;ItemID: &quot; + wdb.ItemID + Environment.NewLine +
++                        &quot;WearableType: &quot; + wdb.WearableType + Environment.NewLine +
++                        &quot;Retrieving as type: &quot; + asset.Type + Environment.NewLine +
++                        e.ToString() + Environment.NewLine + 
++                        asset.AssetDataToString(), Helpers.LogLevel.Error);
+                 }
+             }
+ 
+@@ -134,8 +132,10 @@
+                     case 18:
+                         break;
+                     default:
+-                        Console.WriteLine(&quot;Unknown order for FaceID: &quot; + faceid);
+-                        Console.WriteLine(&quot;Your wearables define a face that we don't know the order of.  Please capture a AgentSetAppearance packet for your current outfit and submit to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;);
++                        Client.Log(&quot;Unknown order for FaceID: &quot; + faceid + Environment.NewLine +
++                            &quot;Your wearables define a face that we don't know the order of.  Please &quot; +
++                            &quot;capture a AgentSetAppearance packet for your current outfit and submit to &quot; +
++                            &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">static.sprocket at gmail.com</A>, thanks!&quot;, Helpers.LogLevel.Info);
+                         break;
+                 }
+             }
+@@ -149,6 +149,7 @@
+             te2.CreateFace(14).TextureID = AgentTextureEntry.GetFace(14).TextureID;
+             te2.CreateFace(13).TextureID = AgentTextureEntry.GetFace(13).TextureID;
+             te2.CreateFace(12).TextureID = AgentTextureEntry.GetFace(12).TextureID;
++            // I wonder if shoes are somewhere in here?
+             te2.CreateFace(7).TextureID = AgentTextureEntry.GetFace(7).TextureID;
+             te2.CreateFace(6).TextureID = AgentTextureEntry.GetFace(6).TextureID;
+             te2.CreateFace(5).TextureID = AgentTextureEntry.GetFace(5).TextureID;
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -164,8 +164,9 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
++
+             request.Completed.WaitOne();
+ 
+             item.SetAssetData(request.AssetData);
+@@ -190,7 +191,7 @@
+ 			slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             request.Completed.WaitOne();
+@@ -203,7 +204,7 @@
+         private void AssetUploadCompleteCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             Packets.AssetUploadCompletePacket reply = (AssetUploadCompletePacket)packet;
+@@ -214,7 +215,7 @@
+         private void RequestXferCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             RequestXferPacket reply = (RequestXferPacket)packet;
+@@ -228,7 +229,7 @@
+         private void ConfirmXferPacketCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             ConfirmXferPacketPacket reply = (ConfirmXferPacketPacket)packet;
+@@ -240,7 +241,7 @@
+         private void TransferInfoCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             TransferInfoPacket reply = (TransferInfoPacket)packet;
+@@ -276,7 +277,7 @@
+         private void TransferPacketCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             TransferPacketPacket reply = (TransferPacketPacket)packet;
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -91,10 +91,9 @@
+ 
+             while (this.Completed.WaitOne(1000, true) == false &amp;&amp; this.resendCount &lt; 20) // only resend 20 times
+             {
+-                //Console.WriteLine(&quot;WaitOne() timeout while uploading&quot;);
+                 if (this.SecondsSinceLastPacket &gt; 2)
+                 {
+-                    Console.WriteLine(&quot;Resending Packet (more than 2 seconds since last confirm)&quot;);
++                    slClient.Log(&quot;Resending Packet (more than 2 seconds since last confirm)&quot;, Helpers.LogLevel.Info);
+                     this.SendCurrentPacket();
+                     resendCount++;
+                 }
+@@ -131,13 +130,13 @@
+             }
+ 
+             slClient.Network.SendPacket(packet);
+-#if DEBUG_PACKETS
+-                Console.WriteLine(packet);
+-#endif
+-#if DEBUG_HEADERS
+-                Console.WriteLine(packet.Header);
+-#endif
+ 
++            #if DEBUG_PACKETS
++                slClient.DebugLog(packet);
++            #endif
++            #if DEBUG_HEADERS
++            slClient.DebugLog(packet.Header.ToString());
++            #endif
+         }
+ 
+         internal void RequestXfer(ulong XferID)
+@@ -167,7 +166,6 @@
+ 
+         private void SendCurrentPacket()
+         {
+-            //            Console.WriteLine(&quot;Sending &quot; + tr.CurrentPacket + &quot; / &quot; + tr.NumPackets);
+             Packet uploadPacket;
+ 
+             // technically we don't need this lock, because no state is updated here!
+@@ -211,12 +209,12 @@
+ 
+             slClient.Network.SendPacket(uploadPacket);
+ 
+-#if DEBUG_PACKETS
+-                Console.WriteLine(uploadPacket);
+-#endif
+-#if DEBUG_HEADERS
+-            Console.WriteLine(uploadPacket.Header);
+-#endif
++            #if DEBUG_PACKETS
++                slClient.DebugLog(uploadPacket);
++            #endif
++            #if DEBUG_HEADERS
++                slClient.DebugLog(uploadPacket.Header.ToString());
++            #endif
+         }
+ 
+         internal void UploadComplete(LLUUID assetID, bool success)
+@@ -230,7 +228,7 @@
+             else
+                 StatusMsg = &quot;Server returned failed&quot;;
+ 
+-            Console.WriteLine(&quot;Upload Complete&quot;);
++            slClient.Log(&quot;Upload complete&quot;, Helpers.LogLevel.Info);
+             Completed.Set();
+         }
+     }
+
+Modified: trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -140,12 +140,11 @@
+                 }
+                 catch (Exception e)
+                 {
+-                    Console.WriteLine(&quot;ERROR: Disk Cache directory could not be established, defaulting to Memory Cache.&quot;);
+-                    Console.WriteLine(e.Message);
++                    slClient.Log(&quot;Disk Cache directory could not be established, defaulting to Memory Cache: &quot; + Environment.NewLine +
++                        e.ToString(), Helpers.LogLevel.Warning);
+ 
+                     CacheType = CacheTypes.Memory;
+                 }
+-
+             }
+ 
+             // Image Packet Helpers
+@@ -338,7 +337,7 @@
+         public void ImageDataCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             ImageDataPacket reply = (ImageDataPacket)packet;
+@@ -395,7 +394,7 @@
+         public void ImagePacketCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             ImagePacketPacket reply = (ImagePacketPacket)packet;
+@@ -447,7 +446,7 @@
+         public void ImageNotInDatabaseCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             ImageNotInDatabasePacket reply = (ImageNotInDatabasePacket)packet;
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/Helpers.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -223,6 +223,38 @@
+             return System.Text.UTF8Encoding.UTF8.GetBytes(str);
+         }
+ 
++        //public static byte[] HexStringToBytes(string hexString)
++        //{
++        //    string newString = &quot;&quot;;
++        //    char c;
++
++        //    // remove all none A-F, 0-9, characters
++        //    for (int i = 0; i &lt; hexString.Length; i++)
++        //    {
++        //        c = hexString[i];
++        //        if (IsHexDigit(c))
++        //            newString += c;
++        //    }
++
++        //    // if odd number of characters, discard last character
++        //    if (newString.Length % 2 != 0)
++        //    {
++        //        newString = newString.Substring(0, newString.Length - 1);
++        //    }
++
++        //    int byteLength = newString.Length / 2;
++        //    byte[] bytes = new byte[byteLength];
++        //    string hex;
++        //    int j = 0;
++        //    for (int i = 0; i &lt; bytes.Length; i++)
++        //    {
++        //        hex = new String(new Char[] { newString[j], newString[j + 1] });
++        //        bytes[i] = HexToByte(hex);
++        //        j = j + 2;
++        //    }
++        //    return bytes;
++        //}
++
+         public static uint GetUnixTime()
+         {
+             return (uint)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -275,7 +275,7 @@
+                     slClient.Network.SendPacket(packet);
+ 
+ #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+ #endif
+                 } while (!ItemCreationCompleted.WaitOne(5000, false));
+             }
+@@ -291,7 +291,7 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet); 
++                slClient.DebugLog(packet); 
+             #endif         
+         }
+ 
+@@ -301,7 +301,7 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet); 
++                slClient.DebugLog(packet); 
+             #endif         
+         }
+ 
+@@ -320,7 +320,7 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet); 
++                slClient.DebugLog(packet); 
+             #endif         
+         }
+ 
+@@ -333,7 +333,7 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet); 
++                slClient.DebugLog(packet); 
+             #endif         
+         }
+ 
+@@ -408,8 +408,10 @@
+                 int curTick = Environment.TickCount;
+                 if ((curTick - LastPacketRecievedAtTick) &gt; 10000)
+                 {
+-                    Console.WriteLine(&quot;Time-out while waiting for packets (&quot; + ((curTick - LastPacketRecievedAtTick) / 1000) + &quot; seconds since last packet)&quot;);
+-                    Console.WriteLine(&quot;Current Status:&quot;);
++                    slClient.Log(&quot;Time-out while waiting for packets (&quot; +
++                        ((curTick - LastPacketRecievedAtTick) / 1000) + &quot; seconds since last packet)&quot;,
++                        Helpers.LogLevel.Warning);
++                    //Console.WriteLine(&quot;Current Status:&quot;);
+ 
+                     // have to make a seperate list otherwise we run into modifying the original array
+                     // while still enumerating it.
+@@ -422,7 +424,7 @@
+ 
+                     foreach (DownloadRequest_Folder dr in FolderDownloadStatus.Values)
+                     {
+-                        Console.WriteLine(dr.FolderID + &quot; &quot; + dr.Expected + &quot; / &quot; + dr.Received + &quot; / &quot; + dr.LastReceivedAtTick);
++                        //Console.WriteLine(dr.FolderID + &quot; &quot; + dr.Expected + &quot; / &quot; + dr.Received + &quot; / &quot; + dr.LastReceivedAtTick);
+ 
+                         alRestartList.Add(dr);
+                     }
+@@ -432,10 +434,9 @@
+                     {
+                         RequestFolder(dr);
+                     }
++                }
+ 
+-                }
+                 slClient.Tick();
+-
+             }
+         }
+ 
+@@ -444,7 +445,7 @@
+         public void UpdateCreateInventoryItemHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet);
+             #endif
+ 
+             if (iiCreationInProgress != null)
+@@ -482,7 +483,7 @@
+             }
+             else
+             {
+-                Console.WriteLine(packet);
++                slClient.DebugLog(packet.ToString());
+                 throw new Exception(&quot;Received a packet for item creation, but no such response was expected.  This is probably a bad thing...&quot;);
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-20 22:19:52 UTC (rev 745)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-20 23:50:35 UTC (rev 746)
+@@ -172,7 +172,6 @@
+             }
+             catch (Exception e)
+             {
+-                Console.WriteLine(e.ToString());
+                 Client.Log(e.ToString(), Helpers.LogLevel.Error);
+             }
+         }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000112.html">[Libsecondlife-commits] r745 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+	<LI>Next message: <A HREF="000114.html">[Libsecondlife-commits] r747 - in trunk/libsecondlife-cs:	AssetSystem examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

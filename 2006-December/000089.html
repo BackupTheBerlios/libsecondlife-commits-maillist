@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r725 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r725%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200612150105.kBF15q0w014908%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000088.html">
+   <LINK REL="Next"  HREF="000090.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r725 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r725%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200612150105.kBF15q0w014908%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r725 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 15 02:05:52 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000088.html">[Libsecondlife-commits] [Patch #1724] improve nant build script to	make TstClient commands work
+</A></li>
+        <LI>Next message: <A HREF="000090.html">[Libsecondlife-commits] r726 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#89">[ date ]</a>
+              <a href="thread.html#89">[ thread ]</a>
+              <a href="subject.html#89">[ subject ]</a>
+              <a href="author.html#89">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-15 02:05:52 +0100 (Fri, 15 Dec 2006)
+New Revision: 725
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+Added ExportOutfit and ImportOutfit commands to TestClient
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-14 22:46:00 UTC (rev 724)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-15 01:05:52 UTC (rev 725)
+@@ -0,0 +1,57 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Xml;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ExportOutfitCommand : Command
++    {
++        public ExportOutfitCommand()
++        {
++            Name = &quot;exportoutfit&quot;;
++            Description = &quot;Exports an avatars outfit to an xml file. Usage: exportoutfit avataruuid outputfile.xml&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 2)
++                return &quot;Usage: exportoutfit avataruuid outputfile.xml&quot;;
++
++            LLUUID id;
++
++            try
++            {
++                id = new LLUUID(args[0]);
++            }
++            catch (Exception)
++            {
++                return &quot;Usage: exportoutfit avataruuid outputfile.xml&quot;;
++            }
++
++            lock (TestClient.Appearances)
++            {
++                if (TestClient.Appearances.ContainsKey(id))
++                {
++                    try
++                    {
++                        XmlWriter writer = XmlWriter.Create(args[1]);
++                        TestClient.Appearances[id].ToXml(writer);
++                    }
++                    catch (Exception e)
++                    {
++                        return e.ToString();
++                    }
++
++                    return &quot;Exported appearance for avatar &quot; + id.ToString() + &quot; to &quot; + args[1];
++                }
++                else
++                {
++                    return &quot;Couldn't find an appearance for avatar &quot; + id.ToString();
++                }
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-14 22:46:00 UTC (rev 724)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-15 01:05:52 UTC (rev 725)
+@@ -0,0 +1,65 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Xml;
++using System.Xml.Serialization;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ImportOutfitCommand : Command
++    {
++        private uint SerialNum = 1;
++
++        public ImportOutfitCommand()
++        {
++            Name = &quot;importoutfit&quot;;
++            Description = &quot;Imports an appearance from an xml file. Usage: importoutfit inputfile.xml&quot;;
++        }
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 1)
++                return &quot;Usage: importoutfit inputfile.xml&quot;;
++
++            try
++            {
++                XmlReader reader = XmlReader.Create(args[0]);
++                XmlSerializer serializer = new XmlSerializer(typeof(Packet));
++                AvatarAppearancePacket appearance = (AvatarAppearancePacket)serializer.Deserialize(reader);
++
++                AgentSetAppearancePacket set = new AgentSetAppearancePacket();
++
++                set.AgentData.AgentID = Client.Network.AgentID;
++                set.AgentData.SessionID = Client.Network.SessionID;
++                set.AgentData.SerialNum = SerialNum++;
++
++                float AV_Height_Range = 2.025506f - 1.50856f;
++                float AV_Height = 1.50856f + (((float)appearance.VisualParam[25].ParamValue / 255.0f) * AV_Height_Range);
++                set.AgentData.Size = new LLVector3(0.45f, 0.6f, AV_Height);
++
++                set.ObjectData.TextureEntry = appearance.ObjectData.TextureEntry;
++                set.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[appearance.VisualParam.Length];
++
++                int i = 0;
++                foreach (AvatarAppearancePacket.VisualParamBlock block in appearance.VisualParam)
++                {
++                    set.VisualParam[i] = new AgentSetAppearancePacket.VisualParamBlock();
++                    set.VisualParam[i].ParamValue = block.ParamValue;
++                    i++;
++                }
++
++                set.WearableData = new AgentSetAppearancePacket.WearableDataBlock[0];
++
++                Client.Network.SendPacket(set);
++            }
++            catch (Exception e)
++            {
++                return e.ToString();
++            }
++
++            return &quot;Imported &quot; + args[0] + &quot; and sent an AgentSetAppearance packet&quot;;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-14 22:46:00 UTC (rev 724)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-15 01:05:52 UTC (rev 725)
+@@ -21,6 +21,7 @@
+         public LLUUID GroupID = LLUUID.Zero;
+         public Dictionary&lt;LLUUID, GroupMember&gt; GroupMembers;
+         public Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt;();
++        public Dictionary&lt;LLUUID, AvatarAppearancePacket&gt; Appearances = new Dictionary&lt;LLUUID, AvatarAppearancePacket&gt;();
+         public Dictionary&lt;uint, Avatar&gt; Avatars = new Dictionary&lt;uint,Avatar&gt;();
+         public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
+         public Dictionary&lt;string, object&gt; SharedValues = new Dictionary&lt;string, object&gt;();
+@@ -93,6 +94,8 @@
+             client.Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+             client.Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
+ 
++            client.Network.RegisterCallback(PacketType.AvatarAppearance, new NetworkManager.PacketCallback(AvatarAppearanceHandler));
++
+             client.Objects.RequestAllObjects = true;
+ 
+             bool login = client.Network.Login(account.FirstName, account.LastName, account.Password, 
+@@ -380,6 +383,13 @@
+             }
+         }
+ 
++        private void AvatarAppearanceHandler(Packet packet, Simulator simulator)
++        {
++            AvatarAppearancePacket appearance = (AvatarAppearancePacket)packet;
++
++            lock (Appearances) Appearances[appearance.Sender.ID] = appearance;
++        }
++
+         private void Self_OnInstantMessage(LLUUID fromAgentID, string fromAgentName, LLUUID toAgentID, uint parentEstateID, 
+             LLUUID regionID, LLVector3 position, byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, 
+             string message, byte offline, byte[] binaryBucket)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-14 22:46:00 UTC (rev 724)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-15 01:05:52 UTC (rev 725)
+@@ -36,6 +36,8 @@
+     &lt;Compile Include=&quot;Arguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\ImportOutfitCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\PacketLogCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SetAppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000088.html">[Libsecondlife-commits] [Patch #1724] improve nant build script to	make TstClient commands work
+</A></li>
+	<LI>Next message: <A HREF="000090.html">[Libsecondlife-commits] r726 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#89">[ date ]</a>
+              <a href="thread.html#89">[ thread ]</a>
+              <a href="subject.html#89">[ subject ]</a>
+              <a href="author.html#89">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

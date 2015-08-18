@@ -1,0 +1,370 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r729 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r729%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples%20examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612161651.kBGGp9Ru007316%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000096.html">
+   <LINK REL="Next"  HREF="000097.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r729 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r729%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples%20examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612161651.kBGGp9Ru007316%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r729 - in trunk/libsecondlife-cs: .	examples examples/TestClient examples/TestClient/Commands">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 17:51:09 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000096.html">[Libsecondlife-commits] [Patch #1724] improve nant build script to	make TstClient commands work
+</A></li>
+        <LI>Next message: <A HREF="000097.html">[Libsecondlife-commits] r730 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#94">[ date ]</a>
+              <a href="thread.html#94">[ thread ]</a>
+              <a href="subject.html#94">[ subject ]</a>
+              <a href="author.html#94">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-16 17:51:04 +0100 (Sat, 16 Dec 2006)
+New Revision: 729
+
+Modified:
+   trunk/libsecondlife-cs/GridManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/Settings.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.build
+   trunk/libsecondlife-cs/examples/examples.build
+Log:
+More documenting. Applied patches #1723 and #1724. Someone test nant build.
+
+Modified: trunk/libsecondlife-cs/GridManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GridManager.cs	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/GridManager.cs	2006-12-16 16:51:04 UTC (rev 729)
+@@ -253,7 +253,7 @@
+         /// Populate Grid info based on data from MapBlockReplyPacket
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming MapBlockReplyPacket packet&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+ 		private void MapBlockReplyHandler(Packet packet, Simulator simulator) 
+ 		{
+ 			GridRegion region;
+@@ -301,7 +301,7 @@
+         /// Get sim time from the appropriate packet
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming SimulatorViewerTimeMessagePacket from SL&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void TimeMessageHandler(Packet packet, Simulator simulator)
+         {
+             SunDirection = ((SimulatorViewerTimeMessagePacket)packet).TimeInfo.SunDirection;
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-16 16:51:04 UTC (rev 729)
+@@ -35,11 +35,11 @@
+     /// &lt;summary&gt;
+     /// Triggered on incoming chat messages
+     /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;Message&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;Audible&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;Type&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;Sourcetype&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;FromName&quot;&gt;&lt;/param&gt;
++    /// &lt;param name=&quot;Message&quot;&gt;Text of chat message&lt;/param&gt;
++    /// &lt;param name=&quot;Audible&quot;&gt;Is this normal audible chat or not.&lt;/param&gt;
++    /// &lt;param name=&quot;Type&quot;&gt;Type of chat (whisper,shout,status,etc)&lt;/param&gt;
++    /// &lt;param name=&quot;Sourcetype&quot;&gt;Type of source (Agent / Object / ???)&lt;/param&gt;
++    /// &lt;param name=&quot;FromName&quot;&gt;Text name of sending Avatar/Object&lt;/param&gt;
+     /// &lt;param name=&quot;ID&quot;&gt;&lt;/param&gt;
+     public delegate void ChatCallback(string message, byte audible, byte type, byte sourcetype,
+         string fromName, LLUUID id, LLUUID ownerid, LLVector3 position);
+@@ -67,17 +67,17 @@
+     /// &lt;summary&gt;
+     /// Tiggered on incoming instant messages
+     /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;fromAgentID&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;fromAgentName&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;toAgentID&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;parentEstateID&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;regionID&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;position&quot;&gt;&lt;/param&gt;
++    /// &lt;param name=&quot;fromAgentID&quot;&gt;Key of sender&lt;/param&gt;
++    /// &lt;param name=&quot;fromAgentName&quot;&gt;Name of sender&lt;/param&gt;
++    /// &lt;param name=&quot;toAgentID&quot;&gt;Key of destination Avatar&lt;/param&gt;
++    /// &lt;param name=&quot;parentEstateID&quot;&gt;ID of originating Estate&lt;/param&gt;
++    /// &lt;param name=&quot;regionID&quot;&gt;Key of originating Region&lt;/param&gt;
++    /// &lt;param name=&quot;position&quot;&gt;Coordinates in originating Region&lt;/param&gt;
+     /// &lt;param name=&quot;dialog&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;groupIM&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;imSessionID&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;timestamp&quot;&gt;&lt;/param&gt;
+-    /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
++    /// &lt;param name=&quot;groupIM&quot;&gt;Group IM session toggle&lt;/param&gt;
++    /// &lt;param name=&quot;imSessionID&quot;&gt;Key of IM Session&lt;/param&gt;
++    /// &lt;param name=&quot;timestamp&quot;&gt;Timestamp of message&lt;/param&gt;
++    /// &lt;param name=&quot;message&quot;&gt;Text of message&lt;/param&gt;
+     /// &lt;param name=&quot;offline&quot;&gt;&lt;/param&gt;
+     /// &lt;param name=&quot;binaryBucket&quot;&gt;&lt;/param&gt;
+     public delegate void InstantMessageCallback(LLUUID fromAgentID, string fromAgentName,
+@@ -774,6 +774,7 @@
+         /// &lt;summary&gt;
+         /// Grabs an object
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;objectLocalID&quot;&gt;Local ID of Object to grab&lt;/param&gt;
+         public void Grab(uint objectLocalID)
+         {
+             ObjectGrabPacket grab = new ObjectGrabPacket();
+@@ -889,7 +890,7 @@
+         ///   OnInstantMessage is defined call that with the appropriate arguments.
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming ImprovedInstantMessagePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void InstantMessageHandler(Packet packet, Simulator simulator)
+         {
+             if (packet.Type == PacketType.ImprovedInstantMessage)
+@@ -922,7 +923,7 @@
+         ///   that with the appropriate arguments.
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming ChatFromSimulatorPacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void ChatHandler(Packet packet, Simulator simulator)
+         {
+             if (OnChat != null)
+@@ -940,7 +941,11 @@
+                     );
+             }
+         }
+-
++        /// &lt;summary&gt;
++        /// Used for parsing llDialog's
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming ScriptDialog packet&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void ScriptDialogHandler(Packet packet, Simulator simulator)
+         {
+             if (OnScriptDialog != null)
+@@ -968,7 +973,7 @@
+         /// Update client's Position and LookAt from incoming packet
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming AgentMovementCompletePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void MovementCompleteHandler(Packet packet, Simulator simulator)
+         {
+             AgentMovementCompletePacket movement = (AgentMovementCompletePacket)packet;
+@@ -981,7 +986,7 @@
+         /// Update Client Avatar's health via incoming packet
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming HealthMessagePacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void HealthHandler(Packet packet, Simulator simulator)
+         {
+             health = ((HealthMessagePacket)packet).HealthData.Health;
+@@ -991,7 +996,7 @@
+         /// Update Client Avatar's L$ balance from incoming packet
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming MoneyBalanceReplyPacket&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;[UNUSED]&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+         private void BalanceHandler(Packet packet, Simulator simulator)
+         {
+             if (packet.Type == PacketType.MoneyBalanceReply)
+@@ -1016,8 +1021,8 @@
+         /// &lt;summary&gt;
+         /// Handler for teleport Requests
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;Packet&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;Simulator&lt;/param&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;Incoming TeleportHandler packet&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;Simulator sending teleport information&lt;/param&gt;
+         private void TeleportHandler(Packet packet, Simulator simulator)
+         {
+             if (packet.Type == PacketType.TeleportStart)
+@@ -1089,8 +1094,8 @@
+                     else
+                     {
+                         // Sleep a little while so we can collect parcel information
+-                        // FIXME: This doesn't belong in libsecondlife
+-                        System.Threading.Thread.Sleep(1000);
++                        // NOTE: This doesn't belong in libsecondlife
++                        // System.Threading.Thread.Sleep(1000);
+                     }
+                 }
+                 else
+@@ -1113,7 +1118,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Teleport Timer Event Handler
++        /// Teleport Timer Event Handler. Used for enforcing timeouts.
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;ea&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/Settings.cs
+===================================================================
+--- trunk/libsecondlife-cs/Settings.cs	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/Settings.cs	2006-12-16 16:51:04 UTC (rev 729)
+@@ -30,6 +30,9 @@
+ 
+ namespace libsecondlife
+ {
++    /// &lt;summary&gt;
++    /// Class for controlling various system settings.
++    /// &lt;/summary&gt;
+     public class Settings
+     {
+         /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
+@@ -63,7 +66,10 @@
+ 
+         private SecondLife Client;
+         private int priceUpload = 0;
+-
++        /// &lt;summary&gt;
++        /// Constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;Client connection Object to use&lt;/param&gt;
+         public Settings(SecondLife client)
+         {
+             Client = client;
+@@ -71,6 +77,11 @@
+             Client.Network.RegisterCallback(Packets.PacketType.EconomyData, new NetworkManager.PacketCallback(EconomyDataHandler));
+         }
+ 
++        /// &lt;summary&gt;
++        /// Presumably for outputting asset upload costs.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         private void EconomyDataHandler(Packet packet, Simulator simulator)
+         {
+             EconomyDataPacket econ = (EconomyDataPacket)packet;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-12-16 16:51:04 UTC (rev 729)
+@@ -6,19 +6,20 @@
+ 
+ namespace libsecondlife.TestClient
+ {
+-    public class UptimeCommand: Command
++    public class UptimeCommand : Command
+     {
+-		public DateTime Created = DateTime.Now;
++        public DateTime Created = DateTime.Now;
+ 
+-		public UptimeCommand()
+-		{
+-			Name = &quot;uptime&quot;;
+-			Description = &quot;Shows the login time and length of time logged on.&quot;;
+-		}
++        public UptimeCommand()
++        {
++            Name = &quot;uptime&quot;;
++            Description = &quot;Shows the login name, login time and length of time logged on.&quot;;
++        }
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+-		{
+-			return &quot;Up Since: &quot; + Created + &quot; (&quot; + (DateTime.Now - Created) + &quot;)&quot;;
+-		}
++        {
++            string name = Client.ToString();
++            return &quot;I am &quot; + name + &quot;, Up Since: &quot; + Created + &quot; (&quot; + (DateTime.Now - Created) + &quot;)&quot;;
++        }
+     }
+-}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.build
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.build	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.build	2006-12-16 16:51:04 UTC (rev 729)
+@@ -23,10 +23,10 @@
+      - datetime::parse('01/01/2002'))))}&quot; /&gt;
+   &lt;property
+     name=&quot;assembly&quot;
+-    value=&quot;TestCommand&quot;/&gt;
++    value=&quot;TestClient&quot;/&gt;
+   &lt;property
+     name=&quot;bin_dir&quot;
+-    value=&quot;../../bin&quot; /&gt;
++    value=&quot;../../../bin&quot; /&gt;
+ 
+   &lt;!-- default configuration --&gt;
+   &lt;property
+@@ -74,7 +74,7 @@
+   &lt;!-- build tasks --&gt;
+   &lt;target
+     name=&quot;build&quot;
+-    depends=&quot;init build-dll&quot;
++    depends=&quot;init&quot;
+     description=&quot;Builds the binaries for the current configuration&quot;&gt;
+     &lt;echo message=&quot;Build Directory is ${bin_dir}/&quot; /&gt;
+     &lt;mkdir
+
+Modified: trunk/libsecondlife-cs/examples/examples.build
+===================================================================
+--- trunk/libsecondlife-cs/examples/examples.build	2006-12-16 09:07:28 UTC (rev 728)
++++ trunk/libsecondlife-cs/examples/examples.build	2006-12-16 16:51:04 UTC (rev 729)
+@@ -44,9 +44,13 @@
+   &lt;!-- build tasks --&gt;
+   &lt;target name=&quot;example&quot; description=&quot;Build a particular example&quot;&gt;
+     &lt;property name=&quot;example_name&quot; value=&quot;${path::get-file-name(example_path)}&quot; /&gt;
++	&lt;property name=&quot;example_buildfile&quot; value=&quot;${example_path}/${example_name}.build&quot; /&gt;
+     &lt;echo message=&quot;building ${example_name}&quot; /&gt;
+-    &lt;csc target=&quot;exe&quot; debug=&quot;${build.debug}&quot; output=&quot;${bin_dir}/${example_name}.exe&quot;&gt;
+-      &lt;sources failonempty=&quot;true&quot;&gt;&lt;include name=&quot;${example_path}/*.cs&quot;/&gt;&lt;/sources&gt;
++	&lt;nant buildfile=&quot;${example_buildfile}&quot; if=&quot;${file::exists(example_buildfile)}&quot; /&gt;
++	  &lt;csc target=&quot;exe&quot; debug=&quot;${build.debug}&quot; output=&quot;${bin_dir}/${example_name}.exe&quot; unless=&quot;${file::exists(example_buildfile)}&quot;&gt;
++		  &lt;sources failonempty=&quot;true&quot;&gt;
++			  &lt;include name=&quot;${example_path}/**/*.cs&quot;/&gt;
++		  &lt;/sources&gt;
+       &lt;references basedir=&quot;${bin_dir}/&quot;&gt; 
+          &lt;include name=&quot;libjaspernet.dll&quot;/&gt;
+          &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000096.html">[Libsecondlife-commits] [Patch #1724] improve nant build script to	make TstClient commands work
+</A></li>
+	<LI>Next message: <A HREF="000097.html">[Libsecondlife-commits] r730 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#94">[ date ]</a>
+              <a href="thread.html#94">[ thread ]</a>
+              <a href="subject.html#94">[ subject ]</a>
+              <a href="author.html#94">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

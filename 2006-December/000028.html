@@ -1,0 +1,1043 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r677 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS examples/slaccountant
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r677%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS%20examples/slaccountant&In-Reply-To=%3C200612040019.kB40Jxpn006731%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000027.html">
+   <LINK REL="Next"  HREF="000029.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r677 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS examples/slaccountant</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r677%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20XmlRpcCS%20examples/slaccountant&In-Reply-To=%3C200612040019.kB40Jxpn006731%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r677 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem XmlRpcCS examples/slaccountant">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  4 01:19:59 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000027.html">[Libsecondlife-commits] r676 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000029.html">[Libsecondlife-commits] r678 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/BodyPartMorphGenerator	examples/IA_InventoryManager
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#28">[ date ]</a>
+              <a href="thread.html#28">[ thread ]</a>
+              <a href="subject.html#28">[ subject ]</a>
+              <a href="author.html#28">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-04 01:19:58 +0100 (Mon, 04 Dec 2006)
+New Revision: 677
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/EstateTools.cs
+   trunk/libsecondlife-cs/GroupManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/Parcel.cs
+   trunk/libsecondlife-cs/Types.cs
+   trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs
+   trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs
+Log:
+* Added more documentation to Types.cs
+* Renamed LLUUID.GenerateUUID() to LLUUID.Random()
+* Optimized the type classes hashing functions
+* Fixed a bug where source packet data would be modified on big endian platforms when creating type classes
+* Normalized the ToString() output of the type classes
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -100,7 +100,7 @@
+ 
+             try
+             {
+-                curUploadRequest = new AssetRequestUpload(slClient, LLUUID.GenerateUUID(), asset);
++                curUploadRequest = new AssetRequestUpload(slClient, LLUUID.Random(), asset);
+ 
+                 LLUUID assetID = curUploadRequest.DoUpload();
+                 if (asset.Type == Asset.ASSET_TYPE_IMAGE)
+@@ -121,7 +121,7 @@
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+ 		public void GetInventoryAsset( InventoryItem item )
+ 		{
+-			LLUUID TransferID = LLUUID.GenerateUUID();
++			LLUUID TransferID = LLUUID.Random();
+ 
+             AssetRequestDownload request = new AssetRequestDownload(TransferID);
+             request.Size = int.MaxValue; // Number of bytes expected
+@@ -159,7 +159,7 @@
+         /// &lt;param name=&quot;asset&quot;&gt;&lt;/param&gt;
+         public void GetInventoryAsset(Asset asset)
+ 		{
+-			LLUUID TransferID = LLUUID.GenerateUUID();
++			LLUUID TransferID = LLUUID.Random();
+ 
+             AssetRequestDownload request = new AssetRequestDownload(TransferID);
+             request.Size = int.MaxValue; // Number of bytes expected
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/Avatar.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -385,7 +385,7 @@
+         /// &lt;param name=&quot;message&quot;&gt;&lt;/param&gt;
+         public void InstantMessage(LLUUID target, string message)
+         {
+-            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.GenerateUUID(), target, message, null, LLUUID.GenerateUUID());
++            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, LLUUID.Random());
+         }
+ 
+         /// &lt;summary&gt;
+@@ -396,7 +396,7 @@
+         /// &lt;param name=&quot;IMSessionID&quot;&gt;&lt;/param&gt;
+         public void InstantMessage(LLUUID target, string message, LLUUID IMSessionID)
+         {
+-            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.GenerateUUID(), target, message, null, IMSessionID);
++            InstantMessage(FirstName + &quot; &quot; + LastName, LLUUID.Random(), target, message, null, IMSessionID);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -409,7 +409,7 @@
+         /// &lt;param name=&quot;conferenceIDs&quot;&gt;&lt;/param&gt;
+         public void InstantMessage(string fromName, LLUUID sessionID, LLUUID target, string message, LLUUID[] conferenceIDs)
+         {
+-            InstantMessage(fromName, sessionID, target, message, conferenceIDs, LLUUID.GenerateUUID());
++            InstantMessage(fromName, sessionID, target, message, conferenceIDs, LLUUID.Random());
+         }
+ 
+         /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/EstateTools.cs
+===================================================================
+--- trunk/libsecondlife-cs/EstateTools.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/EstateTools.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -53,7 +53,7 @@
+             EstateOwnerMessagePacket estate = new EstateOwnerMessagePacket();
+             estate.AgentData.AgentID = Client.Network.AgentID;
+             estate.AgentData.SessionID = Client.Network.SessionID;
+-            estate.MethodData.Invoice = LLUUID.GenerateUUID();
++            estate.MethodData.Invoice = LLUUID.Random();
+             estate.MethodData.Method = Helpers.StringToField(&quot;kick&quot;);
+             estate.ParamList = new EstateOwnerMessagePacket.ParamListBlock[2];
+             estate.ParamList[0].Parameter = Helpers.StringToField(Client.Network.AgentID.ToStringHyphenated());
+
+Modified: trunk/libsecondlife-cs/GroupManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GroupManager.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/GroupManager.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -451,7 +451,7 @@
+         /// &lt;param name=&quot;gmc&quot;&gt;&lt;/param&gt;
+         public void BeginGetGroupMembers(LLUUID group, GroupMembersCallback gmc)
+         {
+-            LLUUID requestID = LLUUID.GenerateUUID();
++            LLUUID requestID = LLUUID.Random();
+ 
+             lock (GroupMembersCaches)
+             {
+@@ -477,7 +477,7 @@
+         /// &lt;param name=&quot;grc&quot;&gt;&lt;/param&gt;
+         public void BeginGetGroupRoles(LLUUID group, GroupRolesCallback grc)
+         {
+-            LLUUID requestID = LLUUID.GenerateUUID();
++            LLUUID requestID = LLUUID.Random();
+ 
+             lock (GroupRolesCaches)
+             {
+@@ -503,7 +503,7 @@
+         /// &lt;param name=&quot;gtc&quot;&gt;&lt;/param&gt;
+         public void BeginGetGroupTitles(LLUUID group, GroupTitlesCallback gtc)
+         {
+-            LLUUID requestID = LLUUID.GenerateUUID();
++            LLUUID requestID = LLUUID.Random();
+ 
+             GroupTitlesCallbacks[group] = gtc;
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -33,7 +33,7 @@
+ 
+ 			set
+ 			{
+-				base._Asset = new AssetImage( LLUUID.GenerateUUID(), value );
++				base._Asset = new AssetImage( LLUUID.Random(), value );
+ 				LLUUID TransactionID = base.iManager.AssetManager.UploadAsset( Asset );
+                 base.SetAssetTransactionIDs( Asset.AssetID, TransactionID );
+ 			}
+@@ -86,7 +86,7 @@
+ 				} 
+ 				else 
+ 				{
+-					_Asset   = new AssetImage( LLUUID.GenerateUUID(), assetData );
++					_Asset   = new AssetImage( LLUUID.Random(), assetData );
+ 					_AssetID = _Asset.AssetID;
+ 				}
+ 			} 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -440,7 +440,7 @@
+                 }
+                 else
+                 {
+-                    _Asset = new Asset(LLUUID.GenerateUUID(), Type, assetData);
++                    _Asset = new Asset(LLUUID.Random(), Type, assetData);
+                     _AssetID = _Asset.AssetID;
+                 }
+             }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -192,7 +192,7 @@
+ 
+         internal InventoryFolder FolderCreate(String name, LLUUID parentid)
+         {
+-            InventoryFolder ifolder = new InventoryFolder(this, name, LLUUID.GenerateUUID(), parentid);
++            InventoryFolder ifolder = new InventoryFolder(this, name, LLUUID.Random(), parentid);
+             ifolder._Type = -1;
+ 
+             if (htFoldersByUUID.ContainsKey(ifolder.ParentID))
+@@ -297,7 +297,7 @@
+ 
+         internal void ItemGiveTo(InventoryItem iitem, LLUUID ToAgentID)
+         {
+-            LLUUID MessageID = LLUUID.GenerateUUID();
++            LLUUID MessageID = LLUUID.Random();
+ 
+             Packet packet = InvPacketHelper.GiveItemViaImprovedInstantMessage(
+                 MessageID
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -30,7 +30,7 @@
+ 
+ 			set
+ 			{
+-				base._Asset          = new AssetNotecard( LLUUID.GenerateUUID(), value );
++				base._Asset          = new AssetNotecard( LLUUID.Random(), value );
+ 				LLUUID TransactionID = base.iManager.AssetManager.UploadAsset( Asset );
+                 base.SetAssetTransactionIDs(Asset.AssetID, TransactionID);
+ 			}
+@@ -97,7 +97,7 @@
+ 				} 
+ 				else 
+ 				{
+-					_Asset   = new AssetNotecard( LLUUID.GenerateUUID(), assetData );
++					_Asset   = new AssetNotecard( LLUUID.Random(), assetData );
+ 					_AssetID = _Asset.AssetID;
+ 				}
+ 			} 
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -29,10 +29,10 @@
+ using System.Collections.Generic;
+ using System.Net;
+ using System.Net.Sockets;
++using System.Globalization;
+ using Nwc.XmlRpc;
+ using Nii.JSON;
+ using libsecondlife.Packets;
+-using System.Globalization;
+ 
+ namespace libsecondlife
+ {
+
+Modified: trunk/libsecondlife-cs/Parcel.cs
+===================================================================
+--- trunk/libsecondlife-cs/Parcel.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/Parcel.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -465,7 +465,7 @@
+             query.QueryData.Auction = auction;
+             query.QueryData.ForSale = forSale;
+             query.QueryData.QueryFlags = 0;
+-            query.QueryData.QueryID = LLUUID.GenerateUUID();
++            query.QueryData.QueryID = LLUUID.Random();
+             query.QueryData.ReservedNewbie = reservedNewbie;
+ 
+             Client.Network.SendPacket((Packet)query);
+
+Modified: trunk/libsecondlife-cs/Types.cs
+===================================================================
+--- trunk/libsecondlife-cs/Types.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/Types.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -47,16 +47,18 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor
+         /// &lt;/summary&gt;
+ 		public LLUUID()
+ 		{
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor that takes a string UUID representation
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;val&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;val&quot;&gt;A string representation of a UUID, case 
++        /// insensitive and can either be hyphenated or non-hyphenated&lt;/param&gt;
++        /// &lt;example&gt;LLUUID(&quot;11f8aa9c-b071-4242-836b-13b7abe0d489&quot;)&lt;/example&gt;
+ 		public LLUUID(string val)
+ 		{
+ 			if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
+@@ -70,32 +72,22 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor that takes a byte array containing a UUID
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;byteArray&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;byteArray&quot;&gt;Byte array containing a 16 byte UUID&lt;/param&gt;
++        /// &lt;param name=&quot;pos&quot;&gt;Beginning offset in the array&lt;/param&gt;
+ 		public LLUUID(byte[] byteArray, int pos)
+ 		{
+ 			Array.Copy(byteArray, pos, data, 0, 16);
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Returns the raw bytes for this UUID
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;randomize&quot;&gt;&lt;/param&gt;
+-		public LLUUID(bool randomize)
+-		{
+-			if (randomize) data = Guid.NewGuid().ToByteArray();
+-			else           data = new byte[16];
+-		}
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A 16 byte array containing this UUID&lt;/returns&gt;
+         public byte[] GetBytes()
+         {
+-            return Data;
++            return data;
+         }
+ 
+ 		/// &lt;summary&gt;
+@@ -118,23 +110,26 @@
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-		public static LLUUID GenerateUUID()
++		public static LLUUID Random()
+ 		{
+ 			return new LLUUID(Guid.NewGuid().ToByteArray(), 0);
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Required implementation for XML serialization
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;null&lt;/returns&gt;
+         public System.Xml.Schema.XmlSchema GetSchema()
+         {
+             return null;
+         }
+ 
++        /// &lt;summary&gt;
++        /// Deserializes an XML UUID
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;reader&quot;&gt;XmlReader containing the UUID to deserialize&lt;/param&gt;
+         public void ReadXml(System.Xml.XmlReader reader)
+         {
+-            //reader.ReadStartElement(&quot;uuid&quot;);
+             string val = reader.ReadString();
+ 
+             if (val.Length == 36) val = val.Replace(&quot;-&quot;, &quot;&quot;);
+@@ -146,31 +141,40 @@
+                 data[i] = Convert.ToByte(val.Substring(i * 2, 2), 16);
+             }
+ 
+-            //reader.ReadEndElement();
+             //reader.MoveToContent();
+         }
+ 
++        /// &lt;summary&gt;
++        /// Serialize this UUID to XML
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;writer&quot;&gt;XmlWriter to serialize to&lt;/param&gt;
+         public void WriteXml(System.Xml.XmlWriter writer)
+         {
+-            //writer.WriteStartElement(&quot;uuid&quot;);
+             writer.WriteString(this.ToString());
+-            //writer.WriteEndElement();
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Return a hash code for this UUID, used by .NET for hash tables
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;An integer composed of all the UUID bytes XORed together&lt;/returns&gt;
+ 		public override int GetHashCode()
+ 		{
+-			return ToString().GetHashCode();
++            int hash = data[0];
++
++            for (int i = 1; i &lt; 16; i++)
++            {
++                hash ^= data[i];
++            }
++
++			return hash;
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Comparison function
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;o&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;param name=&quot;o&quot;&gt;An object to compare to this UUID&lt;/param&gt;
++        /// &lt;returns&gt;False if the object is not an LLUUID, true if it is and
++        /// byte for byte identical to this&lt;/returns&gt;
+ 		public override bool Equals(object o)
+ 		{
+ 			if (!(o is LLUUID)) return false;
+@@ -186,11 +190,11 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Equals operator
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;First LLUUID for comparison&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;Second LLUUID for comparison&lt;/param&gt;
++        /// &lt;returns&gt;True if the UUIDs are byte for byte equal, otherwise false&lt;/returns&gt;
+ 		public static bool operator==(LLUUID lhs, LLUUID rhs)
+ 		{
+             // If both are null, or both are same instance, return true
+@@ -214,22 +218,22 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Not equals operator
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;First LLUUID for comparison&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;Second LLUUID for comparison&lt;/param&gt;
++        /// &lt;returns&gt;True if the UUIDs are not equal, otherwise true&lt;/returns&gt;
+ 		public static bool operator!=(LLUUID lhs, LLUUID rhs)
+ 		{
+ 			return !(lhs == rhs);
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// XOR operator
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;First LLUUID&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;Second LLUUID&lt;/param&gt;
++        /// &lt;returns&gt;A UUID that is a XOR combination of the two input UUIDs&lt;/returns&gt;
+         public static LLUUID operator ^(LLUUID lhs, LLUUID rhs)
+         {
+             LLUUID returnUUID = new LLUUID();
+@@ -243,22 +247,25 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// String typecasting operator
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;val&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;param name=&quot;val&quot;&gt;A UUID in string form. Case insensitive, 
++        /// hyphenated or non-hyphenated&lt;/param&gt;
++        /// &lt;returns&gt;A UUID built from the string representation&lt;/returns&gt;
+         public static implicit operator LLUUID(string val)
+ 		{
+ 			return new LLUUID(val);
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Get a string representation of this UUID
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A string representation of this UUID, lowercase and 
++        /// without hyphens&lt;/returns&gt;
++        /// &lt;example&gt;11f8aa9cb0714242836b13b7abe0d489&lt;/example&gt;
+ 		public override string ToString()
+ 		{
+-			string uuid = &quot;&quot;;
++			string uuid = String.Empty;
+ 
+ 			for (int i = 0; i &lt; 16; ++i)
+ 			{
+@@ -269,12 +276,14 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Get a hyphenated string representation of this UUID
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A string representation of this UUID, lowercase and 
++        /// with hyphens&lt;/returns&gt;
++        /// &lt;example&gt;11f8aa9c-b071-4242-836b-13b7abe0d489&lt;/example&gt;
+ 		public string ToStringHyphenated()
+ 		{
+-			string uuid = &quot;&quot;;
++			string uuid = String.Empty;
+ 
+ 			for (int i = 0; i &lt; 16; ++i)
+ 			{
+@@ -291,34 +300,35 @@
+         /// &lt;summary&gt;
+         /// An LLUUID with a value of all zeroes
+         /// &lt;/summary&gt;
+-        public readonly static LLUUID Zero = new LLUUID();
++        public static readonly LLUUID Zero = new LLUUID();
+ 	}
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A three-dimensional vector with floating-point values
+     /// &lt;/summary&gt;
+     [XmlRoot(&quot;vector3&quot;)]
+ 	public class LLVector3
+ 	{
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;X value&lt;/summary&gt;
+ 		[XmlAttribute(&quot;x&quot;)] public float X;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Y value&lt;/summary&gt;
+         [XmlAttribute(&quot;y&quot;)] public float Y;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Z value&lt;/summary&gt;
+         [XmlAttribute(&quot;z&quot;)] public float Z;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor, all values are set to 0.0
+         /// &lt;/summary&gt;
+ 		public LLVector3()
+ 		{
+-			X = Y = Z = 0.0F;
++			X = Y = Z = 0.0f;
+ 		}
+ 		
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor, builds a single-precision vector from a 
++        /// double-precision one
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;vector&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;vector&quot;&gt;A double-precision vector&lt;/param&gt;
+ 		public LLVector3(LLVector3d vector)
+ 		{
+ 			X = (float)vector.X;
+@@ -327,30 +337,39 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor, builds a vector from a byte array
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;byteArray&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;byteArray&quot;&gt;Byte array containing a 12 byte vector&lt;/param&gt;
++        /// &lt;param name=&quot;pos&quot;&gt;Beginning position in the byte array&lt;/param&gt;
+ 		public LLVector3(byte[] byteArray, int pos)
+ 		{
+-			if(!BitConverter.IsLittleEndian) 
+-			{
+-				Array.Reverse(byteArray, pos, 4);
+-				Array.Reverse(byteArray, pos + 4, 4);
+-				Array.Reverse(byteArray, pos + 8, 4);
+-			}
++            if (!BitConverter.IsLittleEndian)
++            {
++                byte[] newArray = new byte[12];
++                Array.Copy(byteArray, pos, newArray, 0, 12);
+ 
+-			X = BitConverter.ToSingle(byteArray, pos);
+-			Y = BitConverter.ToSingle(byteArray, pos + 4);
+-			Z = BitConverter.ToSingle(byteArray, pos + 8);
++                Array.Reverse(newArray, 0, 4);
++                Array.Reverse(newArray, 4, 4);
++                Array.Reverse(newArray, 8, 4);
++
++                X = BitConverter.ToSingle(newArray, 0);
++                Y = BitConverter.ToSingle(newArray, 4);
++                Z = BitConverter.ToSingle(newArray, 8);
++            }
++            else
++            {
++                X = BitConverter.ToSingle(byteArray, pos);
++                Y = BitConverter.ToSingle(byteArray, pos + 4);
++                Z = BitConverter.ToSingle(byteArray, pos + 8);
++            }
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Constructor, builds a vector for individual float values
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;x&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;y&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;z&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;x&quot;&gt;X value&lt;/param&gt;
++        /// &lt;param name=&quot;y&quot;&gt;Y value&lt;/param&gt;
++        /// &lt;param name=&quot;z&quot;&gt;Z value&lt;/param&gt;
+ 		public LLVector3(float x, float y, float z)
+ 		{
+ 			X = x;
+@@ -359,9 +378,9 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Returns the raw bytes for this vector
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A 12 byte array containing X, Y, and Z&lt;/returns&gt;
+ 		public byte[] GetBytes()
+ 		{
+ 			byte[] byteArray = new byte[12];
+@@ -380,25 +399,22 @@
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Get a formatted string representation of the vector
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;A string representation of the vector, similar to the LSL
++        /// vector to string conversion in Second Life&lt;/returns&gt;
+ 		public override string ToString()
+ 		{
+-			return X.ToString() + &quot; &quot; + Y.ToString() + &quot; &quot; + Z.ToString();
++			return &quot;&lt;&quot; + X.ToString() + &quot;, &quot; + Y.ToString() + &quot;, &quot; + Z.ToString() + &quot;&gt;&quot;;
+ 		}
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// A hash of the vector, used by .NET for hash tables
+         /// &lt;/summary&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
++        /// &lt;returns&gt;The hashes of the individual components XORed together&lt;/returns&gt;
+ 		public override int GetHashCode()
+ 		{
+-			int x = (int)X;
+-			int y = (int)Y;
+-			int z = (int)Z;
+-
+-			return (x ^ y ^ z);
++			return (X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode());
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -482,24 +498,24 @@
+ 	}
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A double-precision three-dimensional vector
+     /// &lt;/summary&gt;
+     [XmlRoot(&quot;vector3d&quot;)]
+ 	public class LLVector3d
+ 	{
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;X value&lt;/summary&gt;
+         [XmlAttribute(&quot;x&quot;)] public double X;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Y value&lt;/summary&gt;
+         [XmlAttribute(&quot;y&quot;)] public double Y;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Z value&lt;/summary&gt;
+         [XmlAttribute(&quot;z&quot;)] public double Z;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor, sets all the values to 0.0
+         /// &lt;/summary&gt;
+ 		public LLVector3d()
+ 		{
+-			X = Y = Z = 0.0D;
++			X = Y = Z = 0.0d;
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -522,15 +538,25 @@
+         /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
+ 		public LLVector3d(byte[] byteArray, int pos)
+ 		{
+-			if(!BitConverter.IsLittleEndian) {
+-				Array.Reverse(byteArray, pos, 8);
+-				Array.Reverse(byteArray, pos + 8, 8);
+-				Array.Reverse(byteArray, pos + 16, 8);
+-			}
++            if (!BitConverter.IsLittleEndian)
++            {
++                byte[] newArray = new byte[24];
++                Array.Copy(byteArray, pos, newArray, 0, 24);
+ 
+-			X = BitConverter.ToDouble(byteArray, pos);
+-			Y = BitConverter.ToDouble(byteArray, pos + 8);
+-			Z = BitConverter.ToDouble(byteArray, pos + 16);
++                Array.Reverse(newArray, 0, 8);
++                Array.Reverse(newArray, 8, 8);
++                Array.Reverse(newArray, 16, 8);
++
++                X = BitConverter.ToDouble(newArray, 0);
++                Y = BitConverter.ToDouble(newArray, 8);
++                Z = BitConverter.ToDouble(newArray, 16);
++            }
++            else
++            {
++                X = BitConverter.ToDouble(byteArray, pos);
++                Y = BitConverter.ToDouble(byteArray, pos + 8);
++                Z = BitConverter.ToDouble(byteArray, pos + 16);
++            }
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -545,7 +571,8 @@
+ 			Array.Copy(BitConverter.GetBytes(Y), 0, byteArray, 8, 8);
+ 			Array.Copy(BitConverter.GetBytes(Z), 0, byteArray, 16, 8);
+ 
+-			if(!BitConverter.IsLittleEndian) {
++			if(!BitConverter.IsLittleEndian)
++            {
+ 				Array.Reverse(byteArray, 0, 8);
+ 				Array.Reverse(byteArray, 8, 8);
+ 				Array.Reverse(byteArray, 16, 8);
+@@ -560,17 +587,17 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+ 		public override string ToString()
+ 		{
+-			return X.ToString() + &quot; &quot; + Y.ToString() + &quot; &quot; + Z.ToString();
++			return &quot;&lt;&quot; + X.ToString() + &quot;, &quot; + Y.ToString() + &quot;, &quot; + Z.ToString() + &quot;&gt;&quot;;
+ 		}
+ 
+         /// &lt;summary&gt;
+         /// An LLVector3d with a value of 0,0,0
+         /// &lt;/summary&gt;
+-        public readonly static LLVector3d Zero = new LLVector3d();
++        public static readonly LLVector3d Zero = new LLVector3d();
+ 	}
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A four-dimensional vector
+     /// &lt;/summary&gt;
+     [XmlRoot(&quot;vector4&quot;)]
+ 	public class LLVector4
+@@ -599,17 +626,28 @@
+         /// &lt;param name=&quot;pos&quot;&gt;&lt;/param&gt;
+ 		public LLVector4(byte[] byteArray, int pos)
+ 		{
+-			if(!BitConverter.IsLittleEndian) {
+-				Array.Reverse(byteArray, pos, 4);
+-				Array.Reverse(byteArray, pos + 4, 4);
+-				Array.Reverse(byteArray, pos + 8, 4);
+-				Array.Reverse(byteArray, pos + 12, 4);
+-			}
++            if (!BitConverter.IsLittleEndian)
++            {
++                byte[] newArray = new byte[16];
++                Array.Copy(byteArray, pos, newArray, 0, 16);
+ 
+-			X = BitConverter.ToSingle(byteArray, pos);
+-			Y = BitConverter.ToSingle(byteArray, pos + 4);
+-			Z = BitConverter.ToSingle(byteArray, pos + 8);
+-			S = BitConverter.ToSingle(byteArray, pos + 12);
++                Array.Reverse(newArray, 0, 4);
++                Array.Reverse(newArray, 4, 4);
++                Array.Reverse(newArray, 8, 4);
++                Array.Reverse(newArray, 12, 4);
++
++                X = BitConverter.ToSingle(newArray, 0);
++                Y = BitConverter.ToSingle(newArray, 4);
++                Z = BitConverter.ToSingle(newArray, 8);
++                S = BitConverter.ToSingle(newArray, 12);
++            }
++            else
++            {
++                X = BitConverter.ToSingle(byteArray, pos);
++                Y = BitConverter.ToSingle(byteArray, pos + 4);
++                Z = BitConverter.ToSingle(byteArray, pos + 8);
++                S = BitConverter.ToSingle(byteArray, pos + 12);
++            }
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -641,7 +679,7 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+ 		public override string ToString()
+ 		{
+-			return X.ToString() + &quot; &quot; + Y.ToString() + &quot; &quot; + Z.ToString() + &quot; &quot; + S.ToString();
++			return &quot;&lt;&quot; + X.ToString() + &quot;, &quot; + Y.ToString() + &quot;, &quot; + Z.ToString() + &quot;, &quot; + S.ToString() + &quot;&gt;&quot;;
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -651,22 +689,22 @@
+ 	}
+ 
+     /// &lt;summary&gt;
+-    /// 
++    /// A quaternion, used for rotations
+     /// &lt;/summary&gt;
+     [XmlRoot(&quot;quaternion&quot;)]
+ 	public class LLQuaternion
+ 	{
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;X value&lt;/summary&gt;
+         [XmlAttribute(&quot;x&quot;)] public float X;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Y value&lt;/summary&gt;
+         [XmlAttribute(&quot;y&quot;)] public float Y;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;Z value&lt;/summary&gt;
+         [XmlAttribute(&quot;z&quot;)] public float Z;
+-        /// &lt;summary&gt;&lt;/summary&gt;
++        /// &lt;summary&gt;W value&lt;/summary&gt;
+         [XmlAttribute(&quot;w&quot;)] public float W;
+ 
+         /// &lt;summary&gt;
+-        /// 
++        /// Default constructor, initializes to no rotation (0,0,0,1)
+         /// &lt;/summary&gt;
+ 		public LLQuaternion()
+ 		{
+@@ -688,30 +726,49 @@
+             {
+                 if (!BitConverter.IsLittleEndian)
+                 {
+-                    Array.Reverse(byteArray, pos, 4);
+-                    Array.Reverse(byteArray, pos + 4, 4);
+-                    Array.Reverse(byteArray, pos + 8, 4);
+-                    Array.Reverse(byteArray, pos + 12, 4);
++                    byte[] newArray = new byte[16];
++                    Array.Copy(byteArray, pos, newArray, 0, 16);
++
++                    Array.Reverse(newArray, 0, 4);
++                    Array.Reverse(newArray, 4, 4);
++                    Array.Reverse(newArray, 8, 4);
++                    Array.Reverse(newArray, 12, 4);
++
++                    X = BitConverter.ToSingle(newArray, 0);
++                    Y = BitConverter.ToSingle(newArray, 4);
++                    Z = BitConverter.ToSingle(newArray, 8);
++                    W = BitConverter.ToSingle(newArray, 12);
+                 }
+-
+-                X = BitConverter.ToSingle(byteArray, pos);
+-                Y = BitConverter.ToSingle(byteArray, pos + 4);
+-                Z = BitConverter.ToSingle(byteArray, pos + 8);
+-                W = BitConverter.ToSingle(byteArray, pos + 12);
++                else
++                {
++                    X = BitConverter.ToSingle(byteArray, pos);
++                    Y = BitConverter.ToSingle(byteArray, pos + 4);
++                    Z = BitConverter.ToSingle(byteArray, pos + 8);
++                    W = BitConverter.ToSingle(byteArray, pos + 12);
++                }
+             }
+             else
+             {
+                 if (!BitConverter.IsLittleEndian)
+                 {
+-                    Array.Reverse(byteArray, pos, 4);
+-                    Array.Reverse(byteArray, pos + 4, 4);
+-                    Array.Reverse(byteArray, pos + 8, 4);
++                    byte[] newArray = new byte[12];
++                    Array.Copy(byteArray, pos, newArray, 0, 12);
++
++                    Array.Reverse(newArray, 0, 4);
++                    Array.Reverse(newArray, 4, 4);
++                    Array.Reverse(newArray, 8, 4);
++
++                    X = BitConverter.ToSingle(newArray, 0);
++                    Y = BitConverter.ToSingle(newArray, 4);
++                    Z = BitConverter.ToSingle(newArray, 8);
+                 }
++                else
++                {
++                    X = BitConverter.ToSingle(byteArray, pos);
++                    Y = BitConverter.ToSingle(byteArray, pos + 4);
++                    Z = BitConverter.ToSingle(byteArray, pos + 8);
++                }
+ 
+-                X = BitConverter.ToSingle(byteArray, pos);
+-                Y = BitConverter.ToSingle(byteArray, pos + 4);
+-                Z = BitConverter.ToSingle(byteArray, pos + 8);
+-
+                 float xyzsum = 1 - X * X - Y * Y - Z * Z;
+                 W = (xyzsum &gt; 0) ? (float)Math.Sqrt(xyzsum) : 0;
+             }
+@@ -776,18 +833,26 @@
+             }
+             else
+             {
+-                throw new Exception(&quot;Quaternion &lt;&quot; + X + &quot;,&quot; + Y + &quot;,&quot; + Z + &quot;,&quot; + W + &quot;&gt; normalized to zero&quot;);
++                throw new Exception(&quot;Quaternion &quot; + this.ToString() + &quot; normalized to zero&quot;);
+             }
+ 
+ 			return bytes;
+ 		}
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public override int GetHashCode()
+         {
+-            float sum = X + Y + Z + W;
+-            return sum.GetHashCode();
++            return (X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode() ^ W.GetHashCode());
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;o&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public override bool Equals(object o)
+         {
+             if (!(o is LLQuaternion)) return false;
+@@ -797,6 +862,12 @@
+             return X == quaternion.X &amp;&amp; Y == quaternion.Y &amp;&amp; Z == quaternion.Z &amp;&amp; W == quaternion.W;
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public static bool operator ==(LLQuaternion lhs, LLQuaternion rhs)
+         {
+             // If both are null, or both are same instance, return true
+@@ -815,11 +886,23 @@
+             return lhs.X == rhs.X &amp;&amp; lhs.Y == rhs.Y &amp;&amp; lhs.Z == rhs.Z &amp;&amp; lhs.W == rhs.W;
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public static bool operator !=(LLQuaternion lhs, LLQuaternion rhs)
+         {
+             return !(lhs == rhs);
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;lhs&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;rhs&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public static LLQuaternion operator *(LLQuaternion lhs, LLQuaternion rhs)
+         {
+             LLQuaternion ret = new LLQuaternion();
+
+Modified: trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs
+===================================================================
+--- trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/XmlRpcCS/XmlRpcErrorCodes.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -2,14 +2,14 @@
+ {
+   using System;
+ 
+-  /// &lt;summary&gt;Standard XML-RPC error codes.&lt;/summary&gt;
++  /// &lt;summary&gt;Standard XML-RPC error codes&lt;/summary&gt;
+   public class XmlRpcErrorCodes
+   {
+     // -32400 ---&gt; system error
+     
+-    /// &lt;summary&gt;&lt;/summary&gt;
++    /// &lt;summary&gt;Transport error&lt;/summary&gt;
+     public const int TRANSPORT_ERROR = -32300;
+-    /// &lt;summary&gt;&lt;/summary&gt;
++    /// &lt;summary&gt;Transport error message&lt;/summary&gt;
+     public const String TRANSPORT_ERROR_MSG = &quot;Transport Layer Error&quot;;
+   }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs	2006-12-03 20:00:34 UTC (rev 676)
++++ trunk/libsecondlife-cs/examples/slaccountant/frmSLAccountant.cs	2006-12-04 00:19:58 UTC (rev 677)
+@@ -453,7 +453,7 @@
+             query.AgentData.AgentID = client.Network.AgentID;
+             query.AgentData.SessionID = client.Network.SessionID;
+             query.QueryData.QueryFlags = 1;
+-            query.QueryData.QueryID = LLUUID.GenerateUUID();
++            query.QueryData.QueryID = LLUUID.Random();
+             query.QueryData.QueryStart = 0;
+             query.QueryData.QueryText = Helpers.StringToField(txtFind.Text);
+             query.Header.Reliable = true;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000027.html">[Libsecondlife-commits] r676 - in trunk/libsecondlife-cs: .	examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000029.html">[Libsecondlife-commits] r678 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/BodyPartMorphGenerator	examples/IA_InventoryManager
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#28">[ date ]</a>
+              <a href="thread.html#28">[ thread ]</a>
+              <a href="subject.html#28">[ subject ]</a>
+              <a href="author.html#28">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

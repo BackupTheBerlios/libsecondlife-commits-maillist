@@ -1,0 +1,1020 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r764 - in trunk/applications: .	SecondGlance SecondGlance/Properties
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r764%20-%20in%20trunk/applications%3A%20.%0A%09SecondGlance%20SecondGlance/Properties&In-Reply-To=%3C200612231413.kBNED3Rk002456%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000132.html">
+   <LINK REL="Next"  HREF="000134.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r764 - in trunk/applications: .	SecondGlance SecondGlance/Properties</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r764%20-%20in%20trunk/applications%3A%20.%0A%09SecondGlance%20SecondGlance/Properties&In-Reply-To=%3C200612231413.kBNED3Rk002456%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r764 - in trunk/applications: .	SecondGlance SecondGlance/Properties">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 23 15:13:03 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000132.html">[Libsecondlife-commits] r763 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000134.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-23 15:13:02 +0100 (Sat, 23 Dec 2006)
+New Revision: 764
+
+Added:
+   trunk/applications/SecondGlance/
+   trunk/applications/SecondGlance/Properties/
+   trunk/applications/SecondGlance/Properties/AssemblyInfo.cs
+   trunk/applications/SecondGlance/Properties/Resources.Designer.cs
+   trunk/applications/SecondGlance/Properties/Resources.resx
+   trunk/applications/SecondGlance/Properties/Settings.Designer.cs
+   trunk/applications/SecondGlance/Properties/Settings.settings
+   trunk/applications/SecondGlance/SecondGlance.cs
+   trunk/applications/SecondGlance/SecondGlance.csproj
+   trunk/applications/SecondGlance/frmSecondGlance.Designer.cs
+   trunk/applications/SecondGlance/frmSecondGlance.cs
+   trunk/applications/SecondGlance/frmSecondGlance.resx
+Log:
+Initial import of the SLProxy GUI, Second Glance
+
+Added: trunk/applications/SecondGlance/Properties/AssemblyInfo.cs
+===================================================================
+--- trunk/applications/SecondGlance/Properties/AssemblyInfo.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/Properties/AssemblyInfo.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,33 @@
++&#65279;using System.Reflection;
++using System.Runtime.CompilerServices;
++using System.Runtime.InteropServices;
++
++// General Information about an assembly is controlled through the following 
++// set of attributes. Change these attribute values to modify the information
++// associated with an assembly.
++[assembly: AssemblyTitle(&quot;SecondGlance&quot;)]
++[assembly: AssemblyDescription(&quot;&quot;)]
++[assembly: AssemblyConfiguration(&quot;&quot;)]
++[assembly: AssemblyCompany(&quot;&quot;)]
++[assembly: AssemblyProduct(&quot;SecondGlance&quot;)]
++[assembly: AssemblyCopyright(&quot;Copyright &#169;  2006&quot;)]
++[assembly: AssemblyTrademark(&quot;&quot;)]
++[assembly: AssemblyCulture(&quot;&quot;)]
++
++// Setting ComVisible to false makes the types in this assembly not visible 
++// to COM components.  If you need to access a type in this assembly from 
++// COM, set the ComVisible attribute to true on that type.
++[assembly: ComVisible(false)]
++
++// The following GUID is for the ID of the typelib if this project is exposed to COM
++[assembly: Guid(&quot;02456c47-f074-4302-a3a3-01a719de9d20&quot;)]
++
++// Version information for an assembly consists of the following four values:
++//
++//      Major Version
++//      Minor Version 
++//      Build Number
++//      Revision
++//
++[assembly: AssemblyVersion(&quot;1.0.0.0&quot;)]
++[assembly: AssemblyFileVersion(&quot;1.0.0.0&quot;)]
+
+Added: trunk/applications/SecondGlance/Properties/Resources.Designer.cs
+===================================================================
+--- trunk/applications/SecondGlance/Properties/Resources.Designer.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/Properties/Resources.Designer.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,71 @@
++&#65279;//------------------------------------------------------------------------------
++// &lt;auto-generated&gt;
++//     This code was generated by a tool.
++//     Runtime Version:2.0.50727.308
++//
++//     Changes to this file may cause incorrect behavior and will be lost if
++//     the code is regenerated.
++// &lt;/auto-generated&gt;
++//------------------------------------------------------------------------------
++
++namespace SecondGlance.Properties
++{
++
++
++    /// &lt;summary&gt;
++    ///   A strongly-typed resource class, for looking up localized strings, etc.
++    /// &lt;/summary&gt;
++    // This class was auto-generated by the StronglyTypedResourceBuilder
++    // class via a tool like ResGen or Visual Studio.
++    // To add or remove a member, edit your .ResX file then rerun ResGen
++    // with the /str option, or rebuild your VS project.
++    [global::System.CodeDom.Compiler.GeneratedCodeAttribute(&quot;System.Resources.Tools.StronglyTypedResourceBuilder&quot;, &quot;2.0.0.0&quot;)]
++    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
++    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
++    internal class Resources
++    {
++
++        private static global::System.Resources.ResourceManager resourceMan;
++
++        private static global::System.Globalization.CultureInfo resourceCulture;
++
++        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute(&quot;Microsoft.Performance&quot;, &quot;CA1811:AvoidUncalledPrivateCode&quot;)]
++        internal Resources()
++        {
++        }
++
++        /// &lt;summary&gt;
++        ///   Returns the cached ResourceManager instance used by this class.
++        /// &lt;/summary&gt;
++        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
++        internal static global::System.Resources.ResourceManager ResourceManager
++        {
++            get
++            {
++                if ((resourceMan == null))
++                {
++                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager(&quot;SecondGlance.Properties.Resources&quot;, typeof(Resources).Assembly);
++                    resourceMan = temp;
++                }
++                return resourceMan;
++            }
++        }
++
++        /// &lt;summary&gt;
++        ///   Overrides the current thread's CurrentUICulture property for all
++        ///   resource lookups using this strongly typed resource class.
++        /// &lt;/summary&gt;
++        [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
++        internal static global::System.Globalization.CultureInfo Culture
++        {
++            get
++            {
++                return resourceCulture;
++            }
++            set
++            {
++                resourceCulture = value;
++            }
++        }
++    }
++}
+
+Added: trunk/applications/SecondGlance/Properties/Resources.resx
+===================================================================
+--- trunk/applications/SecondGlance/Properties/Resources.resx	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/Properties/Resources.resx	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,117 @@
++&#65279;&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
++&lt;root&gt;
++  &lt;!-- 
++    Microsoft ResX Schema 
++    
++    Version 2.0
++    
++    The primary goals of this format is to allow a simple XML format 
++    that is mostly human readable. The generation and parsing of the 
++    various data types are done through the TypeConverter classes 
++    associated with the data types.
++    
++    Example:
++    
++    ... ado.net/XML headers &amp; schema ...
++    &lt;resheader name=&quot;resmimetype&quot;&gt;text/microsoft-resx&lt;/resheader&gt;
++    &lt;resheader name=&quot;version&quot;&gt;2.0&lt;/resheader&gt;
++    &lt;resheader name=&quot;reader&quot;&gt;System.Resources.ResXResourceReader, System.Windows.Forms, ...&lt;/resheader&gt;
++    &lt;resheader name=&quot;writer&quot;&gt;System.Resources.ResXResourceWriter, System.Windows.Forms, ...&lt;/resheader&gt;
++    &lt;data name=&quot;Name1&quot;&gt;&lt;value&gt;this is my long string&lt;/value&gt;&lt;comment&gt;this is a comment&lt;/comment&gt;&lt;/data&gt;
++    &lt;data name=&quot;Color1&quot; type=&quot;System.Drawing.Color, System.Drawing&quot;&gt;Blue&lt;/data&gt;
++    &lt;data name=&quot;Bitmap1&quot; mimetype=&quot;application/x-microsoft.net.object.binary.base64&quot;&gt;
++        &lt;value&gt;[base64 mime encoded serialized .NET Framework object]&lt;/value&gt;
++    &lt;/data&gt;
++    &lt;data name=&quot;Icon1&quot; type=&quot;System.Drawing.Icon, System.Drawing&quot; mimetype=&quot;application/x-microsoft.net.object.bytearray.base64&quot;&gt;
++        &lt;value&gt;[base64 mime encoded string representing a byte array form of the .NET Framework object]&lt;/value&gt;
++        &lt;comment&gt;This is a comment&lt;/comment&gt;
++    &lt;/data&gt;
++                
++    There are any number of &quot;resheader&quot; rows that contain simple 
++    name/value pairs.
++    
++    Each data row contains a name, and value. The row also contains a 
++    type or mimetype. Type corresponds to a .NET class that support 
++    text/value conversion through the TypeConverter architecture. 
++    Classes that don't support this are serialized and stored with the 
++    mimetype set.
++    
++    The mimetype is used for serialized objects, and tells the 
++    ResXResourceReader how to depersist the object. This is currently not 
++    extensible. For a given mimetype the value must be set accordingly:
++    
++    Note - application/x-microsoft.net.object.binary.base64 is the format 
++    that the ResXResourceWriter will generate, however the reader can 
++    read any of the formats listed below.
++    
++    mimetype: application/x-microsoft.net.object.binary.base64
++    value   : The object must be serialized with 
++            : System.Serialization.Formatters.Binary.BinaryFormatter
++            : and then encoded with base64 encoding.
++    
++    mimetype: application/x-microsoft.net.object.soap.base64
++    value   : The object must be serialized with 
++            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
++            : and then encoded with base64 encoding.
++
++    mimetype: application/x-microsoft.net.object.bytearray.base64
++    value   : The object must be serialized into a byte array 
++            : using a System.ComponentModel.TypeConverter
++            : and then encoded with base64 encoding.
++    --&gt;
++  &lt;xsd:schema id=&quot;root&quot; xmlns=&quot;&quot; xmlns:xsd=&quot;<A HREF="http://www.w3.org/2001/XMLSchema">http://www.w3.org/2001/XMLSchema</A>&quot; xmlns:msdata=&quot;urn:schemas-microsoft-com:xml-msdata&quot;&gt;
++    &lt;xsd:element name=&quot;root&quot; msdata:IsDataSet=&quot;true&quot;&gt;
++      &lt;xsd:complexType&gt;
++        &lt;xsd:choice maxOccurs=&quot;unbounded&quot;&gt;
++          &lt;xsd:element name=&quot;metadata&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;type&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;mimetype&quot; type=&quot;xsd:string&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;assembly&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:attribute name=&quot;alias&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;data&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++                &lt;xsd:element name=&quot;comment&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;2&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++              &lt;xsd:attribute name=&quot;type&quot; type=&quot;xsd:string&quot; msdata:Ordinal=&quot;3&quot; /&gt;
++              &lt;xsd:attribute name=&quot;mimetype&quot; type=&quot;xsd:string&quot; msdata:Ordinal=&quot;4&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;resheader&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; use=&quot;required&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++        &lt;/xsd:choice&gt;
++      &lt;/xsd:complexType&gt;
++    &lt;/xsd:element&gt;
++  &lt;/xsd:schema&gt;
++  &lt;resheader name=&quot;resmimetype&quot;&gt;
++    &lt;value&gt;text/microsoft-resx&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;version&quot;&gt;
++    &lt;value&gt;2.0&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;reader&quot;&gt;
++    &lt;value&gt;System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;writer&quot;&gt;
++    &lt;value&gt;System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&lt;/value&gt;
++  &lt;/resheader&gt;
++&lt;/root&gt;
+\ No newline at end of file
+
+Added: trunk/applications/SecondGlance/Properties/Settings.Designer.cs
+===================================================================
+--- trunk/applications/SecondGlance/Properties/Settings.Designer.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/Properties/Settings.Designer.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,30 @@
++&#65279;//------------------------------------------------------------------------------
++// &lt;auto-generated&gt;
++//     This code was generated by a tool.
++//     Runtime Version:2.0.50727.308
++//
++//     Changes to this file may cause incorrect behavior and will be lost if
++//     the code is regenerated.
++// &lt;/auto-generated&gt;
++//------------------------------------------------------------------------------
++
++namespace SecondGlance.Properties
++{
++
++
++    [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
++    [global::System.CodeDom.Compiler.GeneratedCodeAttribute(&quot;Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator&quot;, &quot;8.0.0.0&quot;)]
++    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase
++    {
++
++        private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
++
++        public static Settings Default
++        {
++            get
++            {
++                return defaultInstance;
++            }
++        }
++    }
++}
+
+Added: trunk/applications/SecondGlance/Properties/Settings.settings
+===================================================================
+--- trunk/applications/SecondGlance/Properties/Settings.settings	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/Properties/Settings.settings	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,7 @@
++&#65279;&lt;?xml version='1.0' encoding='utf-8'?&gt;
++&lt;SettingsFile xmlns=&quot;<A HREF="http://schemas.microsoft.com/VisualStudio/2004/01/settings">http://schemas.microsoft.com/VisualStudio/2004/01/settings</A>&quot; CurrentProfile=&quot;(Default)&quot;&gt;
++  &lt;Profiles&gt;
++    &lt;Profile Name=&quot;(Default)&quot; /&gt;
++  &lt;/Profiles&gt;
++  &lt;Settings /&gt;
++&lt;/SettingsFile&gt;
+
+Added: trunk/applications/SecondGlance/SecondGlance.cs
+===================================================================
+--- trunk/applications/SecondGlance/SecondGlance.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/SecondGlance.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,20 @@
++using System;
++using System.Collections.Generic;
++using System.Windows.Forms;
++
++namespace SecondGlance
++{
++    static class SecondGlance
++    {
++        /// &lt;summary&gt;
++        /// The main entry point for the application.
++        /// &lt;/summary&gt;
++        [STAThread]
++        static void Main()
++        {
++            Application.EnableVisualStyles();
++            Application.SetCompatibleTextRenderingDefault(false);
++            Application.Run(new frmSecondGlance());
++        }
++    }
++}
+\ No newline at end of file
+
+Added: trunk/applications/SecondGlance/SecondGlance.csproj
+===================================================================
+--- trunk/applications/SecondGlance/SecondGlance.csproj	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/SecondGlance.csproj	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,88 @@
++&#65279;&lt;Project DefaultTargets=&quot;Build&quot; xmlns=&quot;<A HREF="http://schemas.microsoft.com/developer/msbuild/2003">http://schemas.microsoft.com/developer/msbuild/2003</A>&quot;&gt;
++  &lt;PropertyGroup&gt;
++    &lt;Configuration Condition=&quot; '$(Configuration)' == '' &quot;&gt;Debug&lt;/Configuration&gt;
++    &lt;Platform Condition=&quot; '$(Platform)' == '' &quot;&gt;AnyCPU&lt;/Platform&gt;
++    &lt;ProductVersion&gt;8.0.50727&lt;/ProductVersion&gt;
++    &lt;SchemaVersion&gt;2.0&lt;/SchemaVersion&gt;
++    &lt;ProjectGuid&gt;{D72C92D1-559A-48A7-93F5-99F4E99F3F98}&lt;/ProjectGuid&gt;
++    &lt;OutputType&gt;WinExe&lt;/OutputType&gt;
++    &lt;AppDesignerFolder&gt;Properties&lt;/AppDesignerFolder&gt;
++    &lt;RootNamespace&gt;SecondGlance&lt;/RootNamespace&gt;
++    &lt;AssemblyName&gt;SecondGlance&lt;/AssemblyName&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' &quot;&gt;
++    &lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
++    &lt;DebugType&gt;full&lt;/DebugType&gt;
++    &lt;Optimize&gt;false&lt;/Optimize&gt;
++    &lt;OutputPath&gt;bin\Debug\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;DEBUG;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Release|AnyCPU' &quot;&gt;
++    &lt;DebugType&gt;pdbonly&lt;/DebugType&gt;
++    &lt;Optimize&gt;true&lt;/Optimize&gt;
++    &lt;OutputPath&gt;..\..\bin\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Reference Include=&quot;System&quot; /&gt;
++    &lt;Reference Include=&quot;System.Data&quot; /&gt;
++    &lt;Reference Include=&quot;System.Deployment&quot; /&gt;
++    &lt;Reference Include=&quot;System.Drawing&quot; /&gt;
++    &lt;Reference Include=&quot;System.Windows.Forms&quot; /&gt;
++    &lt;Reference Include=&quot;System.Xml&quot; /&gt;
++  &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Compile Include=&quot;frmSecondGlance.cs&quot;&gt;
++      &lt;SubType&gt;Form&lt;/SubType&gt;
++    &lt;/Compile&gt;
++    &lt;Compile Include=&quot;frmSecondGlance.Designer.cs&quot;&gt;
++      &lt;DependentUpon&gt;frmSecondGlance.cs&lt;/DependentUpon&gt;
++    &lt;/Compile&gt;
++    &lt;Compile Include=&quot;SecondGlance.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Properties\AssemblyInfo.cs&quot; /&gt;
++    &lt;EmbeddedResource Include=&quot;frmSecondGlance.resx&quot;&gt;
++      &lt;SubType&gt;Designer&lt;/SubType&gt;
++      &lt;DependentUpon&gt;frmSecondGlance.cs&lt;/DependentUpon&gt;
++    &lt;/EmbeddedResource&gt;
++    &lt;EmbeddedResource Include=&quot;Properties\Resources.resx&quot;&gt;
++      &lt;Generator&gt;ResXFileCodeGenerator&lt;/Generator&gt;
++      &lt;LastGenOutput&gt;Resources.Designer.cs&lt;/LastGenOutput&gt;
++      &lt;SubType&gt;Designer&lt;/SubType&gt;
++    &lt;/EmbeddedResource&gt;
++    &lt;Compile Include=&quot;Properties\Resources.Designer.cs&quot;&gt;
++      &lt;AutoGen&gt;True&lt;/AutoGen&gt;
++      &lt;DependentUpon&gt;Resources.resx&lt;/DependentUpon&gt;
++    &lt;/Compile&gt;
++    &lt;None Include=&quot;Properties\Settings.settings&quot;&gt;
++      &lt;Generator&gt;SettingsSingleFileGenerator&lt;/Generator&gt;
++      &lt;LastGenOutput&gt;Settings.Designer.cs&lt;/LastGenOutput&gt;
++    &lt;/None&gt;
++    &lt;Compile Include=&quot;Properties\Settings.Designer.cs&quot;&gt;
++      &lt;AutoGen&gt;True&lt;/AutoGen&gt;
++      &lt;DependentUpon&gt;Settings.settings&lt;/DependentUpon&gt;
++      &lt;DesignTimeSharedInput&gt;True&lt;/DesignTimeSharedInput&gt;
++    &lt;/Compile&gt;
++  &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;ProjectReference Include=&quot;..\..\libsecondlife-cs\libsecondlife.csproj&quot;&gt;
++      &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
++    &lt;ProjectReference Include=&quot;..\..\SLProxy\SLProxy.csproj&quot;&gt;
++      &lt;Project&gt;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&lt;/Project&gt;
++      &lt;Name&gt;SLProxy&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
++  &lt;/ItemGroup&gt;
++  &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
++  &lt;!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
++       Other similar extension points exist, see Microsoft.Common.targets.
++  &lt;Target Name=&quot;BeforeBuild&quot;&gt;
++  &lt;/Target&gt;
++  &lt;Target Name=&quot;AfterBuild&quot;&gt;
++  &lt;/Target&gt;
++  --&gt;
++&lt;/Project&gt;
+\ No newline at end of file
+
+Added: trunk/applications/SecondGlance/frmSecondGlance.Designer.cs
+===================================================================
+--- trunk/applications/SecondGlance/frmSecondGlance.Designer.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/frmSecondGlance.Designer.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,232 @@
++namespace SecondGlance
++{
++    partial class frmSecondGlance
++    {
++        /// &lt;summary&gt;
++        /// Required designer variable.
++        /// &lt;/summary&gt;
++        private System.ComponentModel.IContainer components = null;
++
++        /// &lt;summary&gt;
++        /// Clean up any resources being used.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;disposing&quot;&gt;true if managed resources should be disposed; otherwise, false.&lt;/param&gt;
++        protected override void Dispose(bool disposing)
++        {
++            if (disposing &amp;&amp; (components != null))
++            {
++                components.Dispose();
++            }
++            base.Dispose(disposing);
++        }
++
++        #region Windows Form Designer generated code
++
++        /// &lt;summary&gt;
++        /// Required method for Designer support - do not modify
++        /// the contents of this method with the code editor.
++        /// &lt;/summary&gt;
++        private void InitializeComponent()
++        {
++            this.panel1 = new System.Windows.Forms.Panel();
++            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
++            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
++            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.newToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
++            this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
++            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
++            this.cboToLog = new System.Windows.Forms.ComboBox();
++            this.cmdAddLogger = new System.Windows.Forms.Button();
++            this.cmdDontLog = new System.Windows.Forms.Button();
++            this.cboLogged = new System.Windows.Forms.ComboBox();
++            this.lstPackets = new System.Windows.Forms.ListBox();
++            this.panel1.SuspendLayout();
++            this.splitContainer1.Panel1.SuspendLayout();
++            this.splitContainer1.SuspendLayout();
++            this.menuStrip1.SuspendLayout();
++            this.SuspendLayout();
++            // 
++            // panel1
++            // 
++            this.panel1.Controls.Add(this.splitContainer1);
++            this.panel1.Location = new System.Drawing.Point(29, 100);
++            this.panel1.Name = &quot;panel1&quot;;
++            this.panel1.Size = new System.Drawing.Size(664, 333);
++            this.panel1.TabIndex = 0;
++            // 
++            // splitContainer1
++            // 
++            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
++            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
++            this.splitContainer1.Name = &quot;splitContainer1&quot;;
++            // 
++            // splitContainer1.Panel1
++            // 
++            this.splitContainer1.Panel1.Controls.Add(this.lstPackets);
++            this.splitContainer1.Size = new System.Drawing.Size(664, 333);
++            this.splitContainer1.SplitterDistance = 294;
++            this.splitContainer1.TabIndex = 0;
++            // 
++            // menuStrip1
++            // 
++            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
++            this.fileToolStripMenuItem,
++            this.aboutToolStripMenuItem});
++            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
++            this.menuStrip1.Name = &quot;menuStrip1&quot;;
++            this.menuStrip1.Size = new System.Drawing.Size(705, 24);
++            this.menuStrip1.TabIndex = 1;
++            this.menuStrip1.Text = &quot;menuStrip1&quot;;
++            // 
++            // fileToolStripMenuItem
++            // 
++            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
++            this.newToolStripMenuItem,
++            this.openToolStripMenuItem,
++            this.toolStripMenuItem1,
++            this.saveToolStripMenuItem,
++            this.toolStripMenuItem2,
++            this.exitToolStripMenuItem});
++            this.fileToolStripMenuItem.Name = &quot;fileToolStripMenuItem&quot;;
++            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
++            this.fileToolStripMenuItem.Text = &quot;File&quot;;
++            // 
++            // newToolStripMenuItem
++            // 
++            this.newToolStripMenuItem.Name = &quot;newToolStripMenuItem&quot;;
++            this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
++            this.newToolStripMenuItem.Size = new System.Drawing.Size(188, 22);
++            this.newToolStripMenuItem.Text = &quot;New Session&quot;;
++            // 
++            // openToolStripMenuItem
++            // 
++            this.openToolStripMenuItem.Name = &quot;openToolStripMenuItem&quot;;
++            this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
++            this.openToolStripMenuItem.Size = new System.Drawing.Size(188, 22);
++            this.openToolStripMenuItem.Text = &quot;Open Session&quot;;
++            // 
++            // toolStripMenuItem1
++            // 
++            this.toolStripMenuItem1.Name = &quot;toolStripMenuItem1&quot;;
++            this.toolStripMenuItem1.Size = new System.Drawing.Size(185, 6);
++            // 
++            // saveToolStripMenuItem
++            // 
++            this.saveToolStripMenuItem.Name = &quot;saveToolStripMenuItem&quot;;
++            this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
++            this.saveToolStripMenuItem.Size = new System.Drawing.Size(188, 22);
++            this.saveToolStripMenuItem.Text = &quot;Save Session&quot;;
++            // 
++            // toolStripMenuItem2
++            // 
++            this.toolStripMenuItem2.Name = &quot;toolStripMenuItem2&quot;;
++            this.toolStripMenuItem2.Size = new System.Drawing.Size(185, 6);
++            // 
++            // exitToolStripMenuItem
++            // 
++            this.exitToolStripMenuItem.Name = &quot;exitToolStripMenuItem&quot;;
++            this.exitToolStripMenuItem.Size = new System.Drawing.Size(188, 22);
++            this.exitToolStripMenuItem.Text = &quot;Exit&quot;;
++            // 
++            // aboutToolStripMenuItem
++            // 
++            this.aboutToolStripMenuItem.Name = &quot;aboutToolStripMenuItem&quot;;
++            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
++            this.aboutToolStripMenuItem.Text = &quot;About&quot;;
++            // 
++            // cboToLog
++            // 
++            this.cboToLog.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
++            this.cboToLog.FormattingEnabled = true;
++            this.cboToLog.Location = new System.Drawing.Point(12, 27);
++            this.cboToLog.Name = &quot;cboToLog&quot;;
++            this.cboToLog.Size = new System.Drawing.Size(150, 21);
++            this.cboToLog.TabIndex = 4;
++            // 
++            // cmdAddLogger
++            // 
++            this.cmdAddLogger.Location = new System.Drawing.Point(168, 25);
++            this.cmdAddLogger.Name = &quot;cmdAddLogger&quot;;
++            this.cmdAddLogger.Size = new System.Drawing.Size(75, 23);
++            this.cmdAddLogger.TabIndex = 5;
++            this.cmdAddLogger.Text = &quot;Log&quot;;
++            this.cmdAddLogger.UseVisualStyleBackColor = true;
++            this.cmdAddLogger.Click += new System.EventHandler(this.cmdAddLogger_Click);
++            // 
++            // cmdDontLog
++            // 
++            this.cmdDontLog.Location = new System.Drawing.Point(430, 25);
++            this.cmdDontLog.Name = &quot;cmdDontLog&quot;;
++            this.cmdDontLog.Size = new System.Drawing.Size(75, 23);
++            this.cmdDontLog.TabIndex = 7;
++            this.cmdDontLog.Text = &quot;Don\'t Log&quot;;
++            this.cmdDontLog.UseVisualStyleBackColor = true;
++            this.cmdDontLog.Click += new System.EventHandler(this.cmdDontLog_Click);
++            // 
++            // cboLogged
++            // 
++            this.cboLogged.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
++            this.cboLogged.FormattingEnabled = true;
++            this.cboLogged.Location = new System.Drawing.Point(274, 27);
++            this.cboLogged.Name = &quot;cboLogged&quot;;
++            this.cboLogged.Size = new System.Drawing.Size(150, 21);
++            this.cboLogged.TabIndex = 6;
++            // 
++            // lstPackets
++            // 
++            this.lstPackets.FormattingEnabled = true;
++            this.lstPackets.Location = new System.Drawing.Point(26, 40);
++            this.lstPackets.Name = &quot;lstPackets&quot;;
++            this.lstPackets.Size = new System.Drawing.Size(243, 277);
++            this.lstPackets.TabIndex = 1;
++            // 
++            // frmSecondGlance
++            // 
++            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
++            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
++            this.ClientSize = new System.Drawing.Size(705, 498);
++            this.Controls.Add(this.cmdDontLog);
++            this.Controls.Add(this.cboLogged);
++            this.Controls.Add(this.cmdAddLogger);
++            this.Controls.Add(this.cboToLog);
++            this.Controls.Add(this.panel1);
++            this.Controls.Add(this.menuStrip1);
++            this.MainMenuStrip = this.menuStrip1;
++            this.Name = &quot;frmSecondGlance&quot;;
++            this.Text = &quot;Second Glance&quot;;
++            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmSecondGlance_FormClosing);
++            this.panel1.ResumeLayout(false);
++            this.splitContainer1.Panel1.ResumeLayout(false);
++            this.splitContainer1.ResumeLayout(false);
++            this.menuStrip1.ResumeLayout(false);
++            this.menuStrip1.PerformLayout();
++            this.ResumeLayout(false);
++            this.PerformLayout();
++
++        }
++
++        #endregion
++
++        private System.Windows.Forms.Panel panel1;
++        private System.Windows.Forms.SplitContainer splitContainer1;
++        private System.Windows.Forms.MenuStrip menuStrip1;
++        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
++        private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
++        private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
++        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
++        private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
++        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
++        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
++        private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
++        private System.Windows.Forms.ComboBox cboToLog;
++        private System.Windows.Forms.Button cmdAddLogger;
++        private System.Windows.Forms.Button cmdDontLog;
++        private System.Windows.Forms.ComboBox cboLogged;
++        private System.Windows.Forms.ListBox lstPackets;
++    }
++}
++
+
+Added: trunk/applications/SecondGlance/frmSecondGlance.cs
+===================================================================
+--- trunk/applications/SecondGlance/frmSecondGlance.cs	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/frmSecondGlance.cs	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,154 @@
++/*
++ *
++ * Copyright (c) 2007 John Hurliman
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++using System.ComponentModel;
++using System.Data;
++using System.Drawing;
++using System.Net;
++using System.Windows.Forms;
++using libsecondlife;
++using libsecondlife.Packets;
++using SLProxy;
++
++namespace SecondGlance
++{
++    public partial class frmSecondGlance : Form
++    {
++        private Proxy Proxy;
++        private Queue&lt;LoggedPacket&gt; Inbox = new Queue&lt;LoggedPacket&gt;();
++        private System.Timers.Timer DisplayTimer = new System.Timers.Timer(200);
++
++        public frmSecondGlance()
++        {
++            InitializeComponent();
++
++            PacketType[] types = (PacketType[])Enum.GetValues(typeof(PacketType));
++
++            // Fill up the &quot;To Log&quot; combo box with options
++            foreach (PacketType type in types)
++            {
++                if (type != PacketType.Default) cboToLog.Items.Add(type);
++            }
++
++            // Set the default selection to the first entry
++            cboToLog.SelectedIndex = 0;
++
++            // Setup the proxy
++            ProxyConfig proxyConfig = new ProxyConfig(&quot;Second Glance&quot;, &quot;John Hurliman &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">jhurliman at wsu.edu</A>&gt;&quot;, 
++                new string[0]);
++            Proxy = new Proxy(proxyConfig);
++
++            Proxy.Start();
++
++            // Start the timer that moves packets from the queue and displays them
++            DisplayTimer.Elapsed += new System.Timers.ElapsedEventHandler(DisplayTimer_Elapsed);
++            DisplayTimer.Start();
++        }
++
++        void DisplayTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
++        {
++            this.BeginInvoke(new MethodInvoker(UpdateDisplay));
++        }
++
++        void UpdateDisplay()
++        {
++            lock (Inbox)
++            {
++                while (Inbox.Count &gt; 0)
++                {
++                    lstPackets.Items.Add(Inbox.Dequeue());
++                }
++            }
++        }
++
++        private void frmSecondGlance_FormClosing(object sender, FormClosingEventArgs e)
++        {
++            DisplayTimer.Stop();
++            Proxy.Stop();
++        }
++
++        private void cmdAddLogger_Click(object sender, EventArgs e)
++        {
++            if (!cboLogged.Items.Contains(cboToLog.SelectedItem))
++            {
++                PacketType type = (PacketType)cboToLog.SelectedItem;
++
++                cboLogged.Items.Add(type);
++
++                Proxy.AddDelegate(type, Direction.Incoming, new PacketDelegate(IncomingPacketHandler));
++                Proxy.AddDelegate(type, Direction.Outgoing, new PacketDelegate(OutgoingPacketHandler));
++            }
++        }
++
++        private void cmdDontLog_Click(object sender, EventArgs e)
++        {
++            ;
++        }
++
++        private Packet IncomingPacketHandler(Packet packet, IPEndPoint sim)
++        {
++            return PacketHandler(packet, sim, Direction.Incoming);
++        }
++
++        private Packet OutgoingPacketHandler(Packet packet, IPEndPoint sim)
++        {
++            return PacketHandler(packet, sim, Direction.Outgoing);
++        }
++
++        private Packet PacketHandler(Packet packet, IPEndPoint sim, Direction direction)
++        {
++            LoggedPacket logged = new LoggedPacket();
++            logged.Packet = packet;
++            logged.Sim = sim;
++            logged.Direction = direction;
++
++            lock (Inbox)
++                Inbox.Enqueue(logged);
++
++            // TODO: Packet modifications
++
++            return packet;
++        }
++    }
++
++    public class LoggedPacket
++    {
++        public Packet Packet;
++        public IPEndPoint Sim;
++        public Direction Direction;
++
++        public override string ToString()
++        {
++            string text = (Direction == Direction.Incoming) ? &quot;&lt;-- &quot; : &quot;--&gt; &quot;;
++            text += Sim.ToString() + &quot; &quot; + Packet.Type.ToString();
++
++            return text;
++        }
++    }
++}
+
+Added: trunk/applications/SecondGlance/frmSecondGlance.resx
+===================================================================
+--- trunk/applications/SecondGlance/frmSecondGlance.resx	2006-12-23 03:00:55 UTC (rev 763)
++++ trunk/applications/SecondGlance/frmSecondGlance.resx	2006-12-23 14:13:02 UTC (rev 764)
+@@ -0,0 +1,123 @@
++&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
++&lt;root&gt;
++  &lt;!-- 
++    Microsoft ResX Schema 
++    
++    Version 2.0
++    
++    The primary goals of this format is to allow a simple XML format 
++    that is mostly human readable. The generation and parsing of the 
++    various data types are done through the TypeConverter classes 
++    associated with the data types.
++    
++    Example:
++    
++    ... ado.net/XML headers &amp; schema ...
++    &lt;resheader name=&quot;resmimetype&quot;&gt;text/microsoft-resx&lt;/resheader&gt;
++    &lt;resheader name=&quot;version&quot;&gt;2.0&lt;/resheader&gt;
++    &lt;resheader name=&quot;reader&quot;&gt;System.Resources.ResXResourceReader, System.Windows.Forms, ...&lt;/resheader&gt;
++    &lt;resheader name=&quot;writer&quot;&gt;System.Resources.ResXResourceWriter, System.Windows.Forms, ...&lt;/resheader&gt;
++    &lt;data name=&quot;Name1&quot;&gt;&lt;value&gt;this is my long string&lt;/value&gt;&lt;comment&gt;this is a comment&lt;/comment&gt;&lt;/data&gt;
++    &lt;data name=&quot;Color1&quot; type=&quot;System.Drawing.Color, System.Drawing&quot;&gt;Blue&lt;/data&gt;
++    &lt;data name=&quot;Bitmap1&quot; mimetype=&quot;application/x-microsoft.net.object.binary.base64&quot;&gt;
++        &lt;value&gt;[base64 mime encoded serialized .NET Framework object]&lt;/value&gt;
++    &lt;/data&gt;
++    &lt;data name=&quot;Icon1&quot; type=&quot;System.Drawing.Icon, System.Drawing&quot; mimetype=&quot;application/x-microsoft.net.object.bytearray.base64&quot;&gt;
++        &lt;value&gt;[base64 mime encoded string representing a byte array form of the .NET Framework object]&lt;/value&gt;
++        &lt;comment&gt;This is a comment&lt;/comment&gt;
++    &lt;/data&gt;
++                
++    There are any number of &quot;resheader&quot; rows that contain simple 
++    name/value pairs.
++    
++    Each data row contains a name, and value. The row also contains a 
++    type or mimetype. Type corresponds to a .NET class that support 
++    text/value conversion through the TypeConverter architecture. 
++    Classes that don't support this are serialized and stored with the 
++    mimetype set.
++    
++    The mimetype is used for serialized objects, and tells the 
++    ResXResourceReader how to depersist the object. This is currently not 
++    extensible. For a given mimetype the value must be set accordingly:
++    
++    Note - application/x-microsoft.net.object.binary.base64 is the format 
++    that the ResXResourceWriter will generate, however the reader can 
++    read any of the formats listed below.
++    
++    mimetype: application/x-microsoft.net.object.binary.base64
++    value   : The object must be serialized with 
++            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
++            : and then encoded with base64 encoding.
++    
++    mimetype: application/x-microsoft.net.object.soap.base64
++    value   : The object must be serialized with 
++            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
++            : and then encoded with base64 encoding.
++
++    mimetype: application/x-microsoft.net.object.bytearray.base64
++    value   : The object must be serialized into a byte array 
++            : using a System.ComponentModel.TypeConverter
++            : and then encoded with base64 encoding.
++    --&gt;
++  &lt;xsd:schema id=&quot;root&quot; xmlns=&quot;&quot; xmlns:xsd=&quot;<A HREF="http://www.w3.org/2001/XMLSchema">http://www.w3.org/2001/XMLSchema</A>&quot; xmlns:msdata=&quot;urn:schemas-microsoft-com:xml-msdata&quot;&gt;
++    &lt;xsd:import namespace=&quot;<A HREF="http://www.w3.org/XML/1998/namespace">http://www.w3.org/XML/1998/namespace</A>&quot; /&gt;
++    &lt;xsd:element name=&quot;root&quot; msdata:IsDataSet=&quot;true&quot;&gt;
++      &lt;xsd:complexType&gt;
++        &lt;xsd:choice maxOccurs=&quot;unbounded&quot;&gt;
++          &lt;xsd:element name=&quot;metadata&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; use=&quot;required&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;type&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;mimetype&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute ref=&quot;xml:space&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;assembly&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:attribute name=&quot;alias&quot; type=&quot;xsd:string&quot; /&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;data&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++                &lt;xsd:element name=&quot;comment&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;2&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; use=&quot;required&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++              &lt;xsd:attribute name=&quot;type&quot; type=&quot;xsd:string&quot; msdata:Ordinal=&quot;3&quot; /&gt;
++              &lt;xsd:attribute name=&quot;mimetype&quot; type=&quot;xsd:string&quot; msdata:Ordinal=&quot;4&quot; /&gt;
++              &lt;xsd:attribute ref=&quot;xml:space&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++          &lt;xsd:element name=&quot;resheader&quot;&gt;
++            &lt;xsd:complexType&gt;
++              &lt;xsd:sequence&gt;
++                &lt;xsd:element name=&quot;value&quot; type=&quot;xsd:string&quot; minOccurs=&quot;0&quot; msdata:Ordinal=&quot;1&quot; /&gt;
++              &lt;/xsd:sequence&gt;
++              &lt;xsd:attribute name=&quot;name&quot; type=&quot;xsd:string&quot; use=&quot;required&quot; /&gt;
++            &lt;/xsd:complexType&gt;
++          &lt;/xsd:element&gt;
++        &lt;/xsd:choice&gt;
++      &lt;/xsd:complexType&gt;
++    &lt;/xsd:element&gt;
++  &lt;/xsd:schema&gt;
++  &lt;resheader name=&quot;resmimetype&quot;&gt;
++    &lt;value&gt;text/microsoft-resx&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;version&quot;&gt;
++    &lt;value&gt;2.0&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;reader&quot;&gt;
++    &lt;value&gt;System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;resheader name=&quot;writer&quot;&gt;
++    &lt;value&gt;System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089&lt;/value&gt;
++  &lt;/resheader&gt;
++  &lt;metadata name=&quot;menuStrip1.TrayLocation&quot; type=&quot;System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&quot;&gt;
++    &lt;value&gt;17, 17&lt;/value&gt;
++  &lt;/metadata&gt;
++&lt;/root&gt;
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000132.html">[Libsecondlife-commits] r763 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000134.html">[Libsecondlife-commits] [Patch #1759] SLProxy: acks fix,	/inject variable blocks, better delegates
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

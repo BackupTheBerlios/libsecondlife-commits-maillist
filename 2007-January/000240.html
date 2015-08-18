@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r836 - trunk/applications/SLProxy
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r836%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200701111945.l0BJjHQm028835%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000239.html">
+   <LINK REL="Next"  HREF="000241.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r836 - trunk/applications/SLProxy</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r836%20-%20trunk/applications/SLProxy&In-Reply-To=%3C200701111945.l0BJjHQm028835%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r836 - trunk/applications/SLProxy">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 11 20:45:17 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000239.html">[Libsecondlife-commits] r835 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000241.html">[Libsecondlife-commits] r837 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#240">[ date ]</a>
+              <a href="thread.html#240">[ thread ]</a>
+              <a href="subject.html#240">[ subject ]</a>
+              <a href="author.html#240">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-11 20:45:14 +0100 (Thu, 11 Jan 2007)
+New Revision: 836
+
+Modified:
+   trunk/applications/SLProxy/SLProxyLoader.cs
+Log:
+No one should have to need to specify full path anymore.
+
+Modified: trunk/applications/SLProxy/SLProxyLoader.cs
+===================================================================
+--- trunk/applications/SLProxy/SLProxyLoader.cs	2007-01-11 18:06:49 UTC (rev 835)
++++ trunk/applications/SLProxy/SLProxyLoader.cs	2007-01-11 19:45:14 UTC (rev 836)
+@@ -83,8 +83,10 @@
+ 		}
+ 	    }
+ 
+-	    public void LoadPlugin(string name) {
+-		Assembly assembly = Assembly.LoadFile(name);
++	    public void LoadPlugin(string name) 
++        {
++
++            Assembly assembly = Assembly.LoadFile(Path.GetFullPath(name));
+             	foreach (Type t in assembly.GetTypes())
+             	{
+ 	                try
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000239.html">[Libsecondlife-commits] r835 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000241.html">[Libsecondlife-commits] r837 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#240">[ date ]</a>
+              <a href="thread.html#240">[ thread ]</a>
+              <a href="subject.html#240">[ subject ]</a>
+              <a href="author.html#240">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

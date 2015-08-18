@@ -1,0 +1,1381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r840 - in trunk: . applications	applications/SecondGlance applications/libslupdater	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/InventorySystem	libsecondlife-cs/libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r840%20-%20in%20trunk%3A%20.%20applications%0A%09applications/SecondGlance%20applications/libslupdater%0A%09libsecondlife-cs%20libsecondlife-cs/AssetSystem%0A%09libsecondlife-cs/InventorySystem%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701130023.l0D0NF7o022987%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000243.html">
+   <LINK REL="Next"  HREF="000245.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r840 - in trunk: . applications	applications/SecondGlance applications/libslupdater	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/InventorySystem	libsecondlife-cs/libsecondlife.Utilities</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r840%20-%20in%20trunk%3A%20.%20applications%0A%09applications/SecondGlance%20applications/libslupdater%0A%09libsecondlife-cs%20libsecondlife-cs/AssetSystem%0A%09libsecondlife-cs/InventorySystem%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701130023.l0D0NF7o022987%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r840 - in trunk: . applications	applications/SecondGlance applications/libslupdater	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/InventorySystem	libsecondlife-cs/libsecondlife.Utilities">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 13 01:23:15 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000243.html">[Libsecondlife-commits] r839 - in trunk: . libsecondlife.xcodeproj
+</A></li>
+        <LI>Next message: <A HREF="000245.html">[Libsecondlife-commits] r841 - in trunk: libsecondlife-cs	libsecondlife.xcodeproj
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2007-01-13 01:23:00 +0100 (Sat, 13 Jan 2007)
+New Revision: 840
+
+Added:
+   trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+Removed:
+   trunk/libsecondlife-cs/AssetSystem/AssetRequestDownload.cs
+Modified:
+   trunk/
+   trunk/applications/
+   trunk/applications/SecondGlance/
+   trunk/applications/libslupdater/
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
+Asset System work...  Refactoring, documentation, making more sub-class friendly, and oh yeah -- Asset Downloading no longer requires blocking, and timeouts have been added through-out.
+
+
+Property changes on: trunk
+___________________________________________________________________
+Name: svn:ignore
+   - XPTable
+
+   + XPTable
+bin
+
+
+
+Property changes on: trunk/applications
+___________________________________________________________________
+Name: svn:ignore
+   + bin
+
+
+
+Property changes on: trunk/applications/SecondGlance
+___________________________________________________________________
+Name: svn:ignore
+   + bin
+obj
+
+
+
+Property changes on: trunk/applications/libslupdater
+___________________________________________________________________
+Name: svn:ignore
+   + bin
+obj
+
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -32,12 +32,12 @@
+ 			Invalid = 255
+ 		};
+     
+-        private SecondLife Client;
+-        private AssetManager AManager;
++        protected SecondLife Client;
++        protected AssetManager AManager;
+ 
+-        private uint SerialNum = 1;
++        protected uint SerialNum = 1;
+ 
+-        private ManualResetEvent AgentWearablesSignal = null;
++        protected ManualResetEvent AgentWearablesSignal = null;
+ 
+         // This data defines all appearance info for an avatar
+         public AgentWearablesUpdatePacket.WearableDataBlock[] AgentWearablesData;
+@@ -45,20 +45,20 @@
+         public TextureEntry AgentTextureEntry = new TextureEntry(&quot;C228D1CF4B5D4BA884F4899A0796AA97&quot;); // if this isn't valid, blame JH ;-)
+ 
+ 
+-
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         public AppearanceManager(SecondLife client)
+         {
+             Client = client;
+             AManager = client.Assets;
+ 
+-            RegisterCallbacks();
++            Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+ 
+         }
+ 
+-        private void RegisterCallbacks()
+-        {
+-            Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+-        }
++        #region Wear Stuff
+ 
+         /// &lt;summary&gt;
+         /// Add a single wearable to your outfit, replacing if nessesary.
+@@ -159,10 +159,13 @@
+             SendAgentSetAppearance();
+         }
+ 
++        #endregion
++
++
+         /// &lt;summary&gt;
+         /// Creates and sends an AgentIsNowWearing packet based on the local cached AgentWearablesData array.
+         /// &lt;/summary&gt;
+-        private void SendAgentIsNowWearing()
++        protected void SendAgentIsNowWearing()
+         {
+             AgentIsNowWearingPacket nowWearing = new AgentIsNowWearingPacket();
+             nowWearing.AgentData.AgentID = Client.Network.AgentID;
+@@ -182,7 +185,7 @@
+         /// Request from the server what wearables we're currently wearing.  Update cached info.
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;The wearable info for what we're currently wearing&lt;/returns&gt;
+-        public AgentWearablesUpdatePacket.WearableDataBlock[] GetWearables()
++        protected AgentWearablesUpdatePacket.WearableDataBlock[] GetWearables()
+         {
+             AgentWearablesSignal = new ManualResetEvent(false);
+ 
+@@ -199,7 +202,7 @@
+         /// &lt;summary&gt;
+         /// Update the local Avatar Appearance information based on the contents of the assets as defined in the cached wearable data info.
+         /// &lt;/summary&gt;
+-        public void GetAvatarAppearanceInfoFromWearableAssets()
++        protected void GetAvatarAppearanceInfoFromWearableAssets()
+         {
+             // Only request wearable data, if we have to.
+             if ((AgentWearablesData == null) || (AgentWearablesData.Length == 0))
+@@ -230,8 +233,12 @@
+                         break;
+                 }
+ 
+-                
+-                AManager.GetInventoryAsset(wearableAsset);
++                AssetRequestDownload request = Client.Assets.RequestInventoryAsset(wearableAsset);
++                if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
++                {
++                    throw new Exception(&quot;Asset (&quot; + wearableAsset.AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;)&quot;);
++                }
++
+                 if ((wearableAsset.AssetData == null) || (wearableAsset.AssetData.Length == 0))
+                 {
+                     Client.Log(&quot;Asset retrieval failed for AssetID: &quot; + wearableAsset.AssetID, Helpers.LogLevel.Warning);
+@@ -313,11 +320,65 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Send an AgentSetAppearance packet to the server to update your appearance.
++        /// &lt;/summary&gt;
++        public void SendAgentSetAppearance()
++        {
++            // Get latest appearance info
++            if (AgentAppearanceParams.Count == 0)
++            {
++                GetAvatarAppearanceInfoFromWearableAssets();
++            }
++
++            AgentSetAppearancePacket p = new AgentSetAppearancePacket();
++            p.AgentData.AgentID = Client.Network.AgentID;
++            p.AgentData.SessionID = Client.Network.SessionID;
++            p.AgentData.SerialNum = ++SerialNum;
++
++            // Add Texture Data
++            p.ObjectData.TextureEntry = AgentTextureEntry.ToBytes();
++
++            // Add Visual Params
++            Dictionary&lt;uint, byte&gt; VisualParams = GetAssetParamsAsVisualParams();
++            p.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
++            for (uint i = 0; i &lt; 218; i++)
++            {
++                p.VisualParam[i] = new AgentSetAppearancePacket.VisualParamBlock();
++
++                if (VisualParams.ContainsKey(i))
++                {
++                    p.VisualParam[i].ParamValue = VisualParams[i];
++                }
++                else
++                {
++                    uint paramid = GetParamID(i + 1);
++                    float defaultValue = BodyShapeParams.GetValueDefault(paramid);
++
++                    float minVal = BodyShapeParams.GetValueMin(paramid);
++
++                    float range = BodyShapeParams.GetValueMax(paramid) - minVal;
++
++                    float percentage = (defaultValue - minVal) / range;
++
++                    byte packetVal = (byte)(percentage * (byte)255);
++
++                    p.VisualParam[i].ParamValue = packetVal;
++                }
++            }
++
++            // Add Size Data
++            p.AgentData.Size = GetAgentSizeFromVisualParams(VisualParams);
++
++            Client.Network.SendPacket(p);
++        }
++
++
++        /// &lt;summary&gt;
+         /// Convert the morph params as they are stored in assets, to the byte values needed for
+         /// AgentSetAppearance packet
+         /// &lt;/summary&gt;
+         /// &lt;returns&gt;Visual Param information for AgentSetAppearance packets&lt;/returns&gt;
+-        private Dictionary&lt;uint, byte&gt; GetAssetParamsAsVisualParams()
++        protected Dictionary&lt;uint, byte&gt; GetAssetParamsAsVisualParams()
+         {
+             Dictionary&lt;uint, byte&gt; VisualParams = new Dictionary&lt;uint, byte&gt;();
+ 
+@@ -352,7 +413,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;VisualParams&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        private LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;uint, byte&gt; VisualParams)
++        protected LLVector3 GetAgentSizeFromVisualParams(Dictionary&lt;uint, byte&gt; VisualParams)
+         {
+             if (VisualParams.ContainsKey(25))
+             {
+@@ -366,61 +427,10 @@
+             }
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// Send an AgentSetAppearance packet to the server to update your appearance.
+-        /// &lt;/summary&gt;
+-        public void SendAgentSetAppearance()
+-        {
+-            // Get latest appearance info
+-            if (AgentAppearanceParams.Count == 0)
+-            {
+-                GetAvatarAppearanceInfoFromWearableAssets();
+-            }
+ 
+-            AgentSetAppearancePacket p = new AgentSetAppearancePacket();
+-            p.AgentData.AgentID = Client.Network.AgentID;
+-            p.AgentData.SessionID = Client.Network.SessionID;
+-            p.AgentData.SerialNum = ++SerialNum;
+ 
+-            // Add Texture Data
+-            p.ObjectData.TextureEntry = AgentTextureEntry.ToBytes();
++        #region Callback Handlers
+ 
+-            // Add Visual Params
+-            Dictionary&lt;uint, byte&gt; VisualParams = GetAssetParamsAsVisualParams();
+-            p.VisualParam = new AgentSetAppearancePacket.VisualParamBlock[218];
+-            for (uint i = 0; i &lt; 218; i++)
+-            {
+-                p.VisualParam[i] = new AgentSetAppearancePacket.VisualParamBlock();
+-
+-                if (VisualParams.ContainsKey(i))
+-                {
+-                    p.VisualParam[i].ParamValue = VisualParams[i];
+-                }
+-                else
+-                {
+-                    uint paramid = GetParamID(i + 1);
+-                    float defaultValue = BodyShapeParams.GetValueDefault(paramid);
+-
+-                    float minVal = BodyShapeParams.GetValueMin(paramid);
+-
+-                    float range = BodyShapeParams.GetValueMax(paramid) - minVal;
+-
+-                    float percentage = (defaultValue - minVal) / range;
+-
+-                    byte packetVal = (byte)(percentage * (byte)255);
+-
+-                    p.VisualParam[i].ParamValue = packetVal;
+-                }
+-            }
+-
+-            // Add Size Data
+-            p.AgentData.Size = GetAgentSizeFromVisualParams(VisualParams);
+-
+-            Client.Network.SendPacket(p);
+-        }
+-
+-
+-
+         private void AgentWearablesUpdateCallbackHandler(Packet packet, Simulator simulator)
+         {
+             AgentWearablesUpdatePacket wearablesPacket = (AgentWearablesUpdatePacket)packet;
+@@ -429,12 +439,16 @@
+             AgentWearablesSignal.Set();
+         }
+ 
++        #endregion
++
++        #region Lookup Tables
++
+         /// &lt;summary&gt;
+         /// Convert a Visual Params index number from the ParamID provided in Assets and from avatar_lad.xml
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;AssetParamID&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        private static uint GetAgentSetAppearanceIndex(uint AssetParamID)
++        protected static uint GetAgentSetAppearanceIndex(uint AssetParamID)
+         {
+             switch (AssetParamID)
+             {
+@@ -667,7 +681,7 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;VisualParamIdx&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+-        public static uint GetParamID(uint VisualParamIdx)
++        protected static uint GetParamID(uint VisualParamIdx)
+         {
+             switch (VisualParamIdx)
+             {
+@@ -894,5 +908,7 @@
+                     throw new Exception(&quot;Unknown Visual Param (AgentSetApperance) index: &quot; + VisualParamIdx);
+             }
+         }
++
++        #endregion
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -73,13 +73,22 @@
+ 	/// &lt;/summary&gt;
+ 	public class AssetManager
+ 	{
+-		private SecondLife slClient;
++		protected SecondLife slClient;
+ 
+-        private AssetRequestUpload curUploadRequest = null;
+-        private Dictionary&lt;LLUUID, AssetRequestDownload&gt; htDownloadRequests = new Dictionary&lt;LLUUID, AssetRequestDownload&gt;();
++        protected AssetRequestUpload curUploadRequest = null;
++        protected Dictionary&lt;LLUUID, AssetRequestDownload&gt; htDownloadRequests = new Dictionary&lt;LLUUID, AssetRequestDownload&gt;();
+ 
++        public readonly static int DefaultTimeout = 15000;
++
+         /// &lt;summary&gt;
++        /// Event singaling an asset transfer request has completed.
+         /// &lt;/summary&gt;
++        /// &lt;param name=&quot;request&quot;&gt;&lt;/param&gt;
++        public delegate void On_TransferRequestCompleted(AssetRequest request);
++        public event On_TransferRequestCompleted TransferRequestCompletedEvent;
++
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
+         /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
+         internal AssetManager(SecondLife client)
+ 		{
+@@ -97,31 +106,27 @@
+ 			// XFer packets for uploading large assets
+             slClient.Network.RegisterCallback(PacketType.ConfirmXferPacket, new NetworkManager.PacketCallback(ConfirmXferPacketCallbackHandler));
+             slClient.Network.RegisterCallback(PacketType.RequestXfer, new NetworkManager.PacketCallback(RequestXferCallbackHandler));
+-		}
++        }
+ 
+-        void Network_OnConnected(object sender)
++        #region State Handling
++        private void Network_OnConnected(object sender)
+         {
+             ClearState();
+         }
+ 
+-        void Network_OnDisconnected(NetworkManager.DisconnectType reason, string message)
++        private void Network_OnDisconnected(NetworkManager.DisconnectType reason, string message)
+         {
+             ClearState();
+         }
+ 
+-        private void ClearState()
++        protected void ClearState()
+         {
+             htDownloadRequests.Clear();
+             curUploadRequest = null;
+         }
++        #endregion
+ 
+-        /// &lt;summary&gt;
+-        /// Handle the appropriate sink fee associated with an asset upload
+-        /// &lt;/summary&gt;
+-        public void SinkFee()
+-		{
+-            slClient.Self.GiveMoney(LLUUID.Zero, slClient.Settings.UPLOAD_COST, &quot;Image Upload&quot;);
+-		}
++        #region Asset Uploading 
+ 
+         /// &lt;summary&gt;
+         /// Upload an asset to Second Life
+@@ -150,13 +155,25 @@
+             {
+                 curUploadRequest = null;
+             }
+-		}
++        }
+ 
+         /// &lt;summary&gt;
++        /// Handle the appropriate sink fee associated with an asset upload
++        /// &lt;/summary&gt;
++        protected void SinkFee()
++        {
++            slClient.Self.GiveMoney(LLUUID.Zero, slClient.Settings.UPLOAD_COST, &quot;Image Upload&quot;);
++        }
++
++        #endregion
++
++        #region Download Assets
++
++        /// &lt;summary&gt;
+         /// Get the Asset data for an item, must be used when requesting a Notecard
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
+-		public void GetInventoryAsset( InventoryItem item )
++        public AssetRequestDownload RequestInventoryAsset(InventoryItem item)
+ 		{
+             if ( (item.OwnerMask &amp; (uint)AssetPermission.Copy) == 0 )
+                 throw new AssetPermissionException(item, slClient, &quot;Asset data refused, Copy permission needed.&quot;);
+@@ -165,9 +182,7 @@
+ 
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(TransferID);
+-            request.Size = int.MaxValue; // Number of bytes expected
+-            request.Received = 0; // Number of bytes received
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, item._Asset);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+@@ -189,25 +204,21 @@
+             slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+-            request.Completed.WaitOne();
++            return request;
++        }
+ 
+-            item.SetAssetData(request.AssetData);
+-		}
+-
+         /// &lt;summary&gt;
+         /// Get Asset data, works with BodyShapes (type 13) but does not work with Notecards(type 7)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;asset&quot;&gt;&lt;/param&gt;
+-        public void GetInventoryAsset(Asset asset)
++        public AssetRequestDownload RequestInventoryAsset(Asset asset)
+ 		{
+ 			LLUUID TransferID = LLUUID.Random();
+ 
+-            AssetRequestDownload request = new AssetRequestDownload(TransferID);
+-            request.Size = int.MaxValue; // Number of bytes expected
+-            request.Received = 0; // Number of bytes received
++            AssetRequestDownload request = new AssetRequestDownload(slClient.Assets, TransferID, asset);
+             request.UpdateLastPacketTime(); // last time we recevied a packet for this request
+ 
+             htDownloadRequests[TransferID] = request;
+@@ -216,31 +227,69 @@
+ 			slClient.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++            slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+-            request.Completed.WaitOne();
++            return request;
+ 
+-            asset.SetAssetData(request.AssetData);
+-            
+-		}
++        }
+ 
++        #endregion
+ 
++        #region Event Generation
++        internal void FireTransferRequestCompletedEvent(AssetRequest request)
++        {
++            TransferRequestCompletedEvent(request);
++        }
++        #endregion
++
++        #region Deprecated Methods
++        /// &lt;summary&gt;
++        /// Get the Asset data for an item, must be used when requesting a Notecard
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;item&quot;&gt;&lt;/param&gt;
++        [Obsolete(&quot;Use RequestInventoryAsset instead.&quot;, false)]
++        public void GetInventoryAsset(InventoryItem item)
++        {
++            RequestInventoryAsset(item).Wait(-1);
++        }
++
++        /// &lt;summary&gt;
++        /// Get Asset data, works with BodyShapes (type 13) but does not work with Notecards(type 7)
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;asset&quot;&gt;&lt;/param&gt;
++        [Obsolete(&quot;Use RequestInventoryAsset instead.&quot;, false)]
++        public void GetInventoryAsset(Asset asset)
++        {
++            RequestInventoryAsset(asset).Wait(-1);
++        }
++        #endregion
++
++        #region Callback Handlers
++
+         private void AssetUploadCompleteCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+             Packets.AssetUploadCompletePacket reply = (AssetUploadCompletePacket)packet;
++            if (reply.AssetBlock.Success)
++            {
++                curUploadRequest.UploadComplete(reply.AssetBlock.UUID, AssetRequest.RequestStatus.Success);
++            }
++            else
++            {
++                curUploadRequest.UploadComplete(reply.AssetBlock.UUID, AssetRequest.RequestStatus.Failure);
++            }
+ 
+-            curUploadRequest.UploadComplete(reply.AssetBlock.UUID, reply.AssetBlock.Success);
++            TransferRequestCompletedEvent(curUploadRequest);
+ 		}
+ 
+         private void RequestXferCallbackHandler(Packet packet, Simulator simulator)
+ 		{
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+             RequestXferPacket reply = (RequestXferPacket)packet;
+@@ -254,7 +303,7 @@
+         private void ConfirmXferPacketCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+             ConfirmXferPacketPacket reply = (ConfirmXferPacketPacket)packet;
+@@ -263,10 +312,11 @@
+         }
+ 
+ 
++        // Download stuff
+         private void TransferInfoCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+             TransferInfoPacket reply = (TransferInfoPacket)packet;
+@@ -276,33 +326,29 @@
+             int Status = reply.TransferInfo.Status;
+ 
+             // Lookup the request for this packet
+-            AssetRequestDownload request = htDownloadRequests[TransferID];
+-            if (request == null)
++            if (!htDownloadRequests.ContainsKey(TransferID))
+             {
++                slClient.Log(&quot;Received unexpected TransferInfo packet.&quot; + Environment.NewLine + packet.ToString(), Helpers.LogLevel.Warning);
+                 return;
+             }
++            AssetRequestDownload request = htDownloadRequests[TransferID];
+ 
+             // Mark it as either not found or update the request information
+             if (Status == -2)
+             {
+-                request.Status = false;
+-                request.StatusMsg = &quot;Asset Status -2 :: Likely Status Not Found&quot;;
+-
+-                request.Size = 0;
+-                request.AssetData = new byte[0];
+-                request.Completed.Set();
++                request.SetExpectedSize(Size);
++                request.Fail(&quot;Asset Status -2 :: Likely Status Not Found&quot;);
+             }
+             else
+             {
+-                request.Size = Size;
+-                request.AssetData = new byte[Size];
++                request.SetExpectedSize(Size);
+             }
+         }
+ 
+         private void TransferPacketCallbackHandler(Packet packet, Simulator simulator)
+         {
+             #if DEBUG_PACKETS
+-                slClient.DebugLog(packet);
++                slClient.Log(packet.ToString(), Helpers.LogLevel.Info);
+             #endif
+ 
+             TransferPacketPacket reply = (TransferPacketPacket)packet;
+@@ -311,31 +357,18 @@
+             byte[] Data = reply.TransferData.Data;
+ 
+ 
+-            // Append data to data received.
+-            AssetRequestDownload request = htDownloadRequests[TransferID];
+-            if (request == null)
++            // Lookup the request for this packet
++            if (!htDownloadRequests.ContainsKey(TransferID))
+             {
++                slClient.Log(&quot;Received unexpected TransferPacket packet.&quot; + Environment.NewLine + packet.ToString(), Helpers.LogLevel.Warning);
+                 return;
+             }
++            AssetRequestDownload request = htDownloadRequests[TransferID];
+ 
+-            // Add data to data dictionary.
+-            request.AssetDataReceived[reply.TransferData.Packet] = Data;
+-            request.Received += Data.Length;
++            // Append data to data received.
++            request.AddDownloadedData(reply.TransferData.Packet, Data);
++        }
+ 
+-
+-
+-            // If we've gotten all the data, mark it completed.
+-            if (request.Received &gt;= request.Size)
+-            {
+-                int curPos = 0;
+-                foreach (KeyValuePair&lt;int,byte[]&gt; kvp in request.AssetDataReceived)
+-                {
+-                    Array.Copy(kvp.Value, 0, request.AssetData, curPos, kvp.Value.Length);
+-                    curPos += kvp.Value.Length;
+-                }
+-
+-                request.Completed.Set();
+-            }
+-        }
+-	}
++        #endregion
++    }
+ }
+
+Added: trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequest.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -0,0 +1,167 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++//#define DEBUG_PACKETS
++
++using System;
++using System.Collections.Generic;
++
++using libsecondlife;
++
++using libsecondlife.InventorySystem;
++
++using libsecondlife.Packets;
++using System.Threading;
++
++namespace libsecondlife.AssetSystem
++{
++    public class AssetRequest
++    {
++        public enum RequestStatus { Success, Failure };
++
++        protected AssetManager _AssetManager;
++
++        protected LLUUID _TransactionID;
++        public Asset AssetBeingTransferd;
++        
++
++        protected ManualResetEvent _Completed = new ManualResetEvent(false);
++
++        protected RequestStatus _Status;
++        public RequestStatus Status
++        {
++            get { return _Status; }
++        }
++
++        protected string _StatusMsg = &quot;&quot;;
++        public string StatusMsg
++        {
++            get { return _StatusMsg; }
++        }
++
++        protected int _Size;
++        protected byte[] _AssetData;
++
++        protected uint _LastPacketTime;
++        public uint LastPacketTime { get { return _LastPacketTime; } }
++
++        public uint SecondsSinceLastPacket { get { return Helpers.GetUnixTime() - _LastPacketTime; } }
++
++        public AssetRequest(AssetManager Manager, LLUUID TransID, Asset Asset)
++        {
++            _AssetManager = Manager;
++            _TransactionID = TransID;
++            AssetBeingTransferd = Asset;
++
++            _Size = int.MaxValue;
++
++            UpdateLastPacketTime();
++        }
++
++        public void UpdateLastPacketTime()
++        {
++            _LastPacketTime = Helpers.GetUnixTime();
++        }
++
++        /// &lt;summary&gt;
++        /// Wait for this Request to be completed.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;timeout&quot;&gt;milliseconds to wait, -1 to wait indefinitely&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public RequestStatus Wait(int timeout)
++        {
++            if (!_Completed.WaitOne(timeout, false))
++            {
++                _StatusMsg += &quot;Timeout Failure&quot;;
++                return RequestStatus.Failure;
++            }
++            else
++            {
++                return _Status;
++            }
++        }
++
++        protected void MarkCompleted(RequestStatus status, string status_msg)
++        {
++            _StatusMsg += status_msg;
++            _Status = status;
++
++            _Completed.Set();
++
++            _AssetManager.FireTransferRequestCompletedEvent(this);
++        }
++
++        internal void Fail(string status_msg)
++        {
++            MarkCompleted(RequestStatus.Failure, status_msg);
++        }
++
++    }
++
++
++    public class AssetRequestDownload : AssetRequest
++    {
++        protected int _Received;
++        protected SortedList&lt;int, byte[]&gt; _AssetDataReceived = new SortedList&lt;int, byte[]&gt;();
++
++        public AssetRequestDownload(AssetManager Manager, LLUUID TransID, Asset Asset2Update)
++            : base(Manager, TransID, Asset2Update)
++        {
++            _Received = 0;
++        }
++
++        internal void AddDownloadedData(int packetNum, byte[] data)
++        {
++            if (!_AssetDataReceived.ContainsKey(packetNum))
++            {
++                _AssetDataReceived[packetNum] = data;
++                _Received += data.Length;
++            }
++
++            // If we've gotten all the data, mark it completed.
++            if (_Received &gt;= _Size)
++            {
++                int curPos = 0;
++                foreach (KeyValuePair&lt;int, byte[]&gt; kvp in _AssetDataReceived)
++                {
++                    Array.Copy(kvp.Value, 0, _AssetData, curPos, kvp.Value.Length);
++                    curPos += kvp.Value.Length;
++                }
++
++                AssetBeingTransferd.SetAssetData(_AssetData);
++
++                MarkCompleted(AssetRequestDownload.RequestStatus.Success, &quot;Download Completed&quot;);
++            }
++
++        }
++
++        internal void SetExpectedSize(int size)
++        {
++            _Size = size;
++            _AssetData = new byte[_Size];
++        }
++    }
++}
+
+Deleted: trunk/libsecondlife-cs/AssetSystem/AssetRequestDownload.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequestDownload.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequestDownload.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -1,71 +0,0 @@
+-/*
+- * Copyright (c) 2006, Second Life Reverse Engineering Team
+- * All rights reserved.
+- *
+- * - Redistribution and use in source and binary forms, with or without 
+- *   modification, are permitted provided that the following conditions are met:
+- *
+- * - Redistributions of source code must retain the above copyright notice, this
+- *   list of conditions and the following disclaimer.
+- * - Neither the name of the Second Life Reverse Engineering Team nor the names 
+- *   of its contributors may be used to endorse or promote products derived from
+- *   this software without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
+- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+- * POSSIBILITY OF SUCH DAMAGE.
+- */
+-
+-//#define DEBUG_PACKETS
+-
+-using System;
+-using System.Collections.Generic;
+-
+-using libsecondlife;
+-
+-using libsecondlife.InventorySystem;
+-
+-using libsecondlife.Packets;
+-using System.Threading;
+-
+-namespace libsecondlife.AssetSystem
+-{
+-    class AssetRequestDownload
+-    {
+-        public LLUUID TransactionID;
+-
+-        public ManualResetEvent Completed = new ManualResetEvent(false);
+-        public bool Status;
+-        public string StatusMsg;
+-
+-        public int Size;
+-        public int Received;
+-        public byte[] AssetData;
+-        public SortedList&lt;int, byte[]&gt; AssetDataReceived = new SortedList&lt;int, byte[]&gt;();
+-
+-        private uint _LastPacketTime;
+-        public uint LastPacketTime { get { return _LastPacketTime; } }
+-
+-        public uint SecondsSinceLastPacket { get { return Helpers.GetUnixTime() - _LastPacketTime; } }
+-
+-        public AssetRequestDownload(LLUUID TransID)
+-        {
+-            
+-            TransactionID = TransID;
+-            UpdateLastPacketTime();
+-        }
+-
+-        public void UpdateLastPacketTime()
+-        {
+-            _LastPacketTime = Helpers.GetUnixTime();
+-        }
+-    }
+-}
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/AssetSystem/AssetRequestUpload.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -39,109 +39,87 @@
+ 
+ namespace libsecondlife.AssetSystem
+ {
+-    class AssetRequestUpload
++    public class AssetRequestUpload : AssetRequest
+     {
+-        public ManualResetEvent Completed = new ManualResetEvent(false);
+-		public bool Status;
+-		public string StatusMsg;
++        protected SecondLife _Client;
++        protected readonly int _MaxResendAttempts = 20;
+ 
+-        public Asset MyAsset;
++        protected ulong _XferID;
+ 
+-        public LLUUID TransactionID;
+-        public ulong XferID;
++        protected int _ResendCount;
++        protected uint _CurrentPacket;
+ 
+-        SecondLife slClient;
++        protected int _NumPackets2Send; 
+ 
+-        public int resendCount;
+-        public uint CurrentPacket;
+-        private uint _LastPacketTime;
+-        public uint LastPacketTime
++        public AssetRequestUpload(SecondLife Client, LLUUID TransID, Asset Asset2Upload) : base(Client.Assets, TransID, Asset2Upload)
+         {
+-            get { return _LastPacketTime; }
+-        }
++            if ((AssetBeingTransferd._AssetData == null) || (AssetBeingTransferd._AssetData.Length == 0))
++            {
++                throw new Exception(&quot;Asset data cannot be null.&quot;);
++            }
+ 
+-        public uint SecondsSinceLastPacket
+-        {
+-            get { return Helpers.GetUnixTime() - _LastPacketTime; }
+-        }
++            _Client = Client;
+ 
+-        private int _NumPackets; 
+-        public int NumPackets { get { return _NumPackets; } }
+-
+-        public AssetRequestUpload(SecondLife slClient, LLUUID TransID, Asset asset)
+-        {
+-            this.slClient = slClient;
+-            TransactionID = TransID;
+-            UpdateLastPacketTime();
+-
+-            MyAsset = asset;
+-
+-            CurrentPacket = 0;
+-            resendCount = 0;
+-            _NumPackets = asset._AssetData.Length / 1000;
+-            if (_NumPackets &lt; 1)
++            _CurrentPacket = 0;
++            _ResendCount = 0;
++            _NumPackets2Send = AssetBeingTransferd._AssetData.Length / 1000;
++            if (_NumPackets2Send &lt; 1)
+             {
+-                _NumPackets = 1;
++                _NumPackets2Send = 1;
+             }
+         }
+ 
+         internal LLUUID DoUpload()
+         {
+-            this.SendFirstPacket();
++            SendFirstPacket();
+ 
+-            while (this.Completed.WaitOne(1000, true) == false &amp;&amp; this.resendCount &lt; 20) // only resend 20 times
++            while ((_Completed.WaitOne(1000, true) == false) &amp;&amp; (_ResendCount &lt; _MaxResendAttempts))
+             {
+                 if (this.SecondsSinceLastPacket &gt; 2)
+                 {
+-                    slClient.Log(&quot;Resending Packet (more than 2 seconds since last confirm)&quot;, Helpers.LogLevel.Info);
++                    _Client.Log(&quot;Resending Packet (more than 2 seconds since last confirm)&quot;, Helpers.LogLevel.Info);
+                     this.SendCurrentPacket();
+-                    resendCount++;
++                    _ResendCount++;
+                 }
+             }
+ 
+ 
+-            if (this.Status == false)
++            if (_Status == RequestStatus.Failure)
+             {
+-                throw new Exception(this.StatusMsg);
++                throw new Exception(_StatusMsg);
+             }
+             else
+             {
+-                return this.TransactionID;
++                return _TransactionID;
+             }
+         }
+ 
+-        public void UpdateLastPacketTime()
++        protected void SendFirstPacket()
+         {
+-            _LastPacketTime = Helpers.GetUnixTime();
+-        }
+-
+-
+-        internal void SendFirstPacket()
+-        {
+             Packet packet;
+ 
+-            if (this.MyAsset._AssetData.Length &gt; 1000)
++            if (AssetBeingTransferd._AssetData.Length &gt; 1000)
+             {
+-                packet = AssetPacketHelpers.AssetUploadRequestHeaderOnly(this.MyAsset, this.TransactionID);
++                packet = AssetPacketHelpers.AssetUploadRequestHeaderOnly(AssetBeingTransferd, _TransactionID);
+             }
+             else
+             {
+-                packet = AssetPacketHelpers.AssetUploadRequest(this.MyAsset, this.TransactionID);
++                packet = AssetPacketHelpers.AssetUploadRequest(AssetBeingTransferd, _TransactionID);
+             }
+ 
+-            slClient.Network.SendPacket(packet);
++            _Client.Network.SendPacket(packet);
+ 
+             #if DEBUG_PACKETS
+                 slClient.DebugLog(packet);
+             #endif
+             #if DEBUG_HEADERS
+-            slClient.DebugLog(packet.Header.ToString());
++            _Client.DebugLog(packet.Header.ToString());
+             #endif
+         }
+ 
+         internal void RequestXfer(ulong XferID)
+         {
+-            this.XferID = XferID; 
++            _XferID = XferID; 
+             // Setup to send the first packet
+             SendCurrentPacket();
+         }
+@@ -151,11 +129,11 @@
+             // TODO should check that this is the same transfer?
+             this.UpdateLastPacketTime();
+ 
+-            if (PacketNumConfirmed == CurrentPacket)
++            if (PacketNumConfirmed == _CurrentPacket)
+             {
+                 // Increment Packet #
+-                this.CurrentPacket++;
+-                this.resendCount = 0;
++                this._CurrentPacket++;
++                this._ResendCount = 0;
+                 SendCurrentPacket();
+             }
+             else
+@@ -164,72 +142,72 @@
+             }
+         }
+ 
+-        private void SendCurrentPacket()
++        protected void SendCurrentPacket()
+         {
+             Packet uploadPacket;
+ 
+-            // technically we don't need this lock, because no state is updated here!
+-            // lock (this) 
++            // THREADING: snapshot this num so we use a consistent value throughout
++            uint packetNum = _CurrentPacket; 
++            if (packetNum == 0)
+             {
+-                // THREADING: snapshot this num so we use a consistent value throughout
+-                uint packetNum = CurrentPacket; 
+-                if (packetNum == 0)
++                if (AssetBeingTransferd._AssetData.Length &lt;= 1000)
+                 {
+-                    if (MyAsset._AssetData.Length &lt;= 1000)
+-                        throw new Exception(&quot;Should not use xfer for small assets&quot;);
+-                    int dataSize = 1000;
++                    throw new Exception(&quot;Should not use xfer for small assets&quot;);
++                }
++                int dataSize = 1000;
+ 
+-                    byte[] packetData = new byte[dataSize + 4]; // Extra space is for leading data length bytes
++                byte[] packetData = new byte[dataSize + 4]; // Extra space is for leading data length bytes
+ 
+-                    // Prefix the first Xfer packet with the data length
+-                    // FIXME: Apply endianness patch
+-                    Array.Copy(BitConverter.GetBytes((int)MyAsset._AssetData.Length), 0, packetData, 0, 4);
+-                    Array.Copy(MyAsset._AssetData, 0, packetData, 4, dataSize);
++                // Prefix the first Xfer packet with the data length
++                // FIXME: Apply endianness patch
++                Array.Copy(BitConverter.GetBytes((int)AssetBeingTransferd._AssetData.Length), 0, packetData, 0, 4);
++                Array.Copy(AssetBeingTransferd._AssetData, 0, packetData, 4, dataSize);
+ 
+-                    uploadPacket = AssetPacketHelpers.SendXferPacket(XferID, packetData, packetNum);
+-                }
+-                else if (packetNum &lt; this.NumPackets)
+-                {
+-                    byte[] packetData = new byte[1000];
+-                    Array.Copy(this.MyAsset._AssetData, packetNum * 1000, packetData, 0, 1000);
++                uploadPacket = AssetPacketHelpers.SendXferPacket(_XferID, packetData, packetNum);
++            }
++            else if (packetNum &lt; _NumPackets2Send)
++            {
++                byte[] packetData = new byte[1000];
++                Array.Copy(AssetBeingTransferd._AssetData, packetNum * 1000, packetData, 0, 1000);
+ 
+-                    uploadPacket = AssetPacketHelpers.SendXferPacket(this.XferID, packetData, packetNum);
+-                }
+-                else
+-                {
+-                    // The last packet has to be handled slightly differently
+-                    int lastLen = this.MyAsset._AssetData.Length - (this.NumPackets * 1000);
+-                    byte[] packetData = new byte[lastLen];
+-                    Array.Copy(this.MyAsset._AssetData, this.NumPackets * 1000, packetData, 0, lastLen);
++                uploadPacket = AssetPacketHelpers.SendXferPacket(_XferID, packetData, packetNum);
++            }
++            else
++            {
++                // The last packet has to be handled slightly differently
++                int lastLen = this.AssetBeingTransferd._AssetData.Length - (_NumPackets2Send * 1000);
++                byte[] packetData = new byte[lastLen];
++                Array.Copy(this.AssetBeingTransferd._AssetData, _NumPackets2Send * 1000, packetData, 0, lastLen);
+ 
+-                    uint lastPacket = (uint)int.MaxValue + (uint)this.NumPackets + (uint)1;
+-                    uploadPacket = AssetPacketHelpers.SendXferPacket(this.XferID, packetData, lastPacket);
+-                }
++                uint lastPacket = (uint)int.MaxValue + (uint)_NumPackets2Send + (uint)1;
++                uploadPacket = AssetPacketHelpers.SendXferPacket(_XferID, packetData, lastPacket);
+             }
+ 
+-            slClient.Network.SendPacket(uploadPacket);
++            _Client.Network.SendPacket(uploadPacket);
+ 
+             #if DEBUG_PACKETS
+                 slClient.DebugLog(uploadPacket);
+             #endif
+             #if DEBUG_HEADERS
+-                slClient.DebugLog(uploadPacket.Header.ToString());
++                _Client.DebugLog(uploadPacket.Header.ToString());
+             #endif
+         }
+ 
+-        internal void UploadComplete(LLUUID assetID, bool success)
++        internal void UploadComplete(LLUUID assetID, RequestStatus success)
+         {
+-            MyAsset.AssetID = assetID;
+-            this.Status = success;
++            AssetBeingTransferd.AssetID = assetID;
+             UpdateLastPacketTime();
++            _Client.Log(&quot;Upload complete&quot;, Helpers.LogLevel.Info);
+ 
+-            if (Status)
+-                StatusMsg = &quot;Success&quot;;
++            if (_Status == RequestStatus.Success)
++            {
++                MarkCompleted(success, &quot;Success&quot;);
++            }
+             else
+-                StatusMsg = &quot;Server returned failed&quot;;
++            {
++                MarkCompleted(success, &quot;Server returned failed&quot;);
++            }
+ 
+-            slClient.Log(&quot;Upload complete&quot;, Helpers.LogLevel.Info);
+-            Completed.Set();
+         }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -22,8 +22,12 @@
+ 				{
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+ 					{
+-						base.iManager.AssetManager.GetInventoryAsset( this );
+-						return ((AssetImage)Asset).J2CData;
++                        AssetRequestDownload request = base.iManager.AssetManager.RequestInventoryAsset(this);
++                        if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
++                        {
++                            throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
++                        }
++                        return ((AssetImage)Asset).J2CData;
+ 					}
+ 				}
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -130,7 +130,11 @@
+                 {
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+                     {
+-                        base.iManager.AssetManager.GetInventoryAsset(this);
++                        AssetRequestDownload request = base.iManager.AssetManager.RequestInventoryAsset(this);
++                        if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
++                        {
++                            throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
++                        }
+                         return Asset;
+                     }
+                 }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -697,6 +697,11 @@
+             }
+         }
+ 
++        protected void FireRequestDownloadFinishedEvent(object o, EventArgs e)
++        {
++            RequestDownloadFinishedEvent(o, e);
++        }
++
+         #endregion
+ 
+         #region libsecondlife callback handlers
+@@ -948,7 +953,7 @@
+                 {
+                     DownloadRequest_EventArgs e = new DownloadRequest_EventArgs();
+                     e.DownloadRequest = dr;
+-                    RequestDownloadFinishedEvent(InvFolderUpdating, e);
++                    FireRequestDownloadFinishedEvent(InvFolderUpdating, e);
+                 }
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -20,8 +20,12 @@
+ 				} else {
+                     if ((AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero))
+ 					{
+-						base.iManager.AssetManager.GetInventoryAsset( this );
+-						return ((AssetNotecard)Asset).Body;
++                        AssetRequestDownload request = base.iManager.AssetManager.RequestInventoryAsset(this);
++                        if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
++                        {
++                            throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
++                        }
++                        return ((AssetNotecard)Asset).Body;
+ 					}
+ 				}
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -19,7 +19,11 @@
+                 {
+                     if ( (AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero) )
+                     {
+-                        base.iManager.AssetManager.GetInventoryAsset(this);
++                        AssetRequestDownload request = base.iManager.AssetManager.RequestInventoryAsset(this);
++                        if (request.Wait(AssetManager.DefaultTimeout) != AssetRequestDownload.RequestStatus.Success)
++                        {
++                            throw new Exception(&quot;Asset (&quot; + AssetID.ToStringHyphenated() + &quot;) unavailable (&quot; + request.StatusMsg + &quot;) for &quot; + this.Name);
++                        }
+                         return ((AssetScript)Asset).Source;
+                     }
+                 }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2007-01-13 00:23:00 UTC (rev 840)
+@@ -11,7 +11,6 @@
+ 	public class InventoryWearable : InventoryItem
+ 	{
+         // Wearable Inventory/Asset constants
+-        public enum WearableAssetType { Shape = 0, Skin = 1, Hair = 2, Eyes = 3, Socks = 7, Gloves = 9, Pants = 5, Shirt = 4, Shoes = 6, Jacket = 8, Skirt = 12, Underpants = 11 };
+         public enum WearableType : sbyte { Clothing = 5, Body = 13 };
+ 
+ 
+
+
+Property changes on: trunk/libsecondlife-cs/libsecondlife.Utilities
+___________________________________________________________________
+Name: svn:ignore
+   + obj
+
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-12 06:16:19 UTC (rev 839)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2007-01-13 00:23:00 UTC (rev 840)
+@@ -97,12 +97,12 @@
+     &lt;Compile Include=&quot;AssetSystem\AssetManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetNotecard.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetPacketHelpers.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;AssetSystem\AssetRequestDownload.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequestUpload.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetScript.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Body.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetWearable_Clothing.cs&quot; /&gt;
++    &lt;Compile Include=&quot;AssetSystem\AssetRequest.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\_BodyShapeParams_.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImageManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImagePacketHelpers.cs&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000243.html">[Libsecondlife-commits] r839 - in trunk: . libsecondlife.xcodeproj
+</A></li>
+	<LI>Next message: <A HREF="000245.html">[Libsecondlife-commits] r841 - in trunk: libsecondlife-cs	libsecondlife.xcodeproj
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

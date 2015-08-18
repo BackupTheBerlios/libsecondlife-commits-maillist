@@ -1,0 +1,695 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r823 - in	trunk/libsecondlife-cs/examples/TestClient/Commands: .	Communication Movement
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r823%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient/Commands%3A%20.%0A%09Communication%20Movement&In-Reply-To=%3C200701090702.l0972SZo029479%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000226.html">
+   <LINK REL="Next"  HREF="000228.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r823 - in	trunk/libsecondlife-cs/examples/TestClient/Commands: .	Communication Movement</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r823%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient/Commands%3A%20.%0A%09Communication%20Movement&In-Reply-To=%3C200701090702.l0972SZo029479%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r823 - in	trunk/libsecondlife-cs/examples/TestClient/Commands: .	Communication Movement">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 08:02:28 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000226.html">[Libsecondlife-commits] r822 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+        <LI>Next message: <A HREF="000228.html">[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-09 08:02:22 +0100 (Tue, 09 Jan 2007)
+New Revision: 823
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/EchoMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/IMCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/SayCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/ShoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/TtsCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/WhisperCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/GotoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/JumpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/LocationCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/SitCommand.cs
+Log:
+Fix for testclient re-org
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/EchoMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/EchoMasterCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/EchoMasterCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,41 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class EchoMasterCommand: Command
++    {
++        public EchoMasterCommand(TestClient testClient)
++		{
++			Name = &quot;echoMaster&quot;;
++			Description = &quot;Repeat everything that master says.&quot;;
++		}
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++			if (!Active)
++			{
++				Active = true;
++                Client.Self.OnChat += new MainAvatar.ChatCallback(Self_OnChat);
++				return &quot;Echoing is now on.&quot;;
++			}
++			else
++			{
++				Active = false;
++                Client.Self.OnChat -= new MainAvatar.ChatCallback(Self_OnChat);
++				return &quot;Echoing is now off.&quot;;
++			}
++		}
++
++		void Self_OnChat(string message, byte audible, byte type, byte sourcetype, string fromName, LLUUID id, LLUUID ownerid, LLVector3 position)
++		{
++			if (message.Length &gt; 0 &amp;&amp; Client.Master == fromName)
++			{
++			    Client.Self.Chat(message, 0, MainAvatar.ChatType.Normal);
++			}
++		}
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/IMCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/IMCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/IMCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,71 @@
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ImCommand : Command
++    {
++        string ToAvatarName = String.Empty;
++        ManualResetEvent NameSearchEvent = new ManualResetEvent(false);
++        Dictionary&lt;string, LLUUID&gt; Name2Key = new Dictionary&lt;string, LLUUID&gt;();
++
++        public ImCommand(TestClient testClient)
++        {
++            testClient.Avatars.OnAvatarNameSearch += new AvatarManager.AvatarNameSearchCallback(Avatars_OnAvatarNameSearch);
++
++            Name = &quot;im&quot;;
++            Description = &quot;Instant message someone. Usage: im [firstname] [lastname] [message]&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length &lt; 3)
++                return &quot;Usage: im [firstname] [lastname] [message]&quot;;
++
++            ToAvatarName = args[0] + &quot; &quot; + args[1];
++
++            // Build the message
++            string message = String.Empty;
++            for (int ct = 2; ct &lt; args.Length; ct++)
++                message += args[ct] + &quot; &quot;;
++            message = message.TrimEnd();
++            if (message.Length &gt; 1023) message = message.Remove(1023);
++
++            if (!Name2Key.ContainsKey(ToAvatarName.ToLower()))
++            {
++                // Send the Query
++                Client.Avatars.RequestAvatarNameSearch(ToAvatarName, LLUUID.Random());
++
++                NameSearchEvent.WaitOne(6000, false);
++            }
++
++            if (Name2Key.ContainsKey(ToAvatarName.ToLower()))
++            {
++                LLUUID id = Name2Key[ToAvatarName.ToLower()];
++
++                Client.Self.InstantMessage(id, message, id);
++                return &quot;Instant Messaged &quot; + id.ToStringHyphenated() + &quot; with message: &quot; + message;
++            }
++            else
++            {
++                return &quot;Name lookup for &quot; + ToAvatarName + &quot; failed&quot;;
++            }
++        }
++
++        void Avatars_OnAvatarNameSearch(LLUUID queryID, Dictionary&lt;LLUUID, string&gt; avatars)
++        {
++            foreach (KeyValuePair&lt;LLUUID, string&gt; kvp in avatars)
++            {
++                if (kvp.Value.ToLower() == ToAvatarName.ToLower())
++                {
++                    Name2Key[ToAvatarName.ToLower()] = kvp.Key;
++                    NameSearchEvent.Set();
++                    return;
++                }
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/SayCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/SayCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/SayCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,41 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class SayCommand: Command
++    {
++        public SayCommand(TestClient testClient)
++		{
++			Name = &quot;say&quot;;
++			Description = &quot;Say something.  (usage: say (optional channel) whatever)&quot;;
++		}
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++            int channel = 0;
++            int startIndex = 0;
++            string message = String.Empty;
++            if (args.Length &lt; 1)
++            {
++                return &quot;usage: say (optional channel) whatever&quot;;
++            }
++            else if (args.Length &gt; 1)
++            {
++                if (Int32.TryParse(args[0], out channel))
++					startIndex = 1;
++            }
++            
++			for (int i = startIndex; i &lt; args.Length; i++) {
++				message += args[i] + &quot; &quot;;
++            }
++
++			Client.Self.Chat(message, channel, MainAvatar.ChatType.Normal);
++
++            return &quot;Said &quot; + message;
++		}
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/ShoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/ShoutCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/ShoutCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,49 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ShoutCommand : Command
++    {
++        public ShoutCommand(TestClient testClient)
++        {
++            Name = &quot;shout&quot;;
++            Description = &quot;Shout something.&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            int channel = 0;
++            int startIndex = 0;
++            string message = String.Empty;
++            if (args.Length &lt; 1)
++            {
++                return &quot;usage: shout (optional channel) whatever&quot;;
++            }
++            else if (args.Length &gt; 1)
++            {
++                try
++                {
++                    channel = Convert.ToInt32(args[0]);
++                    startIndex = 1;
++                }
++                catch (FormatException)
++                {
++                    channel = 0;
++                }
++            }
++
++            for (int i = startIndex; i &lt; args.Length; i++)
++            {
++                message += args[i] + &quot; &quot;;
++            }
++
++            Client.Self.Chat(message, channel, MainAvatar.ChatType.Shout);
++
++            return &quot;Shouted &quot; + message;
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/TtsCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/TtsCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/TtsCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,51 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using System.Speech.Synthesis;
++using libsecondlife;
++using libsecondlife.Packets;
++using libsecondlife.AssetSystem;
++
++
++// Since this requires .Net 3.0 I've left it out of the project by default.
++// To use this: include it in the project and add a reference to the System.Speech.dll
++
++namespace libsecondlife.TestClient
++{
++    public class TtsCommand : Command
++    {
++		SpeechSynthesizer _speechSynthesizer;
++
++		public TtsCommand(TestClient testClient)
++        {
++            Name = &quot;tts&quot;;
++            Description = &quot;Text To Speech.  When activated, client will echo all recieved chat messages out thru the computer's speakers.&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++			if (!Active)
++			{
++				if (_speechSynthesizer == null)
++					_speechSynthesizer = new SpeechSynthesizer();
++				Active = true;
++				Client.Self.OnChat += new MainAvatar.ChatCallback(Self_OnChat);
++				return &quot;TTS is now on.&quot;;
++			}
++			else
++			{
++				Active = false;
++				Client.Self.OnChat -= new MainAvatar.ChatCallback(Self_OnChat);
++				return &quot;TTS is now off.&quot;;
++			}
++        }
++
++		void Self_OnChat(string message, byte audible, byte type, byte sourcetype, string fromName, LLUUID id, LLUUID ownerid, LLVector3 position)
++		{
++			if (message.Length &gt; 0)
++			{
++				_speechSynthesizer.SpeakAsync(message);
++			}
++		}
++	}
++}
+\ No newline at end of file
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/WhisperCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/WhisperCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Communication/WhisperCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,49 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class WhisperCommand : Command
++    {
++        public WhisperCommand(TestClient testClient)
++        {
++            Name = &quot;whisper&quot;;
++            Description = &quot;Whisper something.&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            int channel = 0;
++            int startIndex = 0;
++            string message = String.Empty;
++            if (args.Length &lt; 1)
++            {
++                return &quot;usage: whisper (optional channel) whatever&quot;;
++            }
++            else if (args.Length &gt; 1)
++            {
++                try
++                {
++                    channel = Convert.ToInt32(args[0]);
++                    startIndex = 1;
++                }
++                catch (FormatException)
++                {
++                    channel = 0;
++                }
++            }
++
++            for (int i = startIndex; i &lt; args.Length; i++)
++            {
++                message += args[i] + &quot; &quot;;
++            }
++
++            Client.Self.Chat(message, channel, MainAvatar.ChatType.Whisper);
++
++            return &quot;Whispered &quot; + message;
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/FollowCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/FollowCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,78 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class FollowCommand: Command
++    {
++		public FollowCommand(TestClient testClient)
++		{
++			Name = &quot;follow&quot;;
++			Description = &quot;Follow another avatar. (usage: follow [FirstName LastName])  If no target is set then will follow master.&quot;;
++		}
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++			string target = String.Empty;
++			for (int ct = 0; ct &lt; args.Length; ct++)
++				target = target + args[ct] + &quot; &quot;;
++			target = target.TrimEnd();
++
++			if (target.Length == 0)
++				target = Client.Master;
++
++            if (target.Length &gt; 0)
++            {
++                if (Follow(target))
++                    return &quot;Following &quot; + target;
++                else
++                    return &quot;Unable to follow &quot; + target + &quot;.  Client may not be able to see that avatar.&quot;;
++            }
++            else
++            {
++                return &quot;No target specified and no master is set. usage: follow [FirstName LastName])&quot;;
++            }
++		}
++
++        const float DISTANCE_BUFFER = 3.0f;
++        string followName;
++		Avatar followAvatar;
++
++        bool Follow(string name)
++        {
++            foreach (Avatar av in Client.AvatarList.Values)
++            {
++                if (av.Name == name)
++				{
++		            followName = name;
++					followAvatar = av;
++					Active = true;
++	                return true;
++				}
++            }
++            return false;
++        }
++
++		public override void Think()
++		{
++            if (Helpers.VecDist(followAvatar.Position, Client.Self.Position) &gt; DISTANCE_BUFFER)
++            {
++                //move toward target
++           		LLVector3 avPos = followAvatar.Position; 
++				Client.Self.AutoPilot((ulong)avPos.X + (ulong)Client.regionX, (ulong)avPos.Y + (ulong)Client.regionY, avPos.Z);
++			}
++			//else
++			//{
++			//    //stop at current position
++			//    LLVector3 myPos = client.Self.Position;
++			//    client.Self.AutoPilot((ulong)myPos.x, (ulong)myPos.y, myPos.Z);
++			//}
++
++			base.Think();
++		}
++
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/GotoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/GotoCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/GotoCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,58 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class GotoCommand: Command
++    {
++        private bool EstateLookupFinished = false;
++
++        public GotoCommand(TestClient testClient)
++		{
++			Name = &quot;goto&quot;;
++			Description = &quot;Teleport to a location (e.g. \&quot;goto Hooper/100/100/30\&quot;)&quot;;
++		}
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++			if (args.Length &lt; 1)
++                return &quot;usage: Destination should be specified as sim/x/y/z&quot;;
++
++            string destination = &quot;&quot;;
++
++            // Handle multi-word sim names by combining the arguments
++            foreach (string arg in args)
++            {
++                destination += arg + &quot; &quot;;
++            }
++            destination = destination.Trim();
++
++            string[] tokens = destination.Split(new char[] { '/' });
++            if (tokens.Length != 4)
++                return &quot;usage: Destination should be specified as sim/x/y/z&quot;;
++
++            string sim = tokens[0];
++			float x = Client.Self.Position.X;
++			float y = Client.Self.Position.Y;
++			float z = Client.Self.Position.Z;
++            float.TryParse(tokens[1], out x);
++            float.TryParse(tokens[2], out y);
++            float.TryParse(tokens[3], out z);
++
++            if (!EstateLookupFinished)
++            {
++                Client.Grid.AddEstateSims();
++                System.Threading.Thread.Sleep(3000);
++
++                EstateLookupFinished = true;
++            }
++
++			Client.Self.Teleport(sim, new LLVector3(x, y, z));
++
++            return &quot;Attempted to teleport to &quot; + sim + &quot; {&quot; + x + &quot;,&quot; + y + &quot;,&quot; + z + &quot;}&quot;;
++		}
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/JumpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/JumpCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/JumpCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,34 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class JumpCommand: Command
++    {
++        public JumpCommand(TestClient testClient)
++		{
++			Name = &quot;jump&quot;;
++			Description = &quot;Teleports to the specified height. (e.g. \&quot;jump 1000\&quot;)&quot;;
++		}
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++			if (args.Length != 1)
++                return &quot;usage: jump 1000&quot;;
++
++			float height = 0;
++			float.TryParse(args[0], out height);
++
++			Client.Self.Teleport
++			(
++				Client.Network.CurrentSim.Region.Name,
++				new LLVector3(Client.Self.Position.X, Client.Self.Position.Y, Client.Self.Position.Z + height)
++			);
++
++            return &quot;Jumped &quot; + height;
++		}
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/LocationCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/LocationCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/LocationCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,22 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class LocationCommand: Command
++    {
++        public LocationCommand(TestClient testClient)
++		{
++			Name = &quot;location&quot;;
++			Description = &quot;Show the location.&quot;;
++		}
++
++		public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++            return &quot;CurrentSim: '&quot; + Client.Network.CurrentSim.Region.Name + &quot;' Position: &quot; + Client.Self.Position.ToString();
++		}
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/SitCommand.cs	2007-01-09 07:00:57 UTC (rev 822)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/Movement/SitCommand.cs	2007-01-09 07:02:22 UTC (rev 823)
+@@ -0,0 +1,52 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class SitCommand: Command
++    {
++        public SitCommand(TestClient testClient)
++		{
++			Name = &quot;sit&quot;;
++			Description = &quot;Attempt to sit on the closest prim&quot;;
++		}
++			
++        public override string Execute(string[] args, LLUUID fromAgentID)
++		{
++		    PrimObject closest = null;
++		    double closestDistance = Double.MaxValue;
++
++		    lock (Client.SimPrims)
++		    {
++                if (Client.SimPrims.ContainsKey(Client.Network.CurrentSim))
++                {
++                    foreach (PrimObject p in Client.SimPrims[Client.Network.CurrentSim].Values)
++                    {
++                        float distance = Helpers.VecDist(Client.Self.Position, p.Position);
++
++                        if (closest == null || distance &lt; closestDistance)
++                        {
++                            closest = p;
++                            closestDistance = distance;
++                        }
++                    }
++                }
++		    }
++
++            if (closest != null)
++            {
++                Client.Self.RequestSit(closest.ID, LLVector3.Zero);
++                Client.Self.Sit();
++
++                return &quot;Sat on &quot; + closest.ID + &quot;. Distance: &quot; + closestDistance;
++            }
++            else
++            {
++                return &quot;Couldn't find a nearby prim to sit on&quot;;
++            }
++		}
++    }
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000226.html">[Libsecondlife-commits] r822 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+	<LI>Next message: <A HREF="000228.html">[Libsecondlife-commits] r824 -	trunk/libsecondlife-cs/examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,678 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r800 - in trunk/libsecondlife-cs: .	AssetSystem examples/TestClient examples/TestClient/Commands	libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r800%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/TestClient%20examples/TestClient/Commands%0A%09libsecondlife.Utilities&In-Reply-To=%3C200701050010.l050AipK005991%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000196.html">
+   <LINK REL="Next"  HREF="000198.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r800 - in trunk/libsecondlife-cs: .	AssetSystem examples/TestClient examples/TestClient/Commands	libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r800%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20examples/TestClient%20examples/TestClient/Commands%0A%09libsecondlife.Utilities&In-Reply-To=%3C200701050010.l050AipK005991%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r800 - in trunk/libsecondlife-cs: .	AssetSystem examples/TestClient examples/TestClient/Commands	libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  5 01:10:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000196.html">[Libsecondlife-commits] r799 - in trunk: applications/SLProxy	libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000198.html">[Libsecondlife-commits] r801 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#197">[ date ]</a>
+              <a href="thread.html#197">[ thread ]</a>
+              <a href="subject.html#197">[ subject ]</a>
+              <a href="author.html#197">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-05 01:10:36 +0100 (Fri, 05 Jan 2007)
+New Revision: 800
+
+Modified:
+   trunk/libsecondlife-cs/AssemblyInfo.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+   trunk/libsecondlife-cs/Avatar.cs
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/ObjectManager.cs
+   trunk/libsecondlife-cs/Settings.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+Log:
+* AssemblyInfo matches the auto-generated one more closely
+* Removed a lot of SinkFee cruft from AssetManager, the Settings class is used now
+* Enough sanity checks in ImageManager to keep it from constantly exploding on me
+* Added GivenPositive and GivenNegative to the ratings structure for Avatars
+* Added group lookup support for avatars. The callback format will change slightly soon
+* HelpCommand in TestClient is more readable
+* Sanity check in TestClient IM callback, may close an open bug
+* Committing all of my latest modifications to AvatarTracker, it's fairly useful now
+* Fixed the documentation of Self.SetHeightWidth(); it actually tells the server the dimensions of the viewer window, nothing to do with Avatars
+* Added Self.ActivateGroup()
+* Changed some &quot;&quot; to String.Empty
+
+Modified: trunk/libsecondlife-cs/AssemblyInfo.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssemblyInfo.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/AssemblyInfo.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -5,13 +5,12 @@
+ // General Information about an assembly is controlled through the following 
+ // set of attributes. Change these attribute values to modify the information
+ // associated with an assembly.
+-//
+ [assembly: AssemblyTitle(&quot;libsecondlife&quot;)]
+ [assembly: AssemblyDescription(&quot;Networking layer for the Second Life world&quot;)]
+ [assembly: AssemblyConfiguration(&quot;&quot;)]
+-[assembly: AssemblyCompany(&quot;libsecondlife Team&quot;)]
+-[assembly: AssemblyProduct(&quot;&quot;)]
+-[assembly: AssemblyCopyright(&quot;(c) 2006 libsecondlife Team&quot;)]
++[assembly: AssemblyCompany(&quot;libsecondlife&quot;)]
++[assembly: AssemblyProduct(&quot;libsecondlife&quot;)]
++[assembly: AssemblyCopyright(&quot;Copyright &#169; libsecondlife 2006&quot;)]
+ [assembly: AssemblyTrademark(&quot;&quot;)]
+ [assembly: AssemblyCulture(&quot;&quot;)]		
+ 
+@@ -26,7 +25,8 @@
+ // You can specify all the values or you can default the Revision and Build Numbers 
+ // by using the '*' as shown below:
+ 
+-[assembly: AssemblyVersion(&quot;0.0.6.0&quot;)]
++[assembly: AssemblyVersion(&quot;0.9.0.0&quot;)]
++[assembly: AssemblyFileVersion(&quot;0.9.0.0&quot;)]
+ 
+ //
+ // In order to sign your assembly you must specify a key to use. Refer to the 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -73,8 +73,6 @@
+ 	/// &lt;/summary&gt;
+ 	public class AssetManager
+ 	{
+-		public const int SINK_FEE_IMAGE = 1;
+-
+ 		private SecondLife slClient;
+ 
+         private AssetRequestUpload curUploadRequest = null;
+@@ -120,17 +118,9 @@
+         /// &lt;summary&gt;
+         /// Handle the appropriate sink fee associated with an asset upload
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;sinkType&quot;&gt;&lt;/param&gt;
+-        public void SinkFee(int sinkType)
++        public void SinkFee()
+ 		{
+-			switch( sinkType )
+-			{
+-				case SINK_FEE_IMAGE:
+-					slClient.Self.GiveMoney( LLUUID.Zero, slClient.Settings.UPLOAD_COST, &quot;Image Upload&quot; );
+-					break;
+-				default:
+-					throw new Exception(&quot;AssetManager: Unknown sinktype (&quot; + sinkType + &quot;)&quot;);
+-			}
++            slClient.Self.GiveMoney(LLUUID.Zero, slClient.Settings.UPLOAD_COST, &quot;Image Upload&quot;);
+ 		}
+ 
+         /// &lt;summary&gt;
+@@ -152,7 +142,7 @@
+                 LLUUID assetID = curUploadRequest.DoUpload();
+                 if (asset.Type == Asset.ASSET_TYPE_IMAGE)
+                 {
+-                    SinkFee(SINK_FEE_IMAGE);
++                    SinkFee();
+                 }
+                 return assetID;
+             }
+
+Modified: trunk/libsecondlife-cs/AssetSystem/ImageManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/AssetSystem/ImageManager.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -402,10 +402,11 @@
+             LLUUID ImageID = reply.ImageID.ID;
+ 
+             // Lookup the request for this packet
+-            TransferRequest tr;
++            TransferRequest tr = null;
+             lock (htDownloadRequests)
+             {
+-                tr = (TransferRequest)htDownloadRequests[ImageID];
++                if (htDownloadRequests.ContainsKey(ImageID))
++                    tr = (TransferRequest)htDownloadRequests[ImageID];
+             }
+             if (tr == null)
+             {
+@@ -454,11 +455,13 @@
+             LLUUID ImageID = reply.ImageID.ID;
+ 
+             // Lookup the request for this packet
+-            TransferRequest tr;
++            TransferRequest tr = null;
+             lock (htDownloadRequests)
+             {
+-                tr = (TransferRequest)htDownloadRequests[ImageID];
++                if (htDownloadRequests.ContainsKey(ImageID))
++                    tr = (TransferRequest)htDownloadRequests[ImageID];
+             }
++
+             if (tr == null)
+             {
+                 // Received a packet that doesn't belong to any requests in our queue, strange...
+
+Modified: trunk/libsecondlife-cs/Avatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/Avatar.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/Avatar.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -129,6 +129,10 @@
+             public int BuildingPositive;
+             /// &lt;summary&gt;Negative ratings for Building&lt;/summary&gt;
+             public int BuildingNegative;
++            /// &lt;summary&gt;Positive ratings given by this avatar&lt;/summary&gt;
++            public int GivenPositive;
++            /// &lt;summary&gt;Negative ratings given by this avatar&lt;/summary&gt;
++            public int GivenNegative;
+         }
+ 
+         /// &lt;summary&gt;
+@@ -190,6 +194,8 @@
+         public string Name = String.Empty;
+         /// &lt;summary&gt;Active group&lt;/summary&gt;
+         public string GroupName = String.Empty;
++        /// &lt;summary&gt;Groups that this avatar is a member of&lt;/summary&gt;
++        public List&lt;LLUUID&gt; Groups = new List&lt;LLUUID&gt;();
+         /// &lt;summary&gt;Online status&lt;/summary&gt;
+         public bool Online = false;
+         /// &lt;summary&gt;Positive and negative ratings&lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -67,6 +67,12 @@
+         /// &lt;param name=&quot;properties&quot;&gt;&lt;/param&gt;
+         public delegate void AvatarPropertiesCallback(LLUUID avatarID, Avatar.Properties properties);
+         /// &lt;summary&gt;
++        /// Triggered when an avatar group list is received (AvatarGroupsReply)
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;avatarID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;groupBlock&quot;&gt;&lt;/param&gt;
++        public delegate void AvatarGroupsCallback(LLUUID avatarID, AvatarGroupsReplyPacket.GroupDataBlock[] groups);
++        /// &lt;summary&gt;
+         /// Triggered when a name search reply is received (AvatarPickerReply)
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;queryID&quot;&gt;&lt;/param&gt;
+@@ -85,6 +91,8 @@
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public event AvatarPropertiesCallback OnAvatarProperties;
+         /// &lt;summary&gt;&lt;/summary&gt;
++        public event AvatarGroupsCallback OnAvatarGroups;
++        /// &lt;summary&gt;&lt;/summary&gt;
+         public event AvatarNameSearchCallback OnAvatarNameSearch;
+ 
+         private SecondLife Client;
+@@ -107,6 +115,9 @@
+             Client.Network.RegisterCallback(PacketType.AvatarStatisticsReply, new NetworkManager.PacketCallback(AvatarStatisticsHandler));
+             Client.Network.RegisterCallback(PacketType.AvatarInterestsReply, new NetworkManager.PacketCallback(AvatarInterestsHandler));
+ 
++            // Avatar group callback
++            Client.Network.RegisterCallback(PacketType.AvatarGroupsReply, new NetworkManager.PacketCallback(AvatarGroupsHandler));
++
+             // Other callbacks
+             Client.Network.RegisterCallback(PacketType.UUIDNameReply, new NetworkManager.PacketCallback(AvatarNameHandler));
+             Client.Network.RegisterCallback(PacketType.AvatarPickerReply, new NetworkManager.PacketCallback(AvatarPickerReplyHandler));
+@@ -255,6 +266,10 @@
+                             stats.AppearancePositive = b.Positive;
+                             stats.AppearanceNegative = b.Negative;
+                             break;
++                        case &quot;Given&quot;:
++                            stats.GivenPositive = b.Positive;
++                            stats.GivenNegative = b.Negative;
++                            break;
+                         default:
+                             Client.Log(&quot;Got an AvatarStatistics block with the name &quot; + n, Helpers.LogLevel.Warning);
+                             break;
+@@ -314,12 +329,24 @@
+             }
+         }
+ 
++        private void AvatarGroupsHandler(Packet packet, Simulator simulator)
++        {
++            if (OnAvatarGroups != null)
++            {
++                AvatarGroupsReplyPacket groups = (AvatarGroupsReplyPacket)packet;
++
++                // FIXME: Build a little struct to represent the groups.GroupData blocks so we keep
++                // libsecondlife.Packets abstracted away
++                OnAvatarGroups(groups.AgentData.AvatarID, groups.GroupData);
++            }
++        }
++
+         private void AvatarPickerReplyHandler(Packet packet, Simulator simulator)
+         {
+             if (OnAvatarNameSearch != null)
+             {
+                 AvatarPickerReplyPacket reply = (AvatarPickerReplyPacket)packet;
+-                Dictionary&lt;LLUUID, string&gt; avatars = new Dictionary&lt;LLUUID,string&gt;();
++                Dictionary&lt;LLUUID, string&gt; avatars = new Dictionary&lt;LLUUID, string&gt;();
+ 
+                 foreach (AvatarPickerReplyPacket.DataBlock block in reply.Data)
+                 {
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -237,8 +237,8 @@
+         public MainAvatarStatus Status;
+         /// &lt;summary&gt;The UUID of your root inventory folder&lt;/summary&gt;
+         public LLUUID InventoryRootFolderUUID;
++
+         
+-        
+         /// &lt;summary&gt;Gets the health of the agent&lt;/summary&gt;
+         public float Health
+         {
+@@ -456,11 +456,11 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Set the height and the width of your avatar. This is used to scale
+-        /// the avatar mesh.
++        /// Set the height and the width of the client window. This is used
++        /// by the server to build a virtual camera frustum for our avatar
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;height&quot;&gt;New height of the avatar&lt;/param&gt;
+-        /// &lt;param name=&quot;width&quot;&gt;New width of the avatar&lt;/param&gt;
++        /// &lt;param name=&quot;height&quot;&gt;New height of the viewer window&lt;/param&gt;
++        /// &lt;param name=&quot;width&quot;&gt;New width of the viewer window&lt;/param&gt;
+         public void SetHeightWidth(ushort height, ushort width)
+         {
+             AgentHeightWidthPacket heightwidth = new AgentHeightWidthPacket();
+@@ -961,6 +961,22 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// Set our current active group
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;groupID&quot;&gt;The group we are a member of that we want to 
++        /// activate&lt;/param&gt;
++        public void ActivateGroup(LLUUID groupID)
++        {
++            ActivateGroupPacket activate = new ActivateGroupPacket();
++
++            activate.AgentData.AgentID = Client.Network.AgentID;
++            activate.AgentData.SessionID = Client.Network.SessionID;
++            activate.AgentData.GroupID = groupID;
++
++            Client.Network.SendPacket(activate);
++        }
++
++        /// &lt;summary&gt;
+         /// Move an agent in to a simulator. This packet is the last packet
+         /// needed to complete the transition in to a new simulator
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/ObjectManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/ObjectManager.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/ObjectManager.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -1011,9 +1011,9 @@
+                             {
+                                 Avatar avatar = new Avatar();
+ 
+-                                string FirstName = &quot;&quot;;
+-                                string LastName = &quot;&quot;;
+-                                string GroupName = &quot;&quot;;
++                                string FirstName = String.Empty;
++                                string LastName = String.Empty;
++                                string GroupName = String.Empty;
+ 
+                                 //avatar.CollisionPlane = new LLQuaternion(block.ObjectData, 0);
+                                 avatar.Position = new LLVector3(block.ObjectData, 16);
+@@ -1248,7 +1248,7 @@
+ 
+                             if ((flags &amp; CompressedFlags.HasText) != 0)
+                             {
+-                                string text = &quot;&quot;;
++                                string text = String.Empty;
+                                 while (block.Data[i] != 0)
+                                 {
+                                     text += (char)block.Data[i];
+@@ -1263,7 +1263,7 @@
+                             }
+                             else
+                             {
+-                                prim.Text = &quot;&quot;;
++                                prim.Text = String.Empty;
+                             }
+ 
+                             if ((flags &amp; CompressedFlags.HasParticles) != 0)
+@@ -1301,7 +1301,7 @@
+                             {
+                                 // Get the attachment string
+                                 // Example: &quot;AttachItemID STRING RW SV fa9a5ab8-1bad-b449-9873-cf5b803e664e&quot;
+-                                string text = &quot;&quot;;
++                                string text = String.Empty;
+                                 while (block.Data[i] != 0)
+                                 {
+                                     text += (char)block.Data[i];
+@@ -1313,7 +1313,7 @@
+                             }
+                             else
+                             {
+-                                prim.Name = &quot;&quot;;
++                                prim.Name = String.Empty;
+                             }
+ 
+                             if ((flags &amp; CompressedFlags.Unknown1) != 0)
+
+Modified: trunk/libsecondlife-cs/Settings.cs
+===================================================================
+--- trunk/libsecondlife-cs/Settings.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/Settings.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -69,6 +69,7 @@
+ 
+         private SecondLife Client;
+         private int priceUpload = 0;
++
+         /// &lt;summary&gt;
+         /// Constructor
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -20,7 +20,7 @@
+ 			result.AppendFormat(&quot;\n\nHELP\nClient accept teleport lures from master and group members.\n&quot;);
+ 			foreach (Command c in Client.Commands.Values)
+ 			{
+-				result.AppendFormat(&quot;{0} - {1}\n&quot;, c.Name, c.Description);
++				result.AppendFormat(&quot; * {0} - {1}\n&quot;, c.Name, c.Description);
+ 			}
+ 
+             return result.ToString();
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -259,7 +259,7 @@
+             LLUUID regionID, LLVector3 position, byte dialog, bool groupIM, LLUUID imSessionID, DateTime timestamp, 
+             string message, byte offline, byte[] binaryBucket)
+         {
+-            if (Master.Length &gt; 0)
++            if (Master != null &amp;&amp; Master.Length &gt; 0)
+             {
+                 if (fromAgentName.ToLower().Trim() != Master.ToLower().Trim())
+                 {
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-05 00:01:09 UTC (rev 799)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-05 00:10:36 UTC (rev 800)
+@@ -103,12 +103,23 @@
+         protected SecondLife Client;
+         protected Dictionary&lt;LLUUID, Avatar&gt; avatars = new Dictionary&lt;LLUUID,Avatar&gt;();
+         protected Dictionary&lt;LLUUID, ManualResetEvent&gt; NameLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
++        protected Dictionary&lt;LLUUID, ManualResetEvent&gt; StatisticsLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
++        protected Dictionary&lt;LLUUID, ManualResetEvent&gt; PropertiesLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
++        protected Dictionary&lt;LLUUID, ManualResetEvent&gt; InterestsLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
++        protected Dictionary&lt;LLUUID, ManualResetEvent&gt; GroupsLookupEvents = new Dictionary&lt;LLUUID, ManualResetEvent&gt;();
+ 
+         public AvatarTracker(SecondLife client)
+         {
+             Client = client;
+ 
+             Client.Avatars.OnAvatarNames += new AvatarManager.AvatarNamesCallback(Avatars_OnAvatarNames);
++            Client.Avatars.OnAvatarInterests += new AvatarManager.AvatarInterestsCallback(Avatars_OnAvatarInterests);
++            Client.Avatars.OnAvatarProperties += new AvatarManager.AvatarPropertiesCallback(Avatars_OnAvatarProperties);
++            Client.Avatars.OnAvatarStatistics += new AvatarManager.AvatarStatisticsCallback(Avatars_OnAvatarStatistics);
++            Client.Avatars.OnAvatarGroups += new AvatarManager.AvatarGroupsCallback(Avatars_OnAvatarGroups);
++
++            Client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
++            Client.Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -121,6 +132,22 @@
+             return avatars.ContainsKey(id);
+         }
+ 
++        public Dictionary&lt;LLUUID, Avatar&gt; SimLocalAvatars()
++        {
++            Dictionary&lt;LLUUID, Avatar&gt; local = new Dictionary&lt;LLUUID, Avatar&gt;();
++
++            lock (avatars)
++            {
++                foreach (Avatar avatar in avatars.Values)
++                {
++                    if (avatar.CurrentRegion == Client.Network.CurrentSim.Region)
++                        local[avatar.ID] = avatar;
++                }
++            }
++
++            return local;
++        }
++
+         /// &lt;summary&gt;
+         /// Get an avatar's name, either from the cache or request it.
+         /// This function is blocking
+@@ -213,6 +240,76 @@
+         //    }
+         //}
+ 
++        public bool GetAvatarProfile(LLUUID id, out Avatar.Interests interests, out Avatar.Properties properties, 
++            out Avatar.Statistics statistics, out List&lt;LLUUID&gt; groups)
++        {
++            // Do a local lookup first
++            if (avatars.ContainsKey(id) &amp;&amp; avatars[id].ProfileProperties.BornOn != null &amp;&amp; 
++                avatars[id].ProfileProperties.BornOn != String.Empty)
++            {
++                interests = avatars[id].ProfileInterests;
++                properties = avatars[id].ProfileProperties;
++                statistics = avatars[id].ProfileStatistics;
++                groups = avatars[id].Groups;
++
++                return true;
++            }
++
++            // Create the ManualResetEvents
++            lock (PropertiesLookupEvents)
++                if (!PropertiesLookupEvents.ContainsKey(id))
++                    PropertiesLookupEvents[id] = new ManualResetEvent(false);
++            lock (InterestsLookupEvents)
++                if (!InterestsLookupEvents.ContainsKey(id))
++                    InterestsLookupEvents[id] = new ManualResetEvent(false);
++            lock (StatisticsLookupEvents)
++                if (!StatisticsLookupEvents.ContainsKey(id))
++                    StatisticsLookupEvents[id] = new ManualResetEvent(false);
++            lock (GroupsLookupEvents)
++                if (!GroupsLookupEvents.ContainsKey(id))
++                    GroupsLookupEvents[id] = new ManualResetEvent(false);
++
++            // Request the avatar profile
++            Client.Avatars.RequestAvatarProperties(id);
++
++            // Wait for all of the events to complete
++            PropertiesLookupEvents[id].WaitOne(5000, false);
++            InterestsLookupEvents[id].WaitOne(5000, false);
++            StatisticsLookupEvents[id].WaitOne(5000, false);
++            GroupsLookupEvents[id].WaitOne(5000, false);
++
++            // Destroy the ManualResetEvents
++            lock (PropertiesLookupEvents)
++                PropertiesLookupEvents.Remove(id);
++            lock (InterestsLookupEvents)
++                InterestsLookupEvents.Remove(id);
++            lock (StatisticsLookupEvents)
++                StatisticsLookupEvents.Remove(id);
++            lock (GroupsLookupEvents)
++                GroupsLookupEvents.Remove(id);
++
++            // If we got a filled in profile return everything
++            if (avatars.ContainsKey(id) &amp;&amp; avatars[id].ProfileProperties.BornOn != null &amp;&amp; 
++                avatars[id].ProfileProperties.BornOn != String.Empty)
++            {
++                interests = avatars[id].ProfileInterests;
++                properties = avatars[id].ProfileProperties;
++                statistics = avatars[id].ProfileStatistics;
++                groups = avatars[id].Groups;
++
++                return true;
++            }
++            else
++            {
++                interests = new Avatar.Interests();
++                properties = new Avatar.Properties();
++                statistics = new Avatar.Statistics();
++                groups = null;
++
++                return false;
++            }
++        }
++
+         /// &lt;summary&gt;
+         /// This function will only check if the avatar name exists locally,
+         /// it will not do any networking calls to fetch the name
+@@ -229,6 +326,19 @@
+             }
+         }
+ 
++        void Objects_OnAvatarMoved(Simulator simulator, AvatarUpdate avatar, ulong regionHandle, ushort timeDilation)
++        {
++            // TODO:
++        }
++
++        void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
++        {
++            lock (avatars)
++            {
++                avatars[avatar.ID] = avatar;
++            }
++        }
++
+         private void Avatars_OnAvatarNames(Dictionary&lt;LLUUID, string&gt; names)
+         {
+             lock (avatars)
+@@ -240,14 +350,75 @@
+ 
+                     avatars[kvp.Key].Name = kvp.Value;
+ 
+-                    lock (NameLookupEvents)
+-                    {
+-                        if (NameLookupEvents.ContainsKey(kvp.Key))
+-                            NameLookupEvents[kvp.Key].Set();
+-                    }
++                    if (NameLookupEvents.ContainsKey(kvp.Key))
++                        NameLookupEvents[kvp.Key].Set();
+                 }
+             }
+         }
++
++        void Avatars_OnAvatarStatistics(LLUUID avatarID, Avatar.Statistics statistics)
++        {
++            lock (avatars)
++            {
++                if (!avatars.ContainsKey(avatarID))
++                    avatars[avatarID] = new Avatar();
++
++                avatars[avatarID].ProfileStatistics = statistics;
++            }
++
++            if (StatisticsLookupEvents.ContainsKey(avatarID))
++                StatisticsLookupEvents[avatarID].Set();
++        }
++
++        void Avatars_OnAvatarProperties(LLUUID avatarID, Avatar.Properties properties)
++        {
++            lock (avatars)
++            {
++                if (!avatars.ContainsKey(avatarID))
++                    avatars[avatarID] = new Avatar();
++
++                avatars[avatarID].ProfileProperties = properties;
++            }
++
++            if (PropertiesLookupEvents.ContainsKey(avatarID))
++                PropertiesLookupEvents[avatarID].Set();
++        }
++
++        void Avatars_OnAvatarInterests(LLUUID avatarID, Avatar.Interests interests)
++        {
++            lock (avatars)
++            {
++                if (!avatars.ContainsKey(avatarID))
++                    avatars[avatarID] = new Avatar();
++
++                avatars[avatarID].ProfileInterests = interests;
++            }
++
++            if (InterestsLookupEvents.ContainsKey(avatarID))
++                InterestsLookupEvents[avatarID].Set();
++        }
++
++        void Avatars_OnAvatarGroups(LLUUID avatarID, AvatarGroupsReplyPacket.GroupDataBlock[] groups)
++        {
++            List&lt;LLUUID&gt; groupList = new List&lt;LLUUID&gt;();
++
++            foreach (AvatarGroupsReplyPacket.GroupDataBlock block in groups)
++            {
++                // TODO: We just toss away all the other information here, seems like a waste...
++                groupList.Add(block.GroupID);
++            }
++
++            lock (avatars)
++            {
++                if (!avatars.ContainsKey(avatarID))
++                    avatars[avatarID] = new Avatar();
++
++                avatars[avatarID].Groups = groupList;
++            }
++
++            if (GroupsLookupEvents.ContainsKey(avatarID))
++                GroupsLookupEvents[avatarID].Set();
++        }
+     }
+ 
+     public class AssetTransfer
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000196.html">[Libsecondlife-commits] r799 - in trunk: applications/SLProxy	libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000198.html">[Libsecondlife-commits] r801 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#197">[ date ]</a>
+              <a href="thread.html#197">[ thread ]</a>
+              <a href="subject.html#197">[ subject ]</a>
+              <a href="author.html#197">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

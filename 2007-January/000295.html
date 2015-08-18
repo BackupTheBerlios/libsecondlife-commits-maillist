@@ -1,0 +1,670 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r867 - in trunk/libsecondlife-cs: .	AssetSystem VisualParamGenerator examples/TestClient	examples/TestClient/Commands libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r867%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20VisualParamGenerator%20examples/TestClient%0A%09examples/TestClient/Commands%20libsecondlife.Utilities&In-Reply-To=%3C200701220115.l0M1F909024649%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000294.html">
+   <LINK REL="Next"  HREF="000296.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r867 - in trunk/libsecondlife-cs: .	AssetSystem VisualParamGenerator examples/TestClient	examples/TestClient/Commands libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r867%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20VisualParamGenerator%20examples/TestClient%0A%09examples/TestClient/Commands%20libsecondlife.Utilities&In-Reply-To=%3C200701220115.l0M1F909024649%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r867 - in trunk/libsecondlife-cs: .	AssetSystem VisualParamGenerator examples/TestClient	examples/TestClient/Commands libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 02:15:09 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000294.html">[Libsecondlife-commits] [Patch #1845] TestClient/ExportCommand	ObjectProperties support
+</A></li>
+        <LI>Next message: <A HREF="000296.html">[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 02:15:08 +0100 (Mon, 22 Jan 2007)
+New Revision: 867
+
+Added:
+   trunk/libsecondlife-cs/VisualParamGenerator/
+   trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs
+   trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.csproj
+   trunk/libsecondlife-cs/examples/TestClient/Commands/DebugCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Appearance.cs
+Log:
+* Fixed another null reference exception in asset code
+* Added a debug logging on/off command to TestClient and a research command that is just a sandbox for random testing
+* Fixed the teleport callback
+* Added VisualParamGenerator that is like BodyShapeGenerator but different
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/AssetSystem/AssetManager.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -288,7 +288,11 @@
+                 curUploadRequest.UploadComplete(reply.AssetBlock.UUID, AssetRequest.RequestStatus.Failure);
+             }
+ 
+-            TransferRequestCompletedEvent(curUploadRequest);
++            if (TransferRequestCompletedEvent != null)
++            {
++                try { TransferRequestCompletedEvent(curUploadRequest); }
++                catch (Exception e) { slClient.Log(e.ToString(), Helpers.LogLevel.Error); }
++            }
+ 		}
+ 
+         private void RequestXferCallbackHandler(Packet packet, Simulator simulator)
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -214,7 +214,7 @@
+         /// &lt;returns&gt;&lt;/returns&gt;
+         internal void UpdateFromAssetData()
+         {
+-            if ( AssetData == null)
++            if ( AssetData == null || AssetData.Length == 0)
+             {
+                 return;
+             }
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -427,7 +427,6 @@
+         internal string teleportMessage = String.Empty;
+ 
+         private SecondLife Client;
+-        private TeleportCallback OnBeginTeleport;
+         private TeleportStatus TeleportStat;
+         private Timer TeleportTimer;
+         private bool TeleportTimeout;
+@@ -946,10 +945,9 @@
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;Callback ID&lt;/param&gt;
+-        public void BeginTeleport(ulong regionHandle, LLVector3 position, TeleportCallback tc)
++        public void BeginTeleport(ulong regionHandle, LLVector3 position)
+         {
+-            BeginTeleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z), tc);
++            BeginTeleport(regionHandle, position, new LLVector3(position.X + 1.0f, position.Y, position.Z));
+         }
+ 
+         /// &lt;summary&gt;
+@@ -958,11 +956,8 @@
+         /// &lt;param name=&quot;regionHandle&quot;&gt;&lt;/param&gt;
+         /// &lt;param name=&quot;position&quot;&gt;Position for Teleport&lt;/param&gt;
+         /// &lt;param name=&quot;lookAt&quot;&gt;Target to look at&lt;/param&gt;
+-        /// &lt;param name=&quot;tc&quot;&gt;Callback ID&lt;/param&gt;
+-        public void BeginTeleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt, TeleportCallback tc)
++        public void BeginTeleport(ulong regionHandle, LLVector3 position, LLVector3 lookAt)
+         {
+-            OnBeginTeleport = tc;
+-
+             TeleportLocationRequestPacket teleport = new TeleportLocationRequestPacket();
+             teleport.AgentData.AgentID = Client.Network.AgentID;
+             teleport.AgentData.SessionID = Client.Network.SessionID;
+@@ -1475,7 +1470,7 @@
+ 		        packet.Info.SimPort = (ushort)(long)info[&quot;SimPort&quot;];
+ 		        packet.Info.SimAccess = (byte)(long)info[&quot;SimAccess&quot;];
+ 
+-                Console.WriteLine(&quot;Received a TeleportFinish event, SimIP: &quot; + new IPAddress(packet.Info.SimIP) + 
++                Client.DebugLog(&quot;Received a TeleportFinish event, SimIP: &quot; + new IPAddress(packet.Info.SimIP) + 
+                     &quot;, LocationID: &quot; + packet.Info.LocationID + &quot;, RegionHandle: &quot; + packet.Info.RegionHandle);
+ 
+ 		        TeleportHandler(packet, Client.Network.CurrentSim);
+@@ -1608,9 +1603,10 @@
+                 teleportMessage = &quot;Teleport started&quot;;
+                 TeleportStat = TeleportStatus.Start;
+ 
+-                if (OnBeginTeleport != null)
++                if (OnTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
++                    try { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
++                    catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                 }
+             }
+             else if (packet.Type == PacketType.TeleportProgress)
+@@ -1620,9 +1616,10 @@
+                 teleportMessage = Helpers.FieldToString(((TeleportProgressPacket)packet).Info.Message);
+                 TeleportStat = TeleportStatus.Progress;
+ 
+-                if (OnBeginTeleport != null)
++                if (OnTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
++                    try { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
++                    catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                 }
+             }
+             else if (packet.Type == PacketType.TeleportFailed)
+@@ -1632,12 +1629,11 @@
+                 teleportMessage = Helpers.FieldToString(((TeleportFailedPacket)packet).Info.Reason);
+                 TeleportStat = TeleportStatus.Failed;
+ 
+-                if (OnBeginTeleport != null)
++                if (OnTeleport != null)
+                 {
+-                    OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
++                    try { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
++                    catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                 }
+-
+-                OnBeginTeleport = null;
+             }
+             else if (packet.Type == PacketType.TeleportFinish)
+             {
+@@ -1672,9 +1668,10 @@
+ 
+                     Client.Log(&quot;Moved to new sim &quot; + sim.ToString(), Helpers.LogLevel.Info);
+ 
+-                    if (OnBeginTeleport != null)
++                    if (OnTeleport != null)
+                     {
+-                        OnBeginTeleport(sim, teleportMessage, TeleportStat);
++                        try { OnTeleport(sim, teleportMessage, TeleportStat); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                     }
+                     else
+                     {
+@@ -1692,13 +1689,12 @@
+ 
+                     Client.Log(teleportMessage, Helpers.LogLevel.Warning);
+ 
+-                    if (OnBeginTeleport != null)
++                    if (OnTeleport != null)
+                     {
+-                        OnBeginTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat);
++                        try { OnTeleport(Client.Network.CurrentSim, teleportMessage, TeleportStat); }
++                        catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                     }
+                 }
+-
+-                OnBeginTeleport = null;
+             }
+         }
+ 
+
+Added: trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs
+===================================================================
+--- trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -0,0 +1,129 @@
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Text;
++using System.Xml;
++
++namespace VisualParamGenerator
++{
++    class VisualParamGenerator
++    {
++        static void Main(string[] args)
++        {
++            if (args.Length &lt; 2)
++            {
++                Console.WriteLine(&quot;Usage: VisualParamGenerator.exe [avatar_lad.xml] [_VisualParams_.cs]&quot;);
++                return;
++            }
++            else if (!File.Exists(args[0]))
++            {
++                Console.WriteLine(&quot;Couldn't find file &quot; + args[0]);
++                return;
++            }
++
++            XmlNodeList list;
++            try
++            {
++                XmlDocument doc = new XmlDocument();
++                doc.LoadXml(File.ReadAllText(args[0]));
++                list = doc.GetElementsByTagName(&quot;param&quot;);
++            }
++            catch (Exception e)
++            {
++                Console.WriteLine(e.ToString());
++                return;
++            }
++
++            StringWriter output = new StringWriter();
++            bool first = true;
++
++            output.Write(&quot;using System;&quot; + Environment.NewLine + Environment.NewLine);
++            output.Write(&quot;namespace libsecondlife.Utilities.Appearance&quot; + Environment.NewLine);
++            output.Write(&quot;{&quot; + Environment.NewLine);
++            output.Write(&quot;    public static class VisualParams&quot; + Environment.NewLine);
++            output.Write(&quot;    {&quot; + Environment.NewLine);
++            output.Write(&quot;        public static VisualParam[] Params = new VisualParam[]&quot; + Environment.NewLine);
++            output.Write(&quot;        {&quot; + Environment.NewLine);
++
++            foreach (XmlNode node in list)
++            {
++                if ((node.Attributes[&quot;shared&quot;] != null) &amp;&amp; (node.Attributes[&quot;shared&quot;].Value.Equals(&quot;1&quot;)))
++                {
++                    // This param will have been already been defined
++                    continue;
++                }
++                if ((node.Attributes[&quot;edit_group&quot;] != null) &amp;&amp; (node.Attributes[&quot;edit_group&quot;].Value.Equals(&quot;driven&quot;)))
++                {
++                    // This param is calculated by the client based on other params
++                    continue;
++                }
++
++                // Confirm this is a valid VisualParam
++                if (node.Attributes[&quot;id&quot;] != null &amp;&amp;
++                    node.Attributes[&quot;name&quot;] != null &amp;&amp;
++                    node.Attributes[&quot;wearable&quot;] != null)
++                {
++                    if (!first)
++                    {
++                        output.Write(&quot;,&quot; + Environment.NewLine);
++                    }
++                    else
++                    {
++                        first = false;
++                    }
++
++                    try
++                    {
++                        int id = Int32.Parse(node.Attributes[&quot;id&quot;].Value);
++                        string name = node.Attributes[&quot;name&quot;].Value;
++                        int group = Int32.Parse(node.Attributes[&quot;group&quot;].Value);
++                        string wearable = node.Attributes[&quot;wearable&quot;].Value;
++
++                        string label = String.Empty;
++                        if (node.Attributes[&quot;label&quot;] != null)
++                            label = node.Attributes[&quot;label&quot;].Value;
++
++                        string label_min = String.Empty;
++                        if (node.Attributes[&quot;label_min&quot;] != null)
++                            label_min = node.Attributes[&quot;label_min&quot;].Value;
++
++                        string label_max = String.Empty;
++                        if (node.Attributes[&quot;label_max&quot;] != null)
++                            label_max = node.Attributes[&quot;label_max&quot;].Value;
++
++                        float min = Single.Parse(node.Attributes[&quot;value_min&quot;].Value);
++                        float max = Single.Parse(node.Attributes[&quot;value_max&quot;].Value);
++
++                        float def;
++                        if (node.Attributes[&quot;value_default&quot;] != null)
++                            def = Single.Parse(node.Attributes[&quot;value_default&quot;].Value);
++                        else
++                            def = min;
++                        
++
++                        output.Write(&quot;            new VisualParam(&quot; + id + &quot;, \&quot;&quot; + name + &quot;\&quot;, &quot; + group + 
++                            &quot;, \&quot;&quot; + wearable + &quot;\&quot;, \&quot;&quot; + label + &quot;\&quot;, \&quot;&quot; + label_min + &quot;\&quot;, \&quot;&quot; + label_max + 
++                            &quot;\&quot;, &quot; + def + &quot;f, &quot; + min + &quot;f, &quot; + max + &quot;f)&quot;);
++                    }
++                    catch (Exception e)
++                    {
++                        Console.WriteLine(e.ToString());
++                    }
++                }
++            }
++
++            output.Write(Environment.NewLine + &quot;        };&quot; + Environment.NewLine);
++            output.Write(&quot;    }&quot; + Environment.NewLine);
++            output.Write(&quot;}&quot; + Environment.NewLine);
++
++            try
++            {
++                File.WriteAllText(args[1], output.ToString());
++            }
++            catch (Exception e)
++            {
++                Console.WriteLine(e.ToString());
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.csproj
+===================================================================
+--- trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.csproj	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/VisualParamGenerator/VisualParamGenerator.csproj	2007-01-22 01:15:08 UTC (rev 867)
+@@ -0,0 +1,45 @@
++&#65279;&lt;Project DefaultTargets=&quot;Build&quot; xmlns=&quot;<A HREF="http://schemas.microsoft.com/developer/msbuild/2003">http://schemas.microsoft.com/developer/msbuild/2003</A>&quot;&gt;
++  &lt;PropertyGroup&gt;
++    &lt;Configuration Condition=&quot; '$(Configuration)' == '' &quot;&gt;Debug&lt;/Configuration&gt;
++    &lt;Platform Condition=&quot; '$(Platform)' == '' &quot;&gt;AnyCPU&lt;/Platform&gt;
++    &lt;ProductVersion&gt;8.0.50727&lt;/ProductVersion&gt;
++    &lt;SchemaVersion&gt;2.0&lt;/SchemaVersion&gt;
++    &lt;ProjectGuid&gt;{D2A514C5-5590-4789-9032-6E5B4C297B80}&lt;/ProjectGuid&gt;
++    &lt;OutputType&gt;Exe&lt;/OutputType&gt;
++    &lt;RootNamespace&gt;VisualParamGenerator&lt;/RootNamespace&gt;
++    &lt;AssemblyName&gt;VisualParamGenerator&lt;/AssemblyName&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' &quot;&gt;
++    &lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
++    &lt;DebugType&gt;full&lt;/DebugType&gt;
++    &lt;Optimize&gt;false&lt;/Optimize&gt;
++    &lt;OutputPath&gt;bin\Debug\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;DEBUG;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Release|AnyCPU' &quot;&gt;
++    &lt;DebugType&gt;pdbonly&lt;/DebugType&gt;
++    &lt;Optimize&gt;true&lt;/Optimize&gt;
++    &lt;OutputPath&gt;..\..\bin\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Reference Include=&quot;System&quot; /&gt;
++    &lt;Reference Include=&quot;System.Data&quot; /&gt;
++    &lt;Reference Include=&quot;System.Xml&quot; /&gt;
++  &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Compile Include=&quot;VisualParamGenerator.cs&quot; /&gt;
++  &lt;/ItemGroup&gt;
++  &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
++  &lt;!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
++       Other similar extension points exist, see Microsoft.Common.targets.
++  &lt;Target Name=&quot;BeforeBuild&quot;&gt;
++  &lt;/Target&gt;
++  &lt;Target Name=&quot;AfterBuild&quot;&gt;
++  &lt;/Target&gt;
++  --&gt;
++&lt;/Project&gt;
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -112,8 +112,6 @@
+ 
+ 		private void PrintPrompt()
+ 		{
+-			//Console.Write(String.Format(&quot;{0} {1} - {2}&gt; &quot;, client.Self.FirstName, client.Self.LastName, client.Network.CurrentSim.Region.Name));
+-
+             int online = 0;
+ 
+             foreach (SecondLife client in Clients.Values)
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/DebugCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/DebugCommand.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/DebugCommand.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -0,0 +1,37 @@
++using System;
++using System.Collections.Generic;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class DebugCommand : Command
++    {
++        public DebugCommand(TestClient testClient)
++        {
++            Name = &quot;debug&quot;;
++            Description = &quot;Turn debug messages on or off. Usage: debug [on/off]&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 1)
++                return &quot;Usage: debug [on/off]&quot;;
++
++            if (args[0].ToLower() == &quot;on&quot;)
++            {
++                Client.Debug = true;
++                return &quot;Debug logging is on&quot;;
++            }
++            else if (args[0].ToLower() == &quot;off&quot;)
++            {
++                Client.Debug = false;
++                return &quot;Debug logging is off&quot;;
++            }
++            else
++            {
++                return &quot;Usage: debug [on/off]&quot;;
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -0,0 +1,132 @@
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using libsecondlife;
++using libsecondlife.Utilities.Assets;
++using libsecondlife.Utilities.Appearance;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class ResearchCommand : Command
++    {
++        private ManualResetEvent AssetReceived = new ManualResetEvent(false);
++        AssetManager manager;
++        AppearanceManager appearance;
++
++        public ResearchCommand(TestClient testClient)
++        {
++            Name = &quot;research&quot;;
++            Description = &quot;Does important research for the betterment of mankind&quot;;
++
++            manager = new AssetManager(testClient);
++            manager.OnAssetReceived += new AssetManager.AssetReceivedCallback(manager_OnAssetReceived);
++            appearance = new AppearanceManager(testClient, manager);
++            appearance.OnAgentWearables += new AppearanceManager.AgentWearablesCallback(appearance_OnAgentWearables);
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            Dictionary&lt;WearableType, LLUUID&gt; wearables = new Dictionary&lt;WearableType, LLUUID&gt;();
++            for (int i = 0; i &lt; AppearanceManager.WEARABLE_COUNT; i++)
++            {
++                wearables[(WearableType)i] = LLUUID.Zero;
++            }
++            wearables[WearableType.Shirt] = new LLUUID(&quot;4fcf0807-b173-5b4e-90fe-d83d84986b59&quot;);
++            appearance.SendAgentWearables(wearables);
++
++            return &quot;Wearing the payload&quot;;
++
++            libsecondlife.AssetSystem.AssetWearable asset = new libsecondlife.AssetSystem.AssetWearable(
++                LLUUID.Zero, (sbyte)AssetType.Bodypart, new byte[0]);
++            string exploit = String.Empty;
++            for (int i = 0; i &lt; 3000; i++)
++                exploit += &quot;A&quot;;
++            asset.Name = exploit;
++            asset.Type = (sbyte)WearableType.Shirt;
++            LLUUID newasset = Client.Assets.UploadAsset(asset);
++
++            return &quot;Created Bodypart &quot; + newasset.ToStringHyphenated();
++            
++
++            if (args.Length != 1)
++            {
++                appearance.RequestAgentWearables();
++
++                return &quot;Appearance fetch complete&quot;;
++            }
++
++            LLUUID id;
++            try
++            {
++                id = new LLUUID(args[0]);
++            }
++            catch (Exception)
++            {
++                return &quot;Need a proper UUID&quot;;
++            }
++
++            manager.RequestAsset(id, AssetType.Bodypart, ChannelType.Asset, SourceType.Asset, 125000.0f);
++
++            //Random random = new Random();
++            //byte r, g, b;
++
++            //lock (Client.AvatarList)
++            //{
++            //    foreach (Avatar avatar in Client.AvatarList.Values)
++            //    {
++            //        //Client.Self.PointAtEffect(avatar.ID, Client.Network.AgentID, LLVector3d.Zero, 
++            //        //    MainAvatar.PointAtType.Grab);
++
++            //        r = (byte)random.Next(byte.MaxValue);
++            //        g = (byte)random.Next(byte.MaxValue);
++            //        b = (byte)random.Next(byte.MaxValue);
++            //        Client.Self.BeamEffect(avatar.ID, Client.Network.AgentID, LLVector3d.Zero, 
++            //            new LLColor(r, g, b, 255), 300.0f);
++            //    }
++            //}
++
++            //FetchInventoryPacket fetch = new FetchInventoryPacket();
++            //fetch.AgentData.AgentID = Client.Network.AgentID;
++            //fetch.AgentData.SessionID = Client.Network.SessionID;
++            //fetch.InventoryData = new FetchInventoryPacket.InventoryDataBlock[1];
++            //fetch.InventoryData[0] = new FetchInventoryPacket.InventoryDataBlock();
++            //fetch.InventoryData[0].ItemID = id;
++            //fetch.InventoryData[0].OwnerID = Client.Network.AgentID;
++
++            //Client.Network.SendPacket(fetch);
++
++            return &quot;Research complete&quot;;
++        }
++
++        void appearance_OnAgentWearables(Dictionary&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearables)
++        {
++            foreach (KeyValuePair&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearable in wearables)
++            {
++                Console.WriteLine(&quot;Received a WearableType &quot; + wearable.Key.ToString() + &quot;, AssetID: &quot; +
++                    wearable.Value.Key.ToStringHyphenated());
++            }
++        }
++
++        void manager_OnAssetReceived(AssetTransfer asset)
++        {
++            if (asset.Success)
++            {
++                Console.WriteLine(&quot;Downloaded &quot; + asset.ID.ToStringHyphenated() + Environment.NewLine + 
++                    Helpers.FieldToUTF8String(asset.AssetData));
++            }
++            else
++            {
++                Console.WriteLine(&quot;Failed to retrieve asset &quot; + asset.ID.ToStringHyphenated(), asset.Transferred +
++                    &quot; bytes were transferred&quot;);
++            }
++        }
++
++        //private void FetchInventoryReplyHandler(Packet packet, Simulator simulator)
++        //{
++        //    FetchInventoryReplyPacket reply = (FetchInventoryReplyPacket)packet;
++
++        //    Console.WriteLine(reply.ToString());
++        //}
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -59,6 +59,7 @@
+ 			Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+ 			Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+             Self.OnInstantMessage += new MainAvatar.InstantMessageCallback(Self_OnInstantMessage);
++            this.OnLogMessage += new LogCallback(TestClient_OnLogMessage);
+ 
+             Network.RegisterCallback(PacketType.AvatarAppearance, new NetworkManager.PacketCallback(AvatarAppearanceHandler));
+ 
+@@ -179,6 +180,11 @@
+             }
+         }
+ 
++        private void TestClient_OnLogMessage(string message, Helpers.LogLevel level)
++        {
++            Console.WriteLine(&quot;&lt;&quot; + this.ToString() + &quot;&gt; &quot; + level.ToString() + &quot;: &quot; + message);
++        }
++
+         private void OnGroupMembers(Dictionary&lt;LLUUID, GroupMember&gt; members)
+         {
+             Console.WriteLine(&quot;Got &quot; + members.Count + &quot; group members.&quot;);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2007-01-22 01:15:08 UTC (rev 867)
+@@ -38,6 +38,7 @@
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\AppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\CloneProfileCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\DebugCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\DeleteFolderCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\Inventory\GiveAllCommand.cs&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Appearance.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Appearance.cs	2007-01-21 00:54:38 UTC (rev 866)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Appearance.cs	2007-01-22 01:15:08 UTC (rev 867)
+@@ -183,7 +183,6 @@
+ 
+         private SecondLife Client;
+         private AssetManager Assets;
+-        private int WearablesSerialNum = 0;
+ 
+ 
+         /// &lt;summary&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000294.html">[Libsecondlife-commits] [Patch #1845] TestClient/ExportCommand	ObjectProperties support
+</A></li>
+	<LI>Next message: <A HREF="000296.html">[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

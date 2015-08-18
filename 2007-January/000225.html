@@ -1,0 +1,321 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r821 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r821%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090642.l096gJgx028023%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000224.html">
+   <LINK REL="Next"  HREF="000226.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r821 - trunk/libsecondlife-cs</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r821%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701090642.l096gJgx028023%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r821 - trunk/libsecondlife-cs">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan  9 07:42:19 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000224.html">[Libsecondlife-commits] r820 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands	examples/TestClient/Commands/Communication	examples/TestClient/Commands/Inventory	examples/TestClient/Commands/Movement
+</A></li>
+        <LI>Next message: <A HREF="000226.html">[Libsecondlife-commits] r822 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-09 07:42:15 +0100 (Tue, 09 Jan 2007)
+New Revision: 821
+
+Modified:
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+Log:
+Cleaned up InstantMessageDialog enum
+Added FieldToFilteredString to Helpers.cs and setup ChatHandler in MainAvatar.cs to make use of it. This is just a hack around lack of unicode support for now.
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-09 05:59:37 UTC (rev 820)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-09 06:42:15 UTC (rev 821)
+@@ -155,8 +155,9 @@
+                 if ((bytes[i] &lt; 0x20 || bytes[i] &gt; 0x7E) &amp;&amp; bytes[i] != 0x09
+                     &amp;&amp; bytes[i] != 0x0D &amp;&amp; bytes[i] != 0x0A &amp;&amp; bytes[i] != 0x00)
+                 {
+-                    printable = false;
+-                    break;
++                    //printable = false;
++                    // break;
++                    bytes[i] = 0x20;
+                 }
+             }
+ 
+@@ -211,6 +212,32 @@
+             return output;
+         }
+ 
++        public static string FieldToFilteredString(byte[] bytes, char filterChar)
++        {
++            if ((int)filterChar &gt; 255)
++            {
++                Console.WriteLine(&quot;FieldToFilteredString error - filterChar overflow&quot;);
++                return null;
++            }
++            string output = &quot;&quot;;
++            bool printable = true;
++
++            for (int i = 0; i &lt; bytes.Length; ++i)
++            {
++                // Check if there are any unprintable characters in the array
++                if ((bytes[i] &lt; 0x20 || bytes[i] &gt; 0x7E) &amp;&amp; bytes[i] != 0x09
++                    &amp;&amp; bytes[i] != 0x0D &amp;&amp; bytes[i] != 0x0A &amp;&amp; bytes[i] != 0x00)
++                {
++                    bytes[i] = (byte)filterChar;
++                }
++            }
++
++            output += System.Text.Encoding.UTF8.GetString(bytes).Replace(&quot;\0&quot;, &quot;&quot;);
++
++            return output;
++        }
++
++
+         /// &lt;summary&gt;
+         /// Convert a UTF8 string to a byte array
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 05:59:37 UTC (rev 820)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2007-01-09 06:42:15 UTC (rev 821)
+@@ -59,46 +59,27 @@
+         /// &lt;/summary&gt;
+         public enum InstantMessageDialog
+         {
+-			/// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
+-			MessageFromAgent = 0,
+-
+-			/// &lt;summary&gt;pops a messagebox with a single OK button&lt;/summary&gt;
++            /// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
++            MessageFromAgent = 0,
++			/// &lt;summary&gt;Simple notification box with an OK button.&lt;/summary&gt;
+ 			MessageBox = 1,
+-
+-			// pops a countdown messagebox with a single OK button
+-			// MESSAGEBOXCOUNTDOWN = 2,
+-
+-			/// &lt;summary&gt;You've been invited to join a group.
+-			/// ID is the group id.
+-
+-			/// The binary bucket contains a null terminated string
+-			/// representation of the officer/member status and join cost for
+-			/// the invitee. (bug # 7672) The format is 1 byte for
+-			/// officer/member (O for officer, M for member), and as many bytes
+-			/// as necessary for cost. &lt;/summary&gt;
++			/// &lt;summary&gt;You've been invited to join a group.&lt;/summary&gt;
+ 			GroupInvitation = 3,
+ 
+-			/// &lt;summary&gt;Inventory offer.
+-			/// ID is the transaction id
+-			/// Binary bucket is a list of inventory uuid and type. &lt;/summary&gt;
++            /// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
++            /// &lt;remarks&gt;Soon to be depreceated&lt;/remarks&gt;
++            GiveInventory = 4,
++			/// &lt;summary&gt;Agent inventory offer.&lt;/summary&gt;
+ 			InventoryOffered = 4,
+ 			InventoryAccepted = 5,
+ 			InventoryDeclined = 6,
+ 
+-			/// &lt;summary&gt;Group vote
+-			/// Name is name of person who called vote.
+-			/// ID is vote ID used for internal tracking&lt;/summary&gt;
++			/// &lt;summary&gt;Group vote&lt;/summary&gt;
+ 			GroupVote = 7,
+-
+-			/// &lt;summary&gt;Group message
+-			/// This means that the message is meant for everyone in the
+-			/// agent's group. This will result in a database query to find all
+-			/// participants and start an im session.&lt;/summary&gt;
+-//			GroupMessageDeprecated = 8,
+-
+-			/// &lt;summary&gt;Task inventory offer.
+-			/// ID is the transaction id
+-			/// Binary bucket is a (mostly) complete packed inventory item&lt;/summary&gt;
++            //TODO - figure out the TaskInventory* bit
++            /// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
++            GiveNotecard = 9,
++			/// &lt;summary&gt;Task inventory offer.&lt;/summary&gt;
+ 			TaskInventoryOffered = 9,
+ 			TaskInventoryAccepted = 10,
+ 			TaskInventoryDeclined = 11,
+@@ -130,9 +111,8 @@
+ 			/// &lt;summary&gt;leave a session&lt;/summary&gt;
+ 			SessionDrop = 18,
+ 
+-			/// &lt;summary&gt;an instant message from an object - for differentiation on the
+-			/// viewer, since you can't IM an object yet.&lt;/summary&gt;
+-			FromTask = 19,
++            /// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
++            MessageFromObject = 19,
+ 
+ 			/// &lt;summary&gt;sent an IM to a busy user, this is the auto response&lt;/summary&gt;
+ 			BusyAutoResponse = 20,
+@@ -140,34 +120,28 @@
+ 			/// &lt;summary&gt;Shows the message in the console and chat history&lt;/summary&gt;
+ 			ConsoleAndChatHistory = 21,
+ 
+-			/// &lt;summary&gt;IM Types used for luring your friends&lt;/summary&gt;
+-			LureUser = 22,
+-			LureAccepted = 23,
+-			LureDeclined = 24,
+-			GodLikeLureUser = 25,
+-//			YetToBeUsed = 26,
++			/// &lt;summary&gt;IM Types used for luring your friends.&lt;/summary&gt;
++            RequestTeleport = 22,
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
++            AcceptTeleport = 23,
++            /// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation.&lt;/summary&gt;
++            DenyTeleport = 24,
++            /// &lt;summary&gt;
++            /// It will be fun once we can actually use this one.
++            /// &lt;/summary&gt;
++            GodLikeRequestTeleport = 25,
+ 
+-			/// &lt;summary&gt;IM that notifie of a new group election.
+-			/// Name is name of person who called vote.
+-			/// ID is election ID used for internal tracking&lt;/summary&gt;
+-//			GroupElectionDeprecated = 27,
+-
+-			/// &lt;summary&gt;IM to tell the user to go to an URL. Put a text message in the
+-			/// message field, and put the url with a trailing \0 in the binary
+-			/// bucket.&lt;/summary&gt;
++			/// &lt;summary&gt;IM to tell the user to go to an URL.&lt;/summary&gt;
+ 			GotoUrl = 28,
+ 
+-			/// &lt;summary&gt;IM for help from the GAURDIANANGELS
+-			/// Binary bucket contains the name of the session.&lt;/summary&gt;
++			/// &lt;summary&gt;IM for help from the GAURDIANANGELS.&lt;/summary&gt;
+ 			Session911Start = 29,
+ 
+ 			/// &lt;summary&gt;IM sent automatically on call for help, 
+ 			/// sends a lure to each Helper reached&lt;/summary&gt;
+ 			Lure911 = 30,
+ 
+-			/// &lt;summary&gt;a message generated by a script which we don't want to
+-			/// be sent through e-mail.  Similar to FROMTASK, but
+-			/// it is shown as an alert on the viewer.&lt;/summary&gt;
++			/// &lt;summary&gt;Like an IM but won't go to email.&lt;/summary&gt;
+ 			FromTaskAsAlert = 31,
+ 
+ 			/// &lt;summary&gt;IM from group officer to all group members.&lt;/summary&gt;
+@@ -197,30 +171,15 @@
+ 			/// &lt;summary&gt; &lt;/summary&gt;
+ 			FriendshipDeclined = 40,
+ 
+-			/// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+-			TypingStart = 41,
++            /// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
++            StartTyping = 41,
++            /// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
++            StopTyping = 42
+ 
+-			/// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+-			TypingStop = 42,
+ 
+-			///// &lt;summary&gt;Indicates a regular IM from another agent&lt;/summary&gt;
+-			//MessageFromAgent = 0,
+-			///// &lt;summary&gt;Indicates that someone has given the user an object&lt;/summary&gt;
+-			//GiveInventory = 4,
+-			///// &lt;summary&gt;Indicates that someone has given the user a notecard&lt;/summary&gt;
+-			//GiveNotecard = 9,
+-			///// &lt;summary&gt;Indicates that the IM is from an object&lt;/summary&gt;
+-			//MessageFromObject = 19,
+-			///// &lt;summary&gt;Indicates that the IM is a teleport invitation&lt;/summary&gt;
+-			//RequestTeleport = 22,
+-			///// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-			//AcceptTeleport = 23,
+-			///// &lt;summary&gt;Response sent to the agent which inititiated a teleport invitation&lt;/summary&gt;
+-			//DenyTeleport = 24,
+-			///// &lt;summary&gt;Indicates that a user has started typing&lt;/summary&gt;
+-			//StartTyping = 41,
+-			///// &lt;summary&gt;Indicates that a user has stopped typing&lt;/summary&gt;
+-			//StopTyping = 42
++
++
++
+         }
+ 
+         /// &lt;summary&gt;
+@@ -1007,7 +966,7 @@
+         /// &lt;param name=&quot;accept&quot;&gt;Accept the teleport request or deny it&lt;/param&gt;
+         public void TeleportLureRespond(LLUUID requesterID, bool accept)
+         {
+-			InstantMessage(requesterID, accept ? InstantMessageDialog.LureAccepted : InstantMessageDialog.LureDeclined);
++			InstantMessage(requesterID, accept ? InstantMessageDialog.AcceptTeleport : InstantMessageDialog.DenyTeleport);
+ 
+             if (accept)
+             {
+@@ -1230,7 +1189,7 @@
+             {
+                 ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
+ 
+-                OnChat(Helpers.FieldToString(chat.ChatData.Message)
++                OnChat(Helpers.FieldToFilteredString(chat.ChatData.Message, new char())
+                     , chat.ChatData.Audible
+                     , chat.ChatData.ChatType
+                     , chat.ChatData.SourceType
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2007-01-09 05:59:37 UTC (rev 820)
++++ trunk/libsecondlife-cs/SecondLife.cs	2007-01-09 06:42:15 UTC (rev 821)
+@@ -117,9 +117,10 @@
+         /// &lt;summary&gt;
+         /// A simple sleep function that will allow pending threads to run
+         /// &lt;/summary&gt;
++        /// &lt;remarks&gt;NOTE - just use System.Threading.Thread.Sleep(1); in your code =O&lt;/remarks&gt;
+         public void Tick()
+         {
+-            System.Threading.Thread.Sleep(0);
++            System.Threading.Thread.Sleep(1);
+         }
+ 
+         /// &lt;summary&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000224.html">[Libsecondlife-commits] r820 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands	examples/TestClient/Commands/Communication	examples/TestClient/Commands/Inventory	examples/TestClient/Commands/Movement
+</A></li>
+	<LI>Next message: <A HREF="000226.html">[Libsecondlife-commits] r822 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r753 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r753%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612221524.kBMFOPmU019129%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000120.html">
+   <LINK REL="Next"  HREF="000122.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r753 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r753%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612221524.kBMFOPmU019129%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r753 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 22 16:24:25 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000120.html">[Libsecondlife-commits] [Patch #1753] Partial /inject and /set	support for Analyst
+</A></li>
+        <LI>Next message: <A HREF="000122.html">[Libsecondlife-commits] r754 - in trunk: SLProxy applications/SLIRC	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/examples/IA_InventoryManager	libsecondlife-cs/examples/IA_TestAsyncImage	libsecondlife-cs/examples/Teleport	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands	libsecondlife-cs/examples/groupmanager	libsecondlife-cs/examples/primexport	libsecondlife-cs/libsecondlife.Tests	libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#121">[ date ]</a>
+              <a href="thread.html#121">[ thread ]</a>
+              <a href="subject.html#121">[ subject ]</a>
+              <a href="author.html#121">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-22 16:24:20 +0100 (Fri, 22 Dec 2006)
+New Revision: 753
+
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+Log:
+Baby Steps...  WearOutfit() now keeps your current body info (Shape, Skin, Eyes, Hair) if the outfit folder doesn't specify replacements.
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-22 03:26:00 UTC (rev 752)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-22 15:24:20 UTC (rev 753)
+@@ -41,59 +41,79 @@
+             Client.Network.RegisterCallback(libsecondlife.Packets.PacketType.AgentWearablesUpdate, new NetworkManager.PacketCallback(AgentWearablesUpdateCallbackHandler));
+         }
+ 
++
++        public void Wear(List&lt;InventoryWearable&gt; wearables)
++        {
++        }
++
++
++        /// &lt;summary&gt;
++        /// Equivalent to the SL &quot;Replace Outfit&quot; command.  All clothing is removed, and replaced with wearables in given folder.  Body wearables will be replaced if provided.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;outfitFolder&quot;&gt;Contains the wearable items to put on.&lt;/param&gt;
+         public void WearOutfit(InventoryFolder outfitFolder)
+         {
++            WearOutfit(outfitFolder, 10000);
++        }
++
++
++        /// &lt;summary&gt;
++        /// Equivalent to the SL &quot;Replace Outfit&quot; command.  All clothing is removed, and replaced with wearables in given folder.  Body wearables will be replaced if provided.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;outfitFolder&quot;&gt;Contains the wearable items to put on.&lt;/param&gt;
++        /// &lt;param name=&quot;TimeOut&quot;&gt;How long to wait for outfit directory information to download&lt;/param&gt;
++        public void WearOutfit(InventoryFolder outfitFolder, int TimeOut)
++        {
+             // Refresh download of outfit folder
+-            if (!outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(30000, false))
++            if (!outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(TimeOut, false))
+             {
+                 Console.WriteLine(&quot;An error occured while downloads the folder contents of : &quot; + outfitFolder.Name);
+             }
+ 
+-            byte NumPieces = 0;
++            // Make sure we have some Wearable Data to start with.
++            if ((AgentWearablesData == null) || (AgentWearablesData.Length == 0))
++            {
++                GetWearables();
++            }
+ 
+-            AgentIsNowWearingPacket nowWearing = new AgentIsNowWearingPacket();
+-            nowWearing.AgentData.AgentID = Client.Network.AgentID;
+-            nowWearing.AgentData.SessionID = Client.Network.SessionID;
+-
+-            nowWearing.WearableData = new AgentIsNowWearingPacket.WearableDataBlock[13];
+-            for (byte i = 0; i &lt;= 12; i++)
++            // Flush the cached clothing wearables so we can redefine them
++            for (byte i = 4; i &lt;= 12; i++)
+             {
+-                nowWearing.WearableData[i] = new AgentIsNowWearingPacket.WearableDataBlock();
+-                nowWearing.WearableData[i].WearableType = i;
+-                nowWearing.WearableData[i].ItemID = LLUUID.Zero;
++                AgentWearablesData[i].ItemID  = LLUUID.Zero;
++                AgentWearablesData[i].AssetID = LLUUID.Zero;
+             }
+ 
+-            outfitFolder.BeginDownloadContents(false).RequestComplete.WaitOne(3000, false);
++            // Replace with wearables from Outfit folder
+             foreach (InventoryBase ib in outfitFolder.GetContents())
+             {
+                 if (ib is InventoryWearable)
+                 {
+                     InventoryWearable iw = (InventoryWearable)ib;
+                     byte type = ((AssetWearable)iw.Asset).TypeFromAsset;
+-                    nowWearing.WearableData[type].ItemID = iw.ItemID;
+-                    NumPieces++;
++                    AgentWearablesData[type].ItemID  = iw.ItemID;
++                    AgentWearablesData[type].AssetID = iw.AssetID;
+                 }
+             }
+ 
+-            // Flush the cached agent wearables so we can redefine them
+-            AgentWearablesData = new AgentWearablesUpdatePacket.WearableDataBlock[NumPieces];
+-            byte WearableDataEntry = 0;
+-
++            // Create AgentIsNowWearing Packet, and send it
++            AgentIsNowWearingPacket nowWearing = new AgentIsNowWearingPacket();
++            nowWearing.AgentData.AgentID = Client.Network.AgentID;
++            nowWearing.AgentData.SessionID = Client.Network.SessionID;
++            nowWearing.WearableData = new AgentIsNowWearingPacket.WearableDataBlock[13];
+             for (byte i = 0; i &lt;= 12; i++)
+             {
+-                if (nowWearing.WearableData[i].ItemID != LLUUID.Zero)
+-                {
+-                    AgentWearablesData[WearableDataEntry] = new AgentWearablesUpdatePacket.WearableDataBlock();
+-                    nowWearing.WearableData[WearableDataEntry].WearableType = nowWearing.WearableData[i].WearableType;
+-                    nowWearing.WearableData[WearableDataEntry].ItemID = nowWearing.WearableData[i].ItemID;
+-                    WearableDataEntry++;
+-                }
++                nowWearing.WearableData[i] = new AgentIsNowWearingPacket.WearableDataBlock();
++                nowWearing.WearableData[i].WearableType = i;
++                nowWearing.WearableData[i].ItemID = AgentWearablesData[i].ItemID;
+             }
+ 
+             Client.Network.SendPacket(nowWearing);
+ 
+-            // Update Appearance Info
++
++            // Update local Appearance Info
+             GetAvatarAppearanceInfoFromWearableAssets();
++
++            // Send updated AgentSetAppearance to the grid
+             SendAgentSetAppearance();
+         }
+ 
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-22 03:26:00 UTC (rev 752)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-22 15:24:20 UTC (rev 753)
+@@ -11,7 +11,7 @@
+ 	public class InventoryWearable : InventoryItem
+ 	{
+         // Wearable Inventory/Asset constants
+-        public enum WearableAssetType { Socks = 7, Eyes = 3, Gloves = 9, Hair = 2, Pants = 5, Shape = 0, Shirt = 4, Shoes = 6, Skin = 1, Jacket = 8, Skirt = 12, Underpants = 11 };
++        public enum WearableAssetType { Shape = 0, Skin = 1, Hair = 2, Eyes = 3, Socks = 7, Gloves = 9, Pants = 5, Shirt = 4, Shoes = 6, Jacket = 8, Skirt = 12, Underpants = 11 };
+         public enum WearableType : sbyte { Clothing = 5, Body = 13 };
+ 
+ 
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 03:26:00 UTC (rev 752)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-22 15:24:20 UTC (rev 753)
+@@ -182,8 +182,8 @@
+                         xml(curCmdLine);
+                         break;
+ 
+-                    case &quot;getlook&quot;:
+-                        getlook();
++                    case &quot;setlook&quot;:
++                        setlook();
+                         break;
+ 
+                     case &quot;saveav&quot;:
+@@ -276,6 +276,7 @@
+             }
+ 
+             aManager.WearOutfit(iFolder);
++
+         }
+ 
+         private void savewearables(string[] cmdLine)
+@@ -424,15 +425,22 @@
+             _Client.Network.SendPacket(p);
+         }
+ 
+-        private void getlook()
++        private void setlook()
+         {
+             if (aManager == null)
+             {
+                 aManager = new AppearanceManager(_Client);
+             }
+ 
+-            aManager.SendAgentSetAppearance();
++            AgentWearablesUpdatePacket.WearableDataBlock[] wdbs = aManager.GetWearables();
+ 
++            foreach (AgentWearablesUpdatePacket.WearableDataBlock wdb in wdbs)
++            {
++                Console.WriteLine(wdb.WearableType + &quot; : &quot; + wdb.ItemID);
++            }
++
++            // aManager.SendAgentSetAppearance();
++
+         }
+ 
+         private void xml(string[] cmdLine)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000120.html">[Libsecondlife-commits] [Patch #1753] Partial /inject and /set	support for Analyst
+</A></li>
+	<LI>Next message: <A HREF="000122.html">[Libsecondlife-commits] r754 - in trunk: SLProxy applications/SLIRC	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/examples/IA_InventoryManager	libsecondlife-cs/examples/IA_TestAsyncImage	libsecondlife-cs/examples/Teleport	libsecondlife-cs/examples/TestClient	libsecondlife-cs/examples/TestClient/Commands	libsecondlife-cs/examples/groupmanager	libsecondlife-cs/examples/primexport	libsecondlife-cs/libsecondlife.Tests	libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#121">[ date ]</a>
+              <a href="thread.html#121">[ thread ]</a>
+              <a href="subject.html#121">[ subject ]</a>
+              <a href="author.html#121">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

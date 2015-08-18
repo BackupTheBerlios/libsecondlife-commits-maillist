@@ -1,0 +1,2671 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r859 - in trunk: data libsecondlife-cs	libsecondlife-cs/examples/ParcelDownload	libsecondlife-cs/libsecondlife.Utilities
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r859%20-%20in%20trunk%3A%20data%20libsecondlife-cs%0A%09libsecondlife-cs/examples/ParcelDownload%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701191315.l0JDFKfU014542%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000281.html">
+   <LINK REL="Next"  HREF="000283.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r859 - in trunk: data libsecondlife-cs	libsecondlife-cs/examples/ParcelDownload	libsecondlife-cs/libsecondlife.Utilities</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r859%20-%20in%20trunk%3A%20data%20libsecondlife-cs%0A%09libsecondlife-cs/examples/ParcelDownload%0A%09libsecondlife-cs/libsecondlife.Utilities&In-Reply-To=%3C200701191315.l0JDFKfU014542%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r859 - in trunk: data libsecondlife-cs	libsecondlife-cs/examples/ParcelDownload	libsecondlife-cs/libsecondlife.Utilities">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 19 14:15:20 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000281.html">[Libsecondlife-commits] [Patch #1826] ImportCommand rezzes at	position of bot (more reliable)
+</A></li>
+        <LI>Next message: <A HREF="000283.html">[Libsecondlife-commits] r860 - in trunk/libsecondlife-cs: .	examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#282">[ date ]</a>
+              <a href="thread.html#282">[ thread ]</a>
+              <a href="subject.html#282">[ subject ]</a>
+              <a href="author.html#282">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-19 14:15:12 +0100 (Fri, 19 Jan 2007)
+New Revision: 859
+
+Modified:
+   trunk/data/message_template.msg
+   trunk/libsecondlife-cs/DirectoryManager.cs
+   trunk/libsecondlife-cs/Helpers.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/Parcel.cs
+   trunk/libsecondlife-cs/Region.cs
+   trunk/libsecondlife-cs/_Packets_.cs
+   trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+Log:
+* Updated to the proper message_template.msg and regenerated _Packets_.cs
+* Added initial (untested) land searching support to DirectoryManager
+* Completely refactored Parcel.cs, moved land directory searching and abstracted out parcel information downloading. Updated to the new protocol
+* Added initial (untested) ParcelDownloader class to libsecondlife.Utilities
+* Removed dangerous exposed generic lists and parcel downloading state tracking from Region
+* Updated the Logout callback to the new protocol
+
+Modified: trunk/data/message_template.msg
+===================================================================
+--- trunk/data/message_template.msg	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/data/message_template.msg	2007-01-19 13:15:12 UTC (rev 859)
+@@ -657,18 +657,14 @@
+ 		{   OwnerID			LLUUID  }
+ 		{   LastOwnerID		LLUUID  }
+ 		{   CreatorID		LLUUID  }
+-		{	SimName			Variable	1	}
++		{	RegionID		LLUUID	}
++		{   AbuserID		LLUUID  }
++		{	AbuseRegionName	Variable	1	}
++		{	AbuseRegionID	LLUUID	}
+ 		{   Summary			Variable	1   }
+ 		{   Details 		Variable	2   }
+ 		{	VersionString	Variable	1	}
+ 	}
+-	{
+-		MeanCollision		Variable
+-		{	Perp			LLUUID	}
+-		{	Time			U32		}
+-		{	Mag				F32		}
+-		{	Type			U8		}
+-	}
+ }
+ 
+ // SetSimStatusInDatabase
+@@ -1044,6 +1040,7 @@
+ 		{	QueryText		Variable	1	}
+ 		{	QueryFlags		U32				}
+ 		{	Category		U32				}
++		{	QueryStart	S32					}
+ 	}
+ }
+ 
+@@ -1063,6 +1060,7 @@
+ 		{	Category		U32				}
+ 		{	EstateID		U32				}
+ 		{	Godlike			BOOL			}
++		{	QueryStart	S32					}
+ 	}
+ }
+ 
+@@ -1294,9 +1292,10 @@
+ 		QueryData			Single
+ 		{	QueryID			LLUUID	}
+ 		{	QueryFlags		U32		}
+-		{	ForSale			BOOL	}
+-		{	Auction			BOOL	}
+-		{	ReservedNewbie	BOOL	}
++		{	SearchType		U32		}
++		{	Price			S32		}
++		{	Area			S32		}
++		{	QueryStart		S32		}
+ 	}
+ }
+ 
+@@ -1312,9 +1311,10 @@
+ 		QueryData			Single
+ 		{	QueryID			LLUUID	}
+ 		{	QueryFlags		U32		}
+-		{	ForSale			BOOL	}
+-		{	Auction			BOOL	}
+-		{	ReservedNewbie	BOOL	}
++		{	SearchType		U32		}
++		{	Price			S32		}
++		{	Area			S32		}
++		{	QueryStart		S32		}
+ 		{	EstateID		U32		}
+ 		{	Godlike			BOOL	}
+ 	}
+@@ -3144,115 +3144,6 @@
+ 	}
+ }
+ 
+-
+-// Grant agents the ability to modify your stuff. This message is sent
+-// to the simulator, and then passed along to the dataserver for
+-// persistance. The dataserver will push live updates through
+-// AddModifyAbility messages to the simulator.
+-// viewer -&gt; simulator -&gt; dataserver
+-//{
+-//	GrantModification Low NotTrusted Unencoded
+-//	{
+-//		AgentData			Single
+-//		{	AgentID			LLUUID	}
+-//		{	SessionID		LLUUID	}
+-//		{	GranterName		Variable	1	}
+-//	}
+-//	{
+-//		EmpoweredBlock		Variable
+-//		{	EmpoweredID		LLUUID	}
+-//	}
+-//}
+-// Revoke the ability to modify your stuff. This message is sent to
+-// the simulator, and then passed along to the dataserver for
+-// persistance. The dataserver will push live updates through
+-// RemoveModifyAbility messages to the simulator.
+-// viewer -&gt; simulator -&gt; dataserver
+-//{
+-//	RevokeModification Low NotTrusted Unencoded
+-//	{
+-//		AgentData			Single
+-//		{	AgentID			LLUUID	}
+-//		{	SessionID		LLUUID	}
+-//		{	GranterName		Variable	1	}
+-//	}
+-//	{
+-//		RevokedBlock		Variable
+-//		{	RevokedID		LLUUID	}
+-//	}
+-//}
+-
+-// This message is sent from viewer-&gt;simulator-&gt;dataserver, which responds with
+-// the complete list of all granted agents in the GrantedProxies message.
+-//{
+-//	RequestGrantedProxies Low NotTrusted Unencoded
+-//	{
+-//		AgentData			Single
+-//		{	AgentID			LLUUID	}
+-//		{	SessionID		LLUUID	}
+-//	}
+-//}
+-
+-// response to the message above
+-//{
+-//	GrantedProxies Low Trusted Unencoded
+-//	{
+-//		AgentData			Single
+-//		{	AgentID			LLUUID	}
+-//	}
+-//	{
+-//		EmpoweredBlock			Variable
+-//		{	EmpoweredID		LLUUID	}
+-//	}
+-//	{
+-//		GranterBlock			Variable
+-//		{	GranterID		LLUUID	}
+-//	}
+-//}
+-
+-// This message is sent from the dataserver to the simulator to let
+-// AgentID know that they can modify GranterID's stuff. This message is
+-// percolated out to child cameras and the viewer. This message is
+-// in response to GrantModification messages, request, or login.
+-// ROUTED dataserver -&gt; simulator -&gt; spaceserver -&gt; simulator
+-// reliable
+-//{
+-//	AddModifyAbility Low Trusted Zerocoded
+-//	{
+-//		TargetBlock			Single
+-//		{	TargetIP		IPADDR	}	// U32 encoded IP
+-//		{	TargetPort		IPPORT	}
+-//	}
+-//	{
+-//		AgentBlock			Single
+-//		{	AgentID			LLUUID	}
+-//	}
+-//	{
+-//		GranterBlock		Variable
+-//		{	GranterID		LLUUID	}
+-//	}
+-//}
+-
+-// This message is sent from the dataserver to the simulator to let
+-// AgentID know that they can no longer modify GranterID's stuff. This
+-// message is percolated out to child cameras and the viewer. This
+-// message is in response to RevokeModification messages.
+-// ROUTED dataserver -&gt; simulator -&gt; spaceserver -&gt; simulator
+-// reliable
+-//{
+-//	RemoveModifyAbility Low Trusted Unencoded
+-//	{
+-//		TargetBlock			Single
+-//		{	TargetIP		IPADDR	}	// U32 encoded IP
+-//		{	TargetPort		IPPORT	}
+-//	}
+-//	{
+-//		AgentBlock			Single
+-//		{	AgentID			LLUUID	}
+-//		{	RevokerID		LLUUID	}
+-//	}
+-//}
+-
+ // end viewer to simulator section
+ 
+ {
+@@ -3343,17 +3234,13 @@
+ 		{   CheckFlags		U8	} // checkboxflags
+ 		{   ScreenshotID	LLUUID  }
+ 		{   ObjectID		LLUUID  }
++		{   AbuserID		LLUUID  }
++		{	AbuseRegionName	Variable	1	}
++		{	AbuseRegionID	LLUUID	}
+ 		{   Summary			Variable	1   }
+ 		{   Details 		Variable	2   }
+ 		{	VersionString	Variable	1	}
+ 	}
+-	{
+-		MeanCollision		Variable
+-		{	Perp			LLUUID	}
+-		{	Time			U32		}
+-		{	Mag				F32		}
+-		{	Type			U8		}
+-	}
+ }
+ 
+ 
+@@ -3952,6 +3839,7 @@
+ 		{	TargetType		S32	}
+ 		{	Status			S32	}
+ 		{	Size			S32	}
++		{	Params			Variable	2	}
+ 	}
+ }
+ 
+@@ -4153,6 +4041,7 @@
+ 		{	CreatorID		LLUUID	}
+ 		{	OwnerID			LLUUID	}
+ 		{	GroupID			LLUUID	}
++		{	CreationDate	U64	}
+ 		{	BaseMask		U32	}
+ 		{	OwnerMask		U32	}
+ 		{	GroupMask		U32	}
+@@ -6230,7 +6119,6 @@
+ 	{
+ 		InventoryData		Variable
+ 		{	ItemID			LLUUID	}  // null if list is actually empty (but has one entry 'cause it can't have none)
+-		{	NewAssetID		LLUUID	}
+ 	}
+ }
+ 
+@@ -6361,6 +6249,7 @@
+ 		AgentData 		Single
+ 		{   AgentID     LLUUID  }
+ 		{	SessionID	LLUUID		}
++		{	TransactionID	LLUUID	}
+ 	}
+ 	{
+ 		MethodData 	Single
+@@ -6381,6 +6270,7 @@
+ 		AgentData 		Single
+ 		{   AgentID     LLUUID  	}
+ 		{	SessionID	LLUUID		}
++		{	TransactionID	LLUUID	}
+ 	}
+ 	{
+ 		MethodData 	Single
+@@ -6402,6 +6292,7 @@
+ 		AgentData 		Single
+ 		{   AgentID     LLUUID  	}
+ 		{	SessionID	LLUUID		}
++		{	TransactionID	LLUUID	}
+ 	}
+ 	{
+ 		MethodData 	Single
+@@ -6637,8 +6528,10 @@
+ //
+ // Sim outgoing only (to dataserver, to viewer)
+ // NOT viewer to sim, sim should not have handler, ever
++// This message is currently only uses objects, so the viewer ignores
++// the asset id.
+ {
+-	SaveAssetIntoInventory Low NotTrusted Unencoded
++	SaveAssetIntoInventory Low Trusted Unencoded
+ 	{
+ 		AgentData		Single
+ 		{	AgentID			LLUUID	}
+@@ -9589,22 +9482,6 @@
+ 	}
+ }
+ 
+-
+-// viewer -&gt; sim 
+-// initiate upload. primarily used for uploading raw files.
+-{
+-	InitiateUpload	Low		NotTrusted Unencoded
+-	{
+-		AgentData	Single
+-		{	AgentID		LLUUID	}
+-	}
+-	{
+-		FileData	Single
+-		{	BaseFilename	Variable	1	}	// string
+-		{	SourceFilename	Variable	1	}	// string
+-	}
+-}
+-
+ // sim -&gt; viewer
+ // initiate upload. primarily used for uploading raw files.
+ {
+
+Modified: trunk/libsecondlife-cs/DirectoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/DirectoryManager.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -64,6 +64,77 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        [Flags]
++        public enum DirFindFlags
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            People = 1 &lt;&lt; 0,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Online = 1 &lt;&lt; 1,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            [Obsolete]
++            Places = 1 &lt;&lt; 2,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Events = 1 &lt;&lt; 3,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Groups = 1 &lt;&lt; 4,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            DateEvents = 1 &lt;&lt; 5,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            AgentOwned = 1 &lt;&lt; 6,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            ForSale = 1 &lt;&lt; 7,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            GroupOwned = 1 &lt;&lt; 8,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            [Obsolete]
++            Auction = 1 &lt;&lt; 9,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            DwellSort = 1 &lt;&lt; 10,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PgSimsOnly = 1 &lt;&lt; 11,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PicturesOnly = 1 &lt;&lt; 12,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PgEventsOnly = 1 &lt;&lt; 13,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            MatureSimsOnly = 1 &lt;&lt; 14,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            SortAsc = 1 &lt;&lt; 15,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PricesSort = 1 &lt;&lt; 16,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            PerMeterSort = 1 &lt;&lt; 17,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            AreaSort = 1 &lt;&lt; 18,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            NameSort = 1 &lt;&lt; 19,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            LimitByPrice = 1 &lt;&lt; 20,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            LimitByArea = 1 &lt;&lt; 21
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        [Flags]
++        public enum SearchTypeFlags
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Auction = 1 &lt;&lt; 0,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Newbie = 1 &lt;&lt; 1,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Mainland = 1 &lt;&lt; 2,
++            /// &lt;summary&gt;&lt;/summary&gt;
++            Estate = 1 &lt;&lt; 3
++        }
++
++
++        /// &lt;summary&gt;
+         /// A classified ad in Second Life
+         /// &lt;/summary&gt;
+         public struct Classified
+@@ -84,16 +155,65 @@
+         }
+ 
+         /// &lt;summary&gt;
++        /// A parcel retrieved from the dataserver such as results from the 
++        /// &quot;For-Sale&quot; listings
++        /// &lt;/summary&gt;
++        public struct DirectoryParcel
++        {
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public LLUUID ID;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public string Name;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public int ActualArea;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public int SalePrice;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public bool Auction;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public bool ForSale;
++            /// &lt;summary&gt;&lt;/summary&gt;
++            public bool ReservedNewbie;
++        }
++
++        /*/// &lt;summary&gt;&lt;/summary&gt;
++        public LLUUID OwnerID;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLUUID SnapshotID;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public ulong RegionHandle;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public string SimName;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public string Desc;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 GlobalPosition;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public LLVector3 SimPosition;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public float Dwell;*/
++
++
++        /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;classifieds&quot;&gt;&lt;/param&gt;
+         public delegate void ClassifiedReplyCallback(List&lt;Classified&gt; classifieds);
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;dirParcels&quot;&gt;&lt;/param&gt;
++        public delegate void DirLandReplyCallback(List&lt;DirectoryParcel&gt; dirParcels);
+ 
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+         public event ClassifiedReplyCallback OnClassifiedReply;
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public event DirLandReplyCallback OnDirLandReply;
+ 
+ 
+         private SecondLife Client;
+@@ -104,6 +224,7 @@
+             Client = client;
+ 
+             Client.Network.RegisterCallback(PacketType.DirClassifiedReply, new NetworkManager.PacketCallback(DirClassifiedReplyHandler));
++            Client.Network.RegisterCallback(PacketType.DirLandReply, new NetworkManager.PacketCallback(DirLandReplyHandler));
+         }
+ 
+         public LLUUID StartClassifiedSearch(string searchText, ClassifiedCategories categories, bool mature)
+@@ -123,6 +244,35 @@
+             return queryID;
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;findFlags&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;typeFlags&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;priceLimit&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;areaLimit&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;queryStart&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public LLUUID StartLandSearch(DirFindFlags findFlags, SearchTypeFlags typeFlags, int priceLimit,
++            int areaLimit, int queryStart)
++        {
++            LLUUID queryID = LLUUID.Random();
++
++            DirLandQueryPacket query = new DirLandQueryPacket();
++            query.AgentData.AgentID = Client.Network.AgentID;
++            query.AgentData.SessionID = Client.Network.SessionID;
++            query.QueryData.Area = areaLimit;
++            query.QueryData.Price = priceLimit;
++            query.QueryData.QueryStart = queryStart;
++            query.QueryData.SearchType = (uint)typeFlags;
++            query.QueryData.QueryFlags = (uint)findFlags;
++            query.QueryData.QueryID = queryID;
++
++            Client.Network.SendPacket(query);
++
++            return queryID;
++        }
++
+         private void DirClassifiedReplyHandler(Packet packet, Simulator simulator)
+         {
+             if (OnClassifiedReply != null)
+@@ -144,8 +294,36 @@
+                     classifieds.Add(classified);
+                 }
+ 
+-                OnClassifiedReply(classifieds);
++                try { OnClassifiedReply(classifieds); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
++
++        private void DirLandReplyHandler(Packet packet, Simulator simulator)
++        {
++            if (OnDirLandReply != null)
++            {
++                List&lt;DirectoryParcel&gt; parcelsForSale = new List&lt;DirectoryParcel&gt;();
++                DirLandReplyPacket reply = (DirLandReplyPacket)packet;
++
++                foreach (DirLandReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
++                {
++                    DirectoryParcel dirParcel = new DirectoryParcel();
++
++                    dirParcel.ActualArea = block.ActualArea;
++                    dirParcel.ID = block.ParcelID;
++                    dirParcel.Name = Helpers.FieldToString(block.Name);
++                    dirParcel.SalePrice = block.SalePrice;
++                    dirParcel.Auction = block.Auction;
++                    dirParcel.ForSale = block.ForSale;
++                    dirParcel.ReservedNewbie = block.ReservedNewbie;
++
++                    parcelsForSale.Add(dirParcel);
++                }
++
++                try { OnDirLandReply(parcelsForSale); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
++            }
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/Helpers.cs
+===================================================================
+--- trunk/libsecondlife-cs/Helpers.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/Helpers.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -263,6 +263,12 @@
+             return output;
+         }
+ 
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;bytes&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;filterChar&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
+         public static string FieldToFilteredString(byte[] bytes, char filterChar)
+         {
+             if ((int)filterChar &gt; 255)
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -1109,8 +1109,8 @@
+         /// &lt;summary&gt;
+         /// Assigned by the OnLogoutReply callback. Raised upone receipt of a LogoutReply packet during logout process.
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;InventoryData&quot;&gt;A dictionary representing received data Key is ItemID and Value is NewAssetID&lt;/param&gt;
+-        public delegate void LogoutCallback(Dictionary&lt;LLUUID, LLUUID&gt; InventoryData);
++        /// &lt;param name=&quot;inventoryItems&quot;&gt;&lt;/param&gt;
++        public delegate void LogoutCallback(List&lt;LLUUID&gt; inventoryItems);
+         /// &lt;summary&gt;
+         /// Event raised when a logout is confirmed by the simulator
+         /// &lt;/summary&gt;
+@@ -1755,21 +1755,15 @@
+                 // Deal with callbacks, if any
+                 if (OnLogoutReply != null)
+                 {
+-                    Dictionary&lt;LLUUID, LLUUID&gt; callbackDict = new Dictionary&lt;LLUUID, LLUUID&gt;();
++                    List&lt;LLUUID&gt; itemIDs = new List&lt;LLUUID&gt;();
+ 
+                     foreach (LogoutReplyPacket.InventoryDataBlock InventoryData in logout.InventoryData)
+                     {
+-                        callbackDict.Add(InventoryData.ItemID, InventoryData.NewAssetID);
++                        itemIDs.Add(InventoryData.ItemID);
+                     }
+-                    try
+-                    {
+-                        OnLogoutReply(callbackDict);
+-                    }
+-                    catch (Exception e)
+-                    {
+-                        Client.Log(&quot;Caught an exception in OnLogoutReply(): &quot; + e.ToString(),
+-                            Helpers.LogLevel.Error);
+-                    }
++
++                    try { OnLogoutReply(itemIDs); }
++                    catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+                 }
+ 
+                 FinalizeLogout();
+
+Modified: trunk/libsecondlife-cs/Parcel.cs
+===================================================================
+--- trunk/libsecondlife-cs/Parcel.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/Parcel.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -32,47 +32,6 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// A parcel retrieved from the dataserver such as results from the 
+-    /// &quot;For-Sale&quot; listings
+-    /// &lt;/summary&gt;
+-    public class DirectoryParcel
+-    {
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID ID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID OwnerID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLUUID SnapshotID;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public ulong RegionHandle;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public string Name;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public string SimName;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public string Desc;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public int SalePrice;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public int ActualArea;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 GlobalPosition;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public LLVector3 SimPosition;
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        public float Dwell;
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        public DirectoryParcel()
+-        {
+-            GlobalPosition = LLVector3.Zero;
+-            SimPosition = LLVector3.Zero;
+-        }
+-    }
+-
+-    /// &lt;summary&gt;
+     /// Parcel information retrieved from a simulator
+     /// &lt;/summary&gt;
+     public class Parcel
+@@ -169,10 +128,9 @@
+         public byte LandingType;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public float Dwell;
++        /// &lt;summary&gt;&lt;/summary&gt;
++        public Simulator Simulator;
+ 
+-        // Using Sim instead of Region since it references both
+-        private Simulator Sim;
+-
+         private void init()
+         {
+             OwnerID = LLUUID.Zero;
+@@ -201,7 +159,7 @@
+         /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+         public Parcel(Simulator simulator)
+         {
+-            Sim = simulator;
++            Simulator = simulator;
+             init();
+         }
+ 
+@@ -217,7 +175,7 @@
+             request.Data.LocalID = LocalID;
+             request.Data.ParcelID = LLUUID.Zero;
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket((Packet)request, Simulator);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -240,7 +198,7 @@
+             request.Data.IsGroupOwned = forGroup;
+             request.Data.RemoveContribution = removeContribution;
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket((Packet)request, Simulator);
+             return true;
+         }
+ 
+@@ -257,7 +215,7 @@
+ 
+             request.Data.LocalID = this.LocalID;
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket((Packet)request, Simulator);
+             return true;
+         }
+ 
+@@ -276,7 +234,7 @@
+             request.Data.LocalID = this.LocalID;
+             request.Data.GroupID = groupID;
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket((Packet)request, Simulator);
+             return true;
+         }
+ 
+@@ -312,7 +270,7 @@
+             request.ParcelData.UserLocation = this.UserLocation;
+             request.ParcelData.UserLookAt = this.UserLookAt;
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket(request, Simulator);
+             //Packet updatePacket = Packets.Parcel.ParcelPropertiesUpdate(client.Protocol, client.Avatar.ID, client.Network.SessionID, this);
+             //Sim.SendPacket(updatePacket, true);
+         }
+@@ -337,371 +295,210 @@
+             request.OwnerIDs = new ParcelReturnObjectsPacket.OwnerIDsBlock[0];
+             request.TaskIDs = new ParcelReturnObjectsPacket.TaskIDsBlock[1];
+ 
+-            client.Network.SendPacket((Packet)request, Sim);
++            client.Network.SendPacket((Packet)request, Simulator);
+         }
+     }
+ 
++    public struct ParcelInfo
++    {
++        public LLUUID ID;
++        public LLUUID OwnerID;
++        public string Name;
++        public string Description;
++        public int ActualArea;
++        public int BillableArea;
++        public bool Mature;
++        public float GlobalX;
++        public float GlobalY;
++        public float GlobalZ;
++        public string SimName;
++        public LLUUID SnapshotID;
++        public float Dwell;
++        public int SalePrice;
++        public int AuctionID;
++    }
++
+     /// &lt;summary&gt;
+-    /// 
++    /// Parcel (subdivided simulator lots) subsystem
+     /// &lt;/summary&gt;
+     public class ParcelManager
+     {
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;parcelID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;localID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;dwell&quot;&gt;&lt;/param&gt;
++        public delegate void ParcelDwellCallback(LLUUID parcelID, int localID, float dwell);
++        public delegate void ParcelInfoCallback(ParcelInfo parcel);
++        public delegate void ParcelPropertiesCallback(Parcel parcel);
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public event ParcelDwellCallback OnParcelDwell;
++        public event ParcelInfoCallback OnParcelInfo;
++        public event ParcelPropertiesCallback OnParcelProperties;
++
++
+         private SecondLife Client;
+-        private bool ReservedNewbie;
+-        private bool ForSale;
+-        private bool Auction;
+-        private bool Finished;
+-        private Timer DirLandTimer;
+-        private bool DirLandTimeout;
+-        private bool ParcelInfoTimeout;
+-        private DirectoryParcel ParcelInfoParcel;
+-        private List&lt;DirectoryParcel&gt; ParcelsForSale;
+ 
+         /// &lt;summary&gt;
+-        /// Parcel (subdivided simulator lots) Subsystem
++        /// Default constructor
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client&lt;/param&gt;
+         public ParcelManager(SecondLife client)
+         {
+             Client = client;
+-            ParcelsForSale = new List&lt;DirectoryParcel&gt;();
+ 
+-            // Setup the timer
+-            DirLandTimer = new Timer(8000);
+-            DirLandTimer.Elapsed += new ElapsedEventHandler(DirLandTimerEvent);
+-            DirLandTimeout = false;
+-
+             // Setup the callbacks
+-            Client.Network.RegisterCallback(PacketType.DirLandReply, new NetworkManager.PacketCallback(DirLandReplyHandler));
+             Client.Network.RegisterCallback(PacketType.ParcelInfoReply, new NetworkManager.PacketCallback(ParcelInfoReplyHandler));
+             Client.Network.RegisterCallback(PacketType.ParcelProperties, new NetworkManager.PacketCallback(ParcelPropertiesHandler));
+             Client.Network.RegisterCallback(PacketType.ParcelDwellReply, new NetworkManager.PacketCallback(ParcelDwellReplyHandler));
+-
+-            ParcelInfoParcel = null;
+         }
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+-        public void ParcelDwellReplyHandler(Packet packet, Simulator simulator)
++        /// &lt;param name=&quot;parcelID&quot;&gt;&lt;/param&gt;
++        public void ParcelInfoRequest(LLUUID parcelID)
+         {
+-            ParcelDwellReplyPacket dwell = (ParcelDwellReplyPacket)packet;
++            ParcelInfoRequestPacket request = new ParcelInfoRequestPacket();
++            request.AgentData.AgentID = Client.Network.AgentID;
++            request.AgentData.SessionID = Client.Network.SessionID;
++            request.Data.ParcelID = parcelID;
+ 
+-            if (dwell.Data.Dwell != 0.0F &amp;&amp; simulator.Region.Parcels.ContainsKey(dwell.Data.LocalID))
+-            {
+-                ((Parcel)simulator.Region.Parcels[dwell.Data.LocalID]).Dwell = dwell.Data.Dwell;
+-            }
++            Client.Network.SendPacket((Packet)request);
+         }
+ 
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;parcel&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public bool RequestParcelInfo(DirectoryParcel parcel)
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;north&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;east&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;south&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;west&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;sequenceID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;snapSelection&quot;&gt;&lt;/param&gt;
++        public void ParcelPropertiesRequest(Simulator simulator, float north, float east, float south, float west,
++            int sequenceID, bool snapSelection)
+         {
+-            int attempts = 0;
++            ParcelPropertiesRequestPacket request = new ParcelPropertiesRequestPacket();
+ 
+-        Beginning:
+-            if (attempts++ &gt; 3) { return false; }
++            request.AgentData.AgentID = Client.Network.AgentID;
++            request.AgentData.SessionID = Client.Network.SessionID;
++            request.ParcelData.North = north;
++            request.ParcelData.East = east;
++            request.ParcelData.South = south;
++            request.ParcelData.West = west;
++            request.ParcelData.SequenceID = sequenceID;
++            request.ParcelData.SnapSelection = snapSelection;
+ 
+-            Finished = false;
+-            ParcelInfoTimeout = false;
+-            ParcelInfoParcel = parcel;
+-
+-        //    // Setup the timer
+-        //    Timer ParcelInfoTimer = new Timer(5000);
+-        //    ParcelInfoTimer.Elapsed += new ElapsedEventHandler(ParcelInfoTimerEvent);
+-        //    ParcelInfoTimeout = false;
+-
+-        //    // Build the ParcelInfoRequest packet
+-        //    ParcelInfoRequestPacket request = new ParcelInfoRequestPacket();
+-        //    request.AgentData.AgentID = Client.Network.AgentID;
+-        //    request.AgentData.SessionID = Client.Network.SessionID;
+-        //    request.Data.ParcelID = parcel.ID;
+-
+-        //    // Start the timer
+-        //    ParcelInfoTimer.Start();
+-
+-        //    Client.Network.SendPacket((Packet)request);
+-
+-            while (!Finished)
+-            {
+-                // FIXME: This can easily cause an infinite loop
+-                if (ParcelInfoTimeout) { goto Beginning; }
+-
+-                Client.Tick();
+-            }
+-
+-            return true;
++            Client.Network.SendPacket(request, simulator);
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;reservedNewbie&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;forSale&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;auction&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public int DirLandRequest(bool reservedNewbie, bool forSale, bool auction)
++        private void ParcelDwellReplyHandler(Packet packet, Simulator simulator)
+         {
+-            // Set the class-wide variables so the callback has them
+-            ReservedNewbie = reservedNewbie;
+-            ForSale = forSale;
+-            Auction = auction;
+-
+-            // Clear the list
+-            ParcelsForSale.Clear();
+-
+-            // Start the timer
+-            DirLandTimeout = false;
+-            DirLandTimer.Start();
+-
+-            DirLandQueryPacket query = new DirLandQueryPacket();
+-            query.AgentData.AgentID = Client.Network.AgentID;
+-            query.AgentData.SessionID = Client.Network.SessionID;
+-            query.QueryData.Auction = auction;
+-            query.QueryData.ForSale = forSale;
+-            query.QueryData.QueryFlags = 0;
+-            query.QueryData.QueryID = LLUUID.Random();
+-            query.QueryData.ReservedNewbie = reservedNewbie;
+-
+-            Client.Network.SendPacket((Packet)query);
+-
+-            while (!DirLandTimeout)
++            if (OnParcelDwell != null)
+             {
+-                Client.Tick();
+-            }
++                ParcelDwellReplyPacket dwell = (ParcelDwellReplyPacket)packet;
+ 
+-            // Make sure the timer is actually stopped
+-            DirLandTimer.Stop();
+-
+-            return ParcelsForSale.Count;
+-        }
+-
+-        private void ParcelPropertiesHandler(Packet packet, Simulator simulator)
+-        {
+-            ParcelPropertiesPacket properties = (ParcelPropertiesPacket)packet;
+-
+-            byte[] Bitmap = properties.ParcelData.Bitmap;
+-            int LocalID = properties.ParcelData.LocalID;
+-
+-            // Mark this area as downloaded
+-            int x, y, index, subindex;
+-            byte val;
+-
+-            for (x = 0; x &lt; 64; x++)
+-            {
+-                for (y = 0; y &lt; 64; y++)
+-                {
+-                    if (simulator.Region.ParcelMarked[y, x] == 0)
+-                    {
+-                        index = ((x * 64) + y);
+-                        subindex = index % 8;
+-                        index /= 8;
+-
+-                        val = Bitmap[index];
+-
+-                        simulator.Region.ParcelMarked[y, x] = ((val &gt;&gt; subindex) &amp; 1) == 1 ? LocalID : 0;
+-                    }
+-                }
++                try { OnParcelDwell(dwell.Data.ParcelID, dwell.Data.LocalID, dwell.Data.Dwell); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+-
+-            // Fire off the next request, if we are downloading the whole sim
+-            bool hasTriggered = false;
+-            if (simulator.Region.ParcelDownloading)
+-            {
+-                for (x = 0; x &lt; 64; x++)
+-                {
+-                    for (y = 0; y &lt; 64; y++)
+-                    {
+-                        if (simulator.Region.ParcelMarked[x, y] == 0)
+-                        {
+-                            ParcelPropertiesRequestPacket tPacket = new ParcelPropertiesRequestPacket();
+-                            tPacket.AgentData.AgentID = Client.Network.AgentID;
+-                            tPacket.AgentData.SessionID = Client.Network.SessionID;
+-                            tPacket.ParcelData.SequenceID = -10000;
+-                            tPacket.ParcelData.West = (x * 4.0f);
+-                            tPacket.ParcelData.South = (y * 4.0f);
+-                            tPacket.ParcelData.East = (x * 4.0f) + 4.0f;
+-                            tPacket.ParcelData.North = (y * 4.0f) + 4.0f;
+-
+-                            Client.Network.SendPacket(tPacket, simulator);
+-
+-                            hasTriggered = true;
+-
+-                            goto exit;
+-                        }
+-                    }
+-                }
+-            exit:
+-                ;
+-            }
+-
+-            // This map is complete, fire callback
+-            if (!hasTriggered)
+-            {
+-                simulator.Region.FilledParcels();
+-            }
+-
+-            Parcel parcel = null;
+-
+-            lock (simulator.Region.Parcels)
+-            {
+-                if (!simulator.Region.Parcels.ContainsKey(LocalID))
+-                {
+-                    simulator.Region.Parcels[LocalID] = new Parcel(simulator);
+-                }
+-
+-                parcel = simulator.Region.Parcels[LocalID];
+-            }
+-
+-            // Save this parcels data
+-            // TODO: Lots of values are not being stored, Parcel needs to be expanded to take all the data.
+-            // August2006:  God help me should I have to type this out again... argh.
+-            // October2006: I really shouldnt have typed that.
+-            parcel.RequestResult       = properties.ParcelData.RequestResult;
+-            parcel.SequenceID          = properties.ParcelData.SequenceID;
+-            parcel.SnapSelection       = properties.ParcelData.SnapSelection;
+-            parcel.SelfCount           = properties.ParcelData.SelfCount;
+-            parcel.OtherCount          = properties.ParcelData.OtherCount;
+-            parcel.PublicCount         = properties.ParcelData.PublicCount;
+-            parcel.LocalID             = LocalID;
+-            parcel.OwnerID             = properties.ParcelData.OwnerID;
+-            parcel.IsGroupOwned        = properties.ParcelData.IsGroupOwned;
+-            parcel.AuctionID           = properties.ParcelData.AuctionID;
+-            parcel.ReservedNewbie      = properties.ParcelData.ReservedNewbie;
+-            parcel.ClaimDate           = properties.ParcelData.ClaimDate;
+-            parcel.ClaimPrice          = properties.ParcelData.ClaimPrice;
+-            parcel.RentPrice           = properties.ParcelData.RentPrice;
+-            parcel.AABBMin             = properties.ParcelData.AABBMin;
+-            parcel.AABBMax             = properties.ParcelData.AABBMax;
+-            parcel.Bitmap              = properties.ParcelData.Bitmap;
+-            parcel.Area                = properties.ParcelData.Area;
+-            parcel.Status              = properties.ParcelData.Status;
+-            parcel.SimWideMaxObjects   = properties.ParcelData.SimWideMaxPrims;
+-            parcel.SimWideTotalObjects = properties.ParcelData.SimWideTotalPrims;
+-            parcel.MaxObjects          = properties.ParcelData.MaxPrims;
+-            parcel.TotalObjects        = properties.ParcelData.TotalPrims;
+-            parcel.OwnerObjects        = properties.ParcelData.OwnerPrims;
+-            parcel.GroupObjects        = properties.ParcelData.GroupPrims;
+-            parcel.OtherObjects        = properties.ParcelData.OtherPrims;
+-            parcel.ParcelObjectBonus   = properties.ParcelData.ParcelPrimBonus;
+-            parcel.OtherCleanTime      = properties.ParcelData.OtherCleanTime;
+-            parcel.ParcelFlags         = properties.ParcelData.ParcelFlags;
+-            parcel.SalePrice           = properties.ParcelData.SalePrice;
+-            parcel.Name                = Helpers.FieldToString(properties.ParcelData.Name);
+-            parcel.Desc                = Helpers.FieldToString(properties.ParcelData.Desc);
+-            parcel.MusicURL            = Helpers.FieldToString(properties.ParcelData.MusicURL);
+-            parcel.MediaURL            = Helpers.FieldToString(properties.ParcelData.MediaURL);
+-            parcel.MediaID             = properties.ParcelData.MediaID;
+-            parcel.MediaAutoScale      = properties.ParcelData.MediaAutoScale;
+-            parcel.GroupID             = properties.ParcelData.GroupID;
+-            parcel.PassPrice           = properties.ParcelData.PassPrice;
+-            parcel.PassHours           = properties.ParcelData.PassHours;
+-            parcel.Category            = properties.ParcelData.Category;
+-            parcel.AuthBuyerID         = properties.ParcelData.AuthBuyerID;
+-            parcel.SnapshotID          = properties.ParcelData.SnapshotID;
+-            parcel.UserLocation        = properties.ParcelData.UserLocation;
+-            parcel.UserLookAt          = properties.ParcelData.UserLookAt;
+-            parcel.LandingType         = properties.ParcelData.LandingType;
+         }
+ 
+         private void ParcelInfoReplyHandler(Packet packet, Simulator simulator)
+         {
+-            if (ParcelInfoParcel != null)
++            if (OnParcelInfo != null)
+             {
+-                ParcelInfoReplyPacket reply = (ParcelInfoReplyPacket)packet;
++                ParcelInfoReplyPacket info = (ParcelInfoReplyPacket)packet;
+ 
+-                if (!reply.Data.ParcelID.Equals(ParcelInfoParcel.ID))
+-                {
+-                    Client.Log(&quot;Received a ParcelInfoReply for &quot; + reply.Data.ParcelID.ToString() +
+-                            &quot;, looking for &quot; + ParcelInfoParcel.ID.ToString(), Helpers.LogLevel.Warning);
++                ParcelInfo parcelInfo = new ParcelInfo();
+ 
+-                    // Build and resend the ParcelInfoRequest packet
+-                    ParcelInfoRequestPacket request = new ParcelInfoRequestPacket();
+-                    request.AgentData.AgentID = Client.Network.AgentID;
+-                    request.AgentData.SessionID = Client.Network.SessionID;
+-                    request.Data.ParcelID = ParcelInfoParcel.ID;
++                parcelInfo.ActualArea = info.Data.ActualArea;
++                parcelInfo.AuctionID = info.Data.AuctionID;
++                parcelInfo.BillableArea = info.Data.BillableArea;
++                parcelInfo.Description = Helpers.FieldToString(info.Data.Desc);
++                parcelInfo.Dwell = info.Data.Dwell;
++                parcelInfo.GlobalX = info.Data.GlobalX;
++                parcelInfo.GlobalY = info.Data.GlobalY;
++                parcelInfo.GlobalZ = info.Data.GlobalZ;
++                parcelInfo.ID = info.Data.ParcelID;
++                parcelInfo.Mature = ((info.Data.Flags &amp; 1) != 0) ? true : false;
++                parcelInfo.Name = Helpers.FieldToString(info.Data.Name);
++                parcelInfo.OwnerID = info.Data.OwnerID;
++                parcelInfo.SalePrice = info.Data.SalePrice;
++                parcelInfo.SimName = Helpers.FieldToString(info.Data.SimName);
++                parcelInfo.SnapshotID = info.Data.SnapshotID;
+ 
+-                    Client.Network.SendPacket(request);
+-
+-                    return;
+-                }
+-
+-                ParcelInfoParcel.SimName = Helpers.FieldToString(reply.Data.SimName);
+-                ParcelInfoParcel.ActualArea = reply.Data.ActualArea;
+-                ParcelInfoParcel.GlobalPosition.X = reply.Data.GlobalX;
+-                ParcelInfoParcel.GlobalPosition.Y = reply.Data.GlobalY;
+-                ParcelInfoParcel.GlobalPosition.Z = reply.Data.GlobalZ;
+-                ParcelInfoParcel.Name = Helpers.FieldToString(reply.Data.Name);
+-                ParcelInfoParcel.Desc = Helpers.FieldToString(reply.Data.Desc);
+-                ParcelInfoParcel.SalePrice = reply.Data.SalePrice;
+-                ParcelInfoParcel.OwnerID = reply.Data.OwnerID;
+-                ParcelInfoParcel.SnapshotID = reply.Data.SnapshotID;
+-                ParcelInfoParcel.Dwell = reply.Data.Dwell;
+-
+-                // Get RegionHandle from GlobalX/GlobalY
+-                uint handleX = (uint)Math.Floor(ParcelInfoParcel.GlobalPosition.X / 256.0F);
+-                handleX *= 256;
+-                uint handleY = (uint)Math.Floor(ParcelInfoParcel.GlobalPosition.Y / 256.0F);
+-                handleY *= 256;
+-                // FIXME: Helpers function needed
+-                //ParcelInfoParcel.RegionHandle = new U64(handleX, handleY);
+-
+-                // Get SimPosition from GlobalX/GlobalY and RegionHandle
+-                ParcelInfoParcel.SimPosition.X = ParcelInfoParcel.GlobalPosition.X - (float)handleX;
+-                ParcelInfoParcel.SimPosition.Y = ParcelInfoParcel.GlobalPosition.Y - (float)handleY;
+-                ParcelInfoParcel.SimPosition.Z = ParcelInfoParcel.GlobalPosition.Z;
+-
+-                Finished = true;
++                try { OnParcelInfo(parcelInfo); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+         }
+ 
+-        //private void ParcelInfoTimerEvent(object source, System.Timers.ElapsedEventArgs ea)
+-        //{
+-        //    ParcelInfoTimeout = true;
+-        //}
+-
+-        private void DirLandReplyHandler(Packet packet, Simulator simulator)
++        private void ParcelPropertiesHandler(Packet packet, Simulator simulator)
+         {
+-            if (!DirLandTimeout)
++            if (OnParcelProperties != null)
+             {
+-                // Reset the timer
+-                DirLandTimer.Stop();
+-                DirLandTimer.Start();
++                ParcelPropertiesPacket properties = (ParcelPropertiesPacket)packet;
+ 
+-                DirLandReplyPacket reply = (DirLandReplyPacket)packet;
++                Parcel parcel = new Parcel(simulator);
+ 
+-                foreach (DirLandReplyPacket.QueryRepliesBlock block in reply.QueryReplies)
+-                {
+-                    if (block.ReservedNewbie == ReservedNewbie &amp;&amp;
+-                        block.Auction == Auction &amp;&amp;
+-                        block.ForSale == ForSale)
+-                    {
+-                        DirectoryParcel parcel = new DirectoryParcel();
++                // TODO: Lots of values are not being stored, Parcel needs to be expanded to take all the data.
++                // August2006:  God help me should I have to type this out again... argh.
++                // October2006: I really shouldnt have typed that.
++                parcel.RequestResult = properties.ParcelData.RequestResult;
++                parcel.SequenceID = properties.ParcelData.SequenceID;
++                parcel.SnapSelection = properties.ParcelData.SnapSelection;
++                parcel.SelfCount = properties.ParcelData.SelfCount;
++                parcel.OtherCount = properties.ParcelData.OtherCount;
++                parcel.PublicCount = properties.ParcelData.PublicCount;
++                parcel.LocalID = properties.ParcelData.LocalID;
++                parcel.OwnerID = properties.ParcelData.OwnerID;
++                parcel.IsGroupOwned = properties.ParcelData.IsGroupOwned;
++                parcel.AuctionID = properties.ParcelData.AuctionID;
++                parcel.ReservedNewbie = properties.ParcelData.ReservedNewbie;
++                parcel.ClaimDate = properties.ParcelData.ClaimDate;
++                parcel.ClaimPrice = properties.ParcelData.ClaimPrice;
++                parcel.RentPrice = properties.ParcelData.RentPrice;
++                parcel.AABBMin = properties.ParcelData.AABBMin;
++                parcel.AABBMax = properties.ParcelData.AABBMax;
++                parcel.Bitmap = properties.ParcelData.Bitmap;
++                parcel.Area = properties.ParcelData.Area;
++                parcel.Status = properties.ParcelData.Status;
++                parcel.SimWideMaxObjects = properties.ParcelData.SimWideMaxPrims;
++                parcel.SimWideTotalObjects = properties.ParcelData.SimWideTotalPrims;
++                parcel.MaxObjects = properties.ParcelData.MaxPrims;
++                parcel.TotalObjects = properties.ParcelData.TotalPrims;
++                parcel.OwnerObjects = properties.ParcelData.OwnerPrims;
++                parcel.GroupObjects = properties.ParcelData.GroupPrims;
++                parcel.OtherObjects = properties.ParcelData.OtherPrims;
++                parcel.ParcelObjectBonus = properties.ParcelData.ParcelPrimBonus;
++                parcel.OtherCleanTime = properties.ParcelData.OtherCleanTime;
++                parcel.ParcelFlags = properties.ParcelData.ParcelFlags;
++                parcel.SalePrice = properties.ParcelData.SalePrice;
++                parcel.Name = Helpers.FieldToString(properties.ParcelData.Name);
++                parcel.Desc = Helpers.FieldToString(properties.ParcelData.Desc);
++                parcel.MusicURL = Helpers.FieldToString(properties.ParcelData.MusicURL);
++                parcel.MediaURL = Helpers.FieldToString(properties.ParcelData.MediaURL);
++                parcel.MediaID = properties.ParcelData.MediaID;
++                parcel.MediaAutoScale = properties.ParcelData.MediaAutoScale;
++                parcel.GroupID = properties.ParcelData.GroupID;
++                parcel.PassPrice = properties.ParcelData.PassPrice;
++                parcel.PassHours = properties.ParcelData.PassHours;
++                parcel.Category = properties.ParcelData.Category;
++                parcel.AuthBuyerID = properties.ParcelData.AuthBuyerID;
++                parcel.SnapshotID = properties.ParcelData.SnapshotID;
++                parcel.UserLocation = properties.ParcelData.UserLocation;
++                parcel.UserLookAt = properties.ParcelData.UserLookAt;
++                parcel.LandingType = properties.ParcelData.LandingType;
+ 
+-                        parcel.ActualArea = block.ActualArea;
+-                        parcel.ID = block.ParcelID;
+-                        parcel.Name = Helpers.FieldToString(block.Name);
+-                        parcel.SalePrice = block.SalePrice;
+-
+-                        ParcelsForSale.Add(parcel);
+-                    }
+-                }
++                // Fire the callback
++                try { OnParcelProperties(parcel); }
++                catch (Exception e) { Client.Log(e.ToString(), Helpers.LogLevel.Error); }
+             }
+-            else
+-            {
+-                Client.Log(&quot;Received a DirLandReply after the timeout, ignoring&quot;, Helpers.LogLevel.Warning);
+-            }
+         }
+-
+-        private void DirLandTimerEvent(object source, System.Timers.ElapsedEventArgs ea)
+-        {
+-            DirLandTimer.Stop();
+-            DirLandTimeout = true;
+-        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/Region.cs
+===================================================================
+--- trunk/libsecondlife-cs/Region.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/Region.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -31,28 +31,11 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// 
+-    /// &lt;/summary&gt;
+-    /// &lt;param name=&quot;region&quot;&gt;&lt;/param&gt;
+-    public delegate void ParcelCompleteCallback(Region region);
+-
+-    /// &lt;summary&gt;
+     /// Represents a region (also known as a sim) in Second Life.
+     /// &lt;/summary&gt;
+     public class Region
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        public event ParcelCompleteCallback OnParcelCompletion;
+-
+-        // FIXME: This whole setup is fscked in a really bad way. We can't be 
+-        // locking on a publically accessible container, and we shouldn't have
+-        // publically accessible containers anyways because external programs 
+-        // might be iterating through them or modifying them when internally 
+-        // we are doing the opposite. The best way to fix this will be 
+-        // privatizing and adding helper functions to access the dictionary
+-        public Dictionary&lt;int, Parcel&gt; Parcels = new Dictionary&lt;int, Parcel&gt;();
+-
+-        /// &lt;summary&gt;&lt;/summary&gt;
+         public LLUUID ID = LLUUID.Zero;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public ulong Handle;
+@@ -62,13 +45,6 @@
+         public byte[] ParcelOverlay = new byte[4096];
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public int ParcelOverlaysReceived;
+-        /// &lt;summary&gt;64x64 Array of parcels which have been successfully downloaded 
+-        /// (and their LocalID's, 0 = Null)&lt;/summary&gt;
+-        public int[,] ParcelMarked = new int[64, 64];
+-        /// &lt;summary&gt;Flag to indicate whether we are downloading a sim's parcels&lt;/summary&gt;
+-        public bool ParcelDownloading;
+-        /// &lt;summary&gt;Flag to indicate whether to get Dwell values automatically (NOT USED YET). Call Parcel.GetDwell() instead&lt;/summary&gt;
+-        public bool ParcelDwell;
+         /// &lt;summary&gt;&lt;/summary&gt;
+         public float TerrainHeightRange00;
+         /// &lt;summary&gt;&lt;/summary&gt;
+@@ -111,7 +87,7 @@
+         public EstateTools Estate;
+ 
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        /// &lt;remarks&gt;This may cause your code to block while the GridRegion data is fetched for the 1st time.&lt;/remarks&gt;
++        /// &lt;remarks&gt;This may cause your code to block while the GridRegion data is fetched for the first time&lt;/remarks&gt;
+         private GridRegion _GridRegionData = null;
+         public GridRegion GridRegionData
+         {
+@@ -160,9 +136,6 @@
+             Handle = handle;
+             Name = name;
+             ParcelOverlay = new byte[4096];
+-            ParcelMarked = new int[64, 64];
+-            ParcelDownloading = false;
+-            ParcelDwell = false;
+ 
+             TerrainHeightRange00 = heightList[0];
+             TerrainHeightRange01 = heightList[1];
+@@ -233,46 +206,6 @@
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        public void FillParcels()
+-        {
+-            // Begins filling parcels
+-            ParcelDownloading = true;
+-
+-            ParcelPropertiesRequestPacket tPacket = new ParcelPropertiesRequestPacket();
+-            tPacket.AgentData.AgentID = Client.Self.ID;
+-            tPacket.AgentData.SessionID = Client.Network.SessionID;
+-            tPacket.ParcelData.SequenceID = -10000;
+-            tPacket.ParcelData.West = 0.0f;
+-            tPacket.ParcelData.South = 0.0f;
+-            tPacket.ParcelData.East = 0.0f;
+-            tPacket.ParcelData.North = 0.0f;
+-
+-            Client.Network.SendPacket((Packet)tPacket);
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        public void ResetParcelDownload()
+-        {
+-            Parcels = new Dictionary&lt;int, Parcel&gt;();
+-            ParcelMarked = new int[64, 64];
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        public void FilledParcels()
+-        {
+-            if (OnParcelCompletion != null)
+-            {
+-                OnParcelCompletion(this);
+-            }
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public override int GetHashCode()
+         {
+
+Modified: trunk/libsecondlife-cs/_Packets_.cs
+===================================================================
+--- trunk/libsecondlife-cs/_Packets_.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/_Packets_.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -741,7 +741,6 @@
+         UpdateUserInfo,
+         GodExpungeUser,
+         StartParcelRemoveAck,
+-        InitiateUpload,
+         InitiateDownload,
+         SystemMessage,
+         MapLayerRequest,
+@@ -1177,7 +1176,6 @@
+     [XmlInclude(typeof(UpdateUserInfoPacket))]
+     [XmlInclude(typeof(GodExpungeUserPacket))]
+     [XmlInclude(typeof(StartParcelRemoveAckPacket))]
+-    [XmlInclude(typeof(InitiateUploadPacket))]
+     [XmlInclude(typeof(InitiateDownloadPacket))]
+     [XmlInclude(typeof(SystemMessagePacket))]
+     [XmlInclude(typeof(MapLayerRequestPacket))]
+@@ -1631,21 +1629,20 @@
+                         case 457: return PacketType.UpdateUserInfo;
+                         case 458: return PacketType.GodExpungeUser;
+                         case 466: return PacketType.StartParcelRemoveAck;
+-                        case 468: return PacketType.InitiateUpload;
+-                        case 469: return PacketType.InitiateDownload;
+-                        case 470: return PacketType.SystemMessage;
+-                        case 471: return PacketType.MapLayerRequest;
+-                        case 472: return PacketType.MapLayerReply;
+-                        case 473: return PacketType.MapBlockRequest;
+-                        case 474: return PacketType.MapNameRequest;
+-                        case 475: return PacketType.MapBlockReply;
+-                        case 476: return PacketType.MapItemRequest;
+-                        case 477: return PacketType.MapItemReply;
+-                        case 478: return PacketType.SendPostcard;
+-                        case 487: return PacketType.ParcelMediaCommandMessage;
+-                        case 488: return PacketType.ParcelMediaUpdate;
+-                        case 489: return PacketType.LandStatRequest;
+-                        case 490: return PacketType.LandStatReply;
++                        case 468: return PacketType.InitiateDownload;
++                        case 469: return PacketType.SystemMessage;
++                        case 470: return PacketType.MapLayerRequest;
++                        case 471: return PacketType.MapLayerReply;
++                        case 472: return PacketType.MapBlockRequest;
++                        case 473: return PacketType.MapNameRequest;
++                        case 474: return PacketType.MapBlockReply;
++                        case 475: return PacketType.MapItemRequest;
++                        case 476: return PacketType.MapItemReply;
++                        case 477: return PacketType.SendPostcard;
++                        case 486: return PacketType.ParcelMediaCommandMessage;
++                        case 487: return PacketType.ParcelMediaUpdate;
++                        case 488: return PacketType.LandStatRequest;
++                        case 489: return PacketType.LandStatReply;
+                         case 65530: return PacketType.SecuredTemplateChecksumRequest;
+                         case 65531: return PacketType.PacketAck;
+                         case 65532: return PacketType.OpenCircuit;
+@@ -2100,21 +2097,20 @@
+                         case 457: return new UpdateUserInfoPacket(header, bytes, ref i);
+                         case 458: return new GodExpungeUserPacket(header, bytes, ref i);
+                         case 466: return new StartParcelRemoveAckPacket(header, bytes, ref i);
+-                        case 468: return new InitiateUploadPacket(header, bytes, ref i);
+-                        case 469: return new InitiateDownloadPacket(header, bytes, ref i);
+-                        case 470: return new SystemMessagePacket(header, bytes, ref i);
+-                        case 471: return new MapLayerRequestPacket(header, bytes, ref i);
+-                        case 472: return new MapLayerReplyPacket(header, bytes, ref i);
+-                        case 473: return new MapBlockRequestPacket(header, bytes, ref i);
+-                        case 474: return new MapNameRequestPacket(header, bytes, ref i);
+-                        case 475: return new MapBlockReplyPacket(header, bytes, ref i);
+-                        case 476: return new MapItemRequestPacket(header, bytes, ref i);
+-                        case 477: return new MapItemReplyPacket(header, bytes, ref i);
+-                        case 478: return new SendPostcardPacket(header, bytes, ref i);
+-                        case 487: return new ParcelMediaCommandMessagePacket(header, bytes, ref i);
+-                        case 488: return new ParcelMediaUpdatePacket(header, bytes, ref i);
+-                        case 489: return new LandStatRequestPacket(header, bytes, ref i);
+-                        case 490: return new LandStatReplyPacket(header, bytes, ref i);
++                        case 468: return new InitiateDownloadPacket(header, bytes, ref i);
++                        case 469: return new SystemMessagePacket(header, bytes, ref i);
++                        case 470: return new MapLayerRequestPacket(header, bytes, ref i);
++                        case 471: return new MapLayerReplyPacket(header, bytes, ref i);
++                        case 472: return new MapBlockRequestPacket(header, bytes, ref i);
++                        case 473: return new MapNameRequestPacket(header, bytes, ref i);
++                        case 474: return new MapBlockReplyPacket(header, bytes, ref i);
++                        case 475: return new MapItemRequestPacket(header, bytes, ref i);
++                        case 476: return new MapItemReplyPacket(header, bytes, ref i);
++                        case 477: return new SendPostcardPacket(header, bytes, ref i);
++                        case 486: return new ParcelMediaCommandMessagePacket(header, bytes, ref i);
++                        case 487: return new ParcelMediaUpdatePacket(header, bytes, ref i);
++                        case 488: return new LandStatRequestPacket(header, bytes, ref i);
++                        case 489: return new LandStatReplyPacket(header, bytes, ref i);
+                         case 65530: return new SecuredTemplateChecksumRequestPacket(header, bytes, ref i);
+                         case 65531: return new PacketAckPacket(header, bytes, ref i);
+                         case 65532: return new OpenCircuitPacket(header, bytes, ref i);
+@@ -5497,6 +5493,7 @@
+             public LLUUID QueryID;
+             public uint Category;
+             public uint QueryFlags;
++            public int QueryStart;
+             private byte[] _querytext;
+             public byte[] QueryText
+             {
+@@ -5514,7 +5511,7 @@
+             {
+                 get
+                 {
+-                    int length = 24;
++                    int length = 28;
+                     if (QueryText != null) { length += 1 + QueryText.Length; }
+                     return length;
+                 }
+@@ -5529,6 +5526,7 @@
+                     QueryID = new LLUUID(bytes, i); i += 16;
+                     Category = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                     QueryFlags = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    QueryStart = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                     length = (ushort)bytes[i++];
+                     _querytext = new byte[length];
+                     Array.Copy(bytes, i, _querytext, 0, length); i += length;
+@@ -5551,6 +5549,10 @@
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)(QueryStart % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 24) % 256);
+                 if(QueryText == null) { Console.WriteLine(&quot;Warning: QueryText is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)QueryText.Length;
+                 Array.Copy(QueryText, 0, bytes, i, QueryText.Length); i += QueryText.Length;
+@@ -5562,6 +5564,7 @@
+                 output += &quot;QueryID: &quot; + QueryID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;Category: &quot; + Category.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;QueryFlags: &quot; + QueryFlags.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;QueryStart: &quot; + QueryStart.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += Helpers.FieldToString(QueryText, &quot;QueryText&quot;) + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+@@ -7454,18 +7457,19 @@
+         [XmlType(&quot;dirlandquery_querydata&quot;)]
+         public class QueryDataBlock
+         {
+-            public bool ReservedNewbie;
+-            public bool ForSale;
++            public uint SearchType;
++            public int Area;
+             public LLUUID QueryID;
+-            public bool Auction;
+             public uint QueryFlags;
++            public int Price;
++            public int QueryStart;
+ 
+             [XmlIgnore]
+             public int Length
+             {
+                 get
+                 {
+-                    return 23;
++                    return 36;
+                 }
+             }
+ 
+@@ -7474,11 +7478,12 @@
+             {
+                 try
+                 {
+-                    ReservedNewbie = (bytes[i++] != 0) ? (bool)true : (bool)false;
+-                    ForSale = (bytes[i++] != 0) ? (bool)true : (bool)false;
++                    SearchType = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    Area = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                     QueryID = new LLUUID(bytes, i); i += 16;
+-                    Auction = (bytes[i++] != 0) ? (bool)true : (bool)false;
+                     QueryFlags = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    Price = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    QueryStart = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                 }
+                 catch (Exception)
+                 {
+@@ -7488,25 +7493,39 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                bytes[i++] = (byte)((ReservedNewbie) ? 1 : 0);
+-                bytes[i++] = (byte)((ForSale) ? 1 : 0);
++                bytes[i++] = (byte)(SearchType % 256);
++                bytes[i++] = (byte)((SearchType &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((SearchType &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((SearchType &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)(Area % 256);
++                bytes[i++] = (byte)((Area &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Area &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Area &gt;&gt; 24) % 256);
+                 if(QueryID == null) { Console.WriteLine(&quot;Warning: QueryID is null, in &quot; + this.GetType()); }
+                 Array.Copy(QueryID.GetBytes(), 0, bytes, i, 16); i += 16;
+-                bytes[i++] = (byte)((Auction) ? 1 : 0);
+                 bytes[i++] = (byte)(QueryFlags % 256);
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((QueryFlags &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)(Price % 256);
++                bytes[i++] = (byte)((Price &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Price &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Price &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)(QueryStart % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((QueryStart &gt;&gt; 24) % 256);
+             }
+ 
+             public override string ToString()
+             {
+                 string output = &quot;-- QueryData --&quot; + Environment.NewLine;
+-                output += &quot;ReservedNewbie: &quot; + ReservedNewbie.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += &quot;ForSale: &quot; + ForSale.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;SearchType: &quot; + SearchType.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Area: &quot; + Area.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;QueryID: &quot; + QueryID.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += &quot;Auction: &quot; + Auction.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;QueryFlags: &quot; + QueryFlags.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Price: &quot; + Price.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;QueryStart: &quot; + QueryStart.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+             }
+@@ -22078,68 +22097,6 @@
+     public class UserReportPacket : Packet
+     {
+         /// &lt;exclude/&gt;
+-        [XmlType(&quot;userreport_meancollision&quot;)]
+-        public class MeanCollisionBlock
+-        {
+-            public float Mag;
+-            public uint Time;
+-            public LLUUID Perp;
+-            public byte Type;
+-
+-            [XmlIgnore]
+-            public int Length
+-            {
+-                get
+-                {
+-                    return 25;
+-                }
+-            }
+-
+-            public MeanCollisionBlock() { }
+-            public MeanCollisionBlock(byte[] bytes, ref int i)
+-            {
+-                try
+-                {
+-                    if (!BitConverter.IsLittleEndian) Array.Reverse(bytes, i, 4);
+-                    Mag = BitConverter.ToSingle(bytes, i); i += 4;
+-                    Time = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+-                    Perp = new LLUUID(bytes, i); i += 16;
+-                    Type = (byte)bytes[i++];
+-                }
+-                catch (Exception)
+-                {
+-                    throw new MalformedDataException();
+-                }
+-            }
+-
+-            public void ToBytes(byte[] bytes, ref int i)
+-            {
+-                byte[] ba;
+-                ba = BitConverter.GetBytes(Mag);
+-                if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
+-                Array.Copy(ba, 0, bytes, i, 4); i += 4;
+-                bytes[i++] = (byte)(Time % 256);
+-                bytes[i++] = (byte)((Time &gt;&gt; 8) % 256);
+-                bytes[i++] = (byte)((Time &gt;&gt; 16) % 256);
+-                bytes[i++] = (byte)((Time &gt;&gt; 24) % 256);
+-                if(Perp == null) { Console.WriteLine(&quot;Warning: Perp is null, in &quot; + this.GetType()); }
+-                Array.Copy(Perp.GetBytes(), 0, bytes, i, 16); i += 16;
+-                bytes[i++] = Type;
+-            }
+-
+-            public override string ToString()
+-            {
+-                string output = &quot;-- MeanCollision --&quot; + Environment.NewLine;
+-                output += &quot;Mag: &quot; + Mag.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += &quot;Time: &quot; + Time.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += &quot;Perp: &quot; + Perp.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += &quot;Type: &quot; + Type.ToString() + &quot;&quot; + Environment.NewLine;
+-                output = output.Trim();
+-                return output;
+-            }
+-        }
+-
+-        /// &lt;exclude/&gt;
+         [XmlType(&quot;userreport_reportdata&quot;)]
+         public class ReportDataBlock
+         {
+@@ -22166,6 +22123,7 @@
+                     else { _versionstring = new byte[value.Length]; Array.Copy(value, _versionstring, value.Length); }
+                 }
+             }
++            public LLUUID AbuseRegionID;
+             public byte CheckFlags;
+             public byte Category;
+             private byte[] _summary;
+@@ -22180,6 +22138,18 @@
+                 }
+             }
+             public byte ReportType;
++            public LLUUID AbuserID;
++            private byte[] _abuseregionname;
++            public byte[] AbuseRegionName
++            {
++                get { return _abuseregionname; }
++                set
++                {
++                    if (value == null) { _abuseregionname = null; return; }
++                    if (value.Length &gt; 255) { throw new OverflowException(&quot;Value exceeds 255 characters&quot;); }
++                    else { _abuseregionname = new byte[value.Length]; Array.Copy(value, _abuseregionname, value.Length); }
++                }
++            }
+             public LLUUID ScreenshotID;
+             public LLVector3 Position;
+ 
+@@ -22188,10 +22158,11 @@
+             {
+                 get
+                 {
+-                    int length = 47;
++                    int length = 79;
+                     if (Details != null) { length += 2 + Details.Length; }
+                     if (VersionString != null) { length += 1 + VersionString.Length; }
+                     if (Summary != null) { length += 1 + Summary.Length; }
++                    if (AbuseRegionName != null) { length += 1 + AbuseRegionName.Length; }
+                     return length;
+                 }
+             }
+@@ -22209,12 +22180,17 @@
+                     length = (ushort)bytes[i++];
+                     _versionstring = new byte[length];
+                     Array.Copy(bytes, i, _versionstring, 0, length); i += length;
++                    AbuseRegionID = new LLUUID(bytes, i); i += 16;
+                     CheckFlags = (byte)bytes[i++];
+                     Category = (byte)bytes[i++];
+                     length = (ushort)bytes[i++];
+                     _summary = new byte[length];
+                     Array.Copy(bytes, i, _summary, 0, length); i += length;
+                     ReportType = (byte)bytes[i++];
++                    AbuserID = new LLUUID(bytes, i); i += 16;
++                    length = (ushort)bytes[i++];
++                    _abuseregionname = new byte[length];
++                    Array.Copy(bytes, i, _abuseregionname, 0, length); i += length;
+                     ScreenshotID = new LLUUID(bytes, i); i += 16;
+                     Position = new LLVector3(bytes, i); i += 12;
+                 }
+@@ -22235,12 +22211,19 @@
+                 if(VersionString == null) { Console.WriteLine(&quot;Warning: VersionString is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)VersionString.Length;
+                 Array.Copy(VersionString, 0, bytes, i, VersionString.Length); i += VersionString.Length;
++                if(AbuseRegionID == null) { Console.WriteLine(&quot;Warning: AbuseRegionID is null, in &quot; + this.GetType()); }
++                Array.Copy(AbuseRegionID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 bytes[i++] = CheckFlags;
+                 bytes[i++] = Category;
+                 if(Summary == null) { Console.WriteLine(&quot;Warning: Summary is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)Summary.Length;
+                 Array.Copy(Summary, 0, bytes, i, Summary.Length); i += Summary.Length;
+                 bytes[i++] = ReportType;
++                if(AbuserID == null) { Console.WriteLine(&quot;Warning: AbuserID is null, in &quot; + this.GetType()); }
++                Array.Copy(AbuserID.GetBytes(), 0, bytes, i, 16); i += 16;
++                if(AbuseRegionName == null) { Console.WriteLine(&quot;Warning: AbuseRegionName is null, in &quot; + this.GetType()); }
++                bytes[i++] = (byte)AbuseRegionName.Length;
++                Array.Copy(AbuseRegionName, 0, bytes, i, AbuseRegionName.Length); i += AbuseRegionName.Length;
+                 if(ScreenshotID == null) { Console.WriteLine(&quot;Warning: ScreenshotID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ScreenshotID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 Array.Copy(Position.GetBytes(), 0, bytes, i, 12); i += 12;
+@@ -22252,10 +22235,13 @@
+                 output += &quot;ObjectID: &quot; + ObjectID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += Helpers.FieldToString(Details, &quot;Details&quot;) + &quot;&quot; + Environment.NewLine;
+                 output += Helpers.FieldToString(VersionString, &quot;VersionString&quot;) + &quot;&quot; + Environment.NewLine;
++                output += &quot;AbuseRegionID: &quot; + AbuseRegionID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;CheckFlags: &quot; + CheckFlags.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;Category: &quot; + Category.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += Helpers.FieldToString(Summary, &quot;Summary&quot;) + &quot;&quot; + Environment.NewLine;
+                 output += &quot;ReportType: &quot; + ReportType.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;AbuserID: &quot; + AbuserID.ToString() + &quot;&quot; + Environment.NewLine;
++                output += Helpers.FieldToString(AbuseRegionName, &quot;AbuseRegionName&quot;) + &quot;&quot; + Environment.NewLine;
+                 output += &quot;ScreenshotID: &quot; + ScreenshotID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;Position: &quot; + Position.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+@@ -22314,7 +22300,6 @@
+         private Header header;
+         public override Header Header { get { return header; } set { header = value; } }
+         public override PacketType Type { get { return PacketType.UserReport; } }
+-        public MeanCollisionBlock[] MeanCollision;
+         public ReportDataBlock ReportData;
+         public AgentDataBlock AgentData;
+ 
+@@ -22324,7 +22309,6 @@
+             Header.ID = 161;
+             Header.Reliable = true;
+             Header.Zerocoded = true;
+-            MeanCollision = new MeanCollisionBlock[0];
+             ReportData = new ReportDataBlock();
+             AgentData = new AgentDataBlock();
+         }
+@@ -22333,10 +22317,6 @@
+         {
+             int packetEnd = bytes.Length - 1;
+             Header = new LowHeader(bytes, ref i, ref packetEnd);
+-            int count = (int)bytes[i++];
+-            MeanCollision = new MeanCollisionBlock[count];
+-            for (int j = 0; j &lt; count; j++)
+-            { MeanCollision[j] = new MeanCollisionBlock(bytes, ref i); }
+             ReportData = new ReportDataBlock(bytes, ref i);
+             AgentData = new AgentDataBlock(bytes, ref i);
+         }
+@@ -22344,10 +22324,6 @@
+         public UserReportPacket(Header head, byte[] bytes, ref int i)
+         {
+             Header = head;
+-            int count = (int)bytes[i++];
+-            MeanCollision = new MeanCollisionBlock[count];
+-            for (int j = 0; j &lt; count; j++)
+-            { MeanCollision[j] = new MeanCollisionBlock(bytes, ref i); }
+             ReportData = new ReportDataBlock(bytes, ref i);
+             AgentData = new AgentDataBlock(bytes, ref i);
+         }
+@@ -22356,14 +22332,10 @@
+         {
+             int length = 8;
+             length += ReportData.Length;            length += AgentData.Length;;
+-            length++;
+-            for (int j = 0; j &lt; MeanCollision.Length; j++) { length += MeanCollision[j].Length; }
+             if (header.AckList.Length &gt; 0) { length += header.AckList.Length * 4 + 1; }
+             byte[] bytes = new byte[length];
+             int i = 0;
+             header.ToBytes(bytes, ref i);
+-            bytes[i++] = (byte)MeanCollision.Length;
+-            for (int j = 0; j &lt; MeanCollision.Length; j++) { MeanCollision[j].ToBytes(bytes, ref i); }
+             ReportData.ToBytes(bytes, ref i);
+             AgentData.ToBytes(bytes, ref i);
+             if (header.AckList.Length &gt; 0) { header.AcksToBytes(bytes, ref i); }
+@@ -22373,10 +22345,6 @@
+         public override string ToString()
+         {
+             string output = &quot;--- UserReport ---&quot; + Environment.NewLine;
+-            for (int j = 0; j &lt; MeanCollision.Length; j++)
+-            {
+-                output += MeanCollision[j].ToString() + &quot;&quot; + Environment.NewLine;
+-            }
+                 output += ReportData.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += AgentData.ToString() + &quot;&quot; + Environment.NewLine;
+             return output;
+@@ -24832,6 +24800,17 @@
+         {
+             public LLUUID TransferID;
+             public int Size;
++            private byte[] _params;
++            public byte[] Params
++            {
++                get { return _params; }
++                set
++                {
++                    if (value == null) { _params = null; return; }
++                    if (value.Length &gt; 1024) { throw new OverflowException(&quot;Value exceeds 1024 characters&quot;); }
++                    else { _params = new byte[value.Length]; Array.Copy(value, _params, value.Length); }
++                }
++            }
+             public int ChannelType;
+             public int TargetType;
+             public int Status;
+@@ -24841,17 +24820,23 @@
+             {
+                 get
+                 {
+-                    return 32;
++                    int length = 32;
++                    if (Params != null) { length += 2 + Params.Length; }
++                    return length;
+                 }
+             }
+ 
+             public TransferInfoBlock() { }
+             public TransferInfoBlock(byte[] bytes, ref int i)
+             {
++                int length;
+                 try
+                 {
+                     TransferID = new LLUUID(bytes, i); i += 16;
+                     Size = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    length = (ushort)(bytes[i++] + (bytes[i++] &lt;&lt; 8));
++                    _params = new byte[length];
++                    Array.Copy(bytes, i, _params, 0, length); i += length;
+                     ChannelType = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                     TargetType = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+                     Status = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
+@@ -24870,6 +24855,10 @@
+                 bytes[i++] = (byte)((Size &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((Size &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((Size &gt;&gt; 24) % 256);
++                if(Params == null) { Console.WriteLine(&quot;Warning: Params is null, in &quot; + this.GetType()); }
++                bytes[i++] = (byte)(Params.Length % 256);
++                bytes[i++] = (byte)((Params.Length &gt;&gt; 8) % 256);
++                Array.Copy(Params, 0, bytes, i, Params.Length); i += Params.Length;
+                 bytes[i++] = (byte)(ChannelType % 256);
+                 bytes[i++] = (byte)((ChannelType &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((ChannelType &gt;&gt; 16) % 256);
+@@ -24889,6 +24878,7 @@
+                 string output = &quot;-- TransferInfo --&quot; + Environment.NewLine;
+                 output += &quot;TransferID: &quot; + TransferID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;Size: &quot; + Size.ToString() + &quot;&quot; + Environment.NewLine;
++                output += Helpers.FieldToString(Params, &quot;Params&quot;) + &quot;&quot; + Environment.NewLine;
+                 output += &quot;ChannelType: &quot; + ChannelType.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;TargetType: &quot; + TargetType.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;Status: &quot; + Status.ToString() + &quot;&quot; + Environment.NewLine;
+@@ -38783,7 +38773,6 @@
+         [XmlType(&quot;logoutreply_inventorydata&quot;)]
+         public class InventoryDataBlock
+         {
+-            public LLUUID NewAssetID;
+             public LLUUID ItemID;
+ 
+             [XmlIgnore]
+@@ -38791,7 +38780,7 @@
+             {
+                 get
+                 {
+-                    return 32;
++                    return 16;
+                 }
+             }
+ 
+@@ -38800,7 +38789,6 @@
+             {
+                 try
+                 {
+-                    NewAssetID = new LLUUID(bytes, i); i += 16;
+                     ItemID = new LLUUID(bytes, i); i += 16;
+                 }
+                 catch (Exception)
+@@ -38811,8 +38799,6 @@
+ 
+             public void ToBytes(byte[] bytes, ref int i)
+             {
+-                if(NewAssetID == null) { Console.WriteLine(&quot;Warning: NewAssetID is null, in &quot; + this.GetType()); }
+-                Array.Copy(NewAssetID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(ItemID == null) { Console.WriteLine(&quot;Warning: ItemID is null, in &quot; + this.GetType()); }
+                 Array.Copy(ItemID.GetBytes(), 0, bytes, i, 16); i += 16;
+             }
+@@ -38820,7 +38806,6 @@
+             public override string ToString()
+             {
+                 string output = &quot;-- InventoryData --&quot; + Environment.NewLine;
+-                output += &quot;NewAssetID: &quot; + NewAssetID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;ItemID: &quot; + ItemID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+@@ -40043,13 +40028,14 @@
+         {
+             public LLUUID AgentID;
+             public LLUUID SessionID;
++            public LLUUID TransactionID;
+ 
+             [XmlIgnore]
+             public int Length
+             {
+                 get
+                 {
+-                    return 32;
++                    return 48;
+                 }
+             }
+ 
+@@ -40060,6 +40046,7 @@
+                 {
+                     AgentID = new LLUUID(bytes, i); i += 16;
+                     SessionID = new LLUUID(bytes, i); i += 16;
++                    TransactionID = new LLUUID(bytes, i); i += 16;
+                 }
+                 catch (Exception)
+                 {
+@@ -40073,6 +40060,8 @@
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
++                if(TransactionID == null) { Console.WriteLine(&quot;Warning: TransactionID is null, in &quot; + this.GetType()); }
++                Array.Copy(TransactionID.GetBytes(), 0, bytes, i, 16); i += 16;
+             }
+ 
+             public override string ToString()
+@@ -40080,6 +40069,7 @@
+                 string output = &quot;-- AgentData --&quot; + Environment.NewLine;
+                 output += &quot;AgentID: &quot; + AgentID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;SessionID: &quot; + SessionID.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;TransactionID: &quot; + TransactionID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+             }
+@@ -40290,13 +40280,14 @@
+         {
+             public LLUUID AgentID;
+             public LLUUID SessionID;
++            public LLUUID TransactionID;
+ 
+             [XmlIgnore]
+             public int Length
+             {
+                 get
+                 {
+-                    return 32;
++                    return 48;
+                 }
+             }
+ 
+@@ -40307,6 +40298,7 @@
+                 {
+                     AgentID = new LLUUID(bytes, i); i += 16;
+                     SessionID = new LLUUID(bytes, i); i += 16;
++                    TransactionID = new LLUUID(bytes, i); i += 16;
+                 }
+                 catch (Exception)
+                 {
+@@ -40320,6 +40312,8 @@
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
++                if(TransactionID == null) { Console.WriteLine(&quot;Warning: TransactionID is null, in &quot; + this.GetType()); }
++                Array.Copy(TransactionID.GetBytes(), 0, bytes, i, 16); i += 16;
+             }
+ 
+             public override string ToString()
+@@ -40327,6 +40321,7 @@
+                 string output = &quot;-- AgentData --&quot; + Environment.NewLine;
+                 output += &quot;AgentID: &quot; + AgentID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;SessionID: &quot; + SessionID.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;TransactionID: &quot; + TransactionID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+             }
+@@ -40537,13 +40532,14 @@
+         {
+             public LLUUID AgentID;
+             public LLUUID SessionID;
++            public LLUUID TransactionID;
+ 
+             [XmlIgnore]
+             public int Length
+             {
+                 get
+                 {
+-                    return 32;
++                    return 48;
+                 }
+             }
+ 
+@@ -40554,6 +40550,7 @@
+                 {
+                     AgentID = new LLUUID(bytes, i); i += 16;
+                     SessionID = new LLUUID(bytes, i); i += 16;
++                    TransactionID = new LLUUID(bytes, i); i += 16;
+                 }
+                 catch (Exception)
+                 {
+@@ -40567,6 +40564,8 @@
+                 Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+                 if(SessionID == null) { Console.WriteLine(&quot;Warning: SessionID is null, in &quot; + this.GetType()); }
+                 Array.Copy(SessionID.GetBytes(), 0, bytes, i, 16); i += 16;
++                if(TransactionID == null) { Console.WriteLine(&quot;Warning: TransactionID is null, in &quot; + this.GetType()); }
++                Array.Copy(TransactionID.GetBytes(), 0, bytes, i, 16); i += 16;
+             }
+ 
+             public override string ToString()
+@@ -40574,6 +40573,7 @@
+                 string output = &quot;-- AgentData --&quot; + Environment.NewLine;
+                 output += &quot;AgentID: &quot; + AgentID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;SessionID: &quot; + SessionID.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;TransactionID: &quot; + TransactionID.ToString() + &quot;&quot; + Environment.NewLine;
+                 output = output.Trim();
+                 return output;
+             }
+@@ -65497,184 +65497,6 @@
+     }
+ 
+     /// &lt;exclude/&gt;
+-    public class InitiateUploadPacket : Packet
+-    {
+-        /// &lt;exclude/&gt;
+-        [XmlType(&quot;initiateupload_filedata&quot;)]
+-        public class FileDataBlock
+-        {
+-            private byte[] _sourcefilename;
+-            public byte[] SourceFilename
+-            {
+-                get { return _sourcefilename; }
+-                set
+-                {
+-                    if (value == null) { _sourcefilename = null; return; }
+-                    if (value.Length &gt; 255) { throw new OverflowException(&quot;Value exceeds 255 characters&quot;); }
+-                    else { _sourcefilename = new byte[value.Length]; Array.Copy(value, _sourcefilename, value.Length); }
+-                }
+-            }
+-            private byte[] _basefilename;
+-            public byte[] BaseFilename
+-            {
+-                get { return _basefilename; }
+-                set
+-                {
+-                    if (value == null) { _basefilename = null; return; }
+-                    if (value.Length &gt; 255) { throw new OverflowException(&quot;Value exceeds 255 characters&quot;); }
+-                    else { _basefilename = new byte[value.Length]; Array.Copy(value, _basefilename, value.Length); }
+-                }
+-            }
+-
+-            [XmlIgnore]
+-            public int Length
+-            {
+-                get
+-                {
+-                    int length = 0;
+-                    if (SourceFilename != null) { length += 1 + SourceFilename.Length; }
+-                    if (BaseFilename != null) { length += 1 + BaseFilename.Length; }
+-                    return length;
+-                }
+-            }
+-
+-            public FileDataBlock() { }
+-            public FileDataBlock(byte[] bytes, ref int i)
+-            {
+-                int length;
+-                try
+-                {
+-                    length = (ushort)bytes[i++];
+-                    _sourcefilename = new byte[length];
+-                    Array.Copy(bytes, i, _sourcefilename, 0, length); i += length;
+-                    length = (ushort)bytes[i++];
+-                    _basefilename = new byte[length];
+-                    Array.Copy(bytes, i, _basefilename, 0, length); i += length;
+-                }
+-                catch (Exception)
+-                {
+-                    throw new MalformedDataException();
+-                }
+-            }
+-
+-            public void ToBytes(byte[] bytes, ref int i)
+-            {
+-                if(SourceFilename == null) { Console.WriteLine(&quot;Warning: SourceFilename is null, in &quot; + this.GetType()); }
+-                bytes[i++] = (byte)SourceFilename.Length;
+-                Array.Copy(SourceFilename, 0, bytes, i, SourceFilename.Length); i += SourceFilename.Length;
+-                if(BaseFilename == null) { Console.WriteLine(&quot;Warning: BaseFilename is null, in &quot; + this.GetType()); }
+-                bytes[i++] = (byte)BaseFilename.Length;
+-                Array.Copy(BaseFilename, 0, bytes, i, BaseFilename.Length); i += BaseFilename.Length;
+-            }
+-
+-            public override string ToString()
+-            {
+-                string output = &quot;-- FileData --&quot; + Environment.NewLine;
+-                output += Helpers.FieldToString(SourceFilename, &quot;SourceFilename&quot;) + &quot;&quot; + Environment.NewLine;
+-                output += Helpers.FieldToString(BaseFilename, &quot;BaseFilename&quot;) + &quot;&quot; + Environment.NewLine;
+-                output = output.Trim();
+-                return output;
+-            }
+-        }
+-
+-        /// &lt;exclude/&gt;
+-        [XmlType(&quot;initiateupload_agentdata&quot;)]
+-        public class AgentDataBlock
+-        {
+-            public LLUUID AgentID;
+-
+-            [XmlIgnore]
+-            public int Length
+-            {
+-                get
+-                {
+-                    return 16;
+-                }
+-            }
+-
+-            public AgentDataBlock() { }
+-            public AgentDataBlock(byte[] bytes, ref int i)
+-            {
+-                try
+-                {
+-                    AgentID = new LLUUID(bytes, i); i += 16;
+-                }
+-                catch (Exception)
+-                {
+-                    throw new MalformedDataException();
+-                }
+-            }
+-
+-            public void ToBytes(byte[] bytes, ref int i)
+-            {
+-                if(AgentID == null) { Console.WriteLine(&quot;Warning: AgentID is null, in &quot; + this.GetType()); }
+-                Array.Copy(AgentID.GetBytes(), 0, bytes, i, 16); i += 16;
+-            }
+-
+-            public override string ToString()
+-            {
+-                string output = &quot;-- AgentData --&quot; + Environment.NewLine;
+-                output += &quot;AgentID: &quot; + AgentID.ToString() + &quot;&quot; + Environment.NewLine;
+-                output = output.Trim();
+-                return output;
+-            }
+-        }
+-
+-        private Header header;
+-        public override Header Header { get { return header; } set { header = value; } }
+-        public override PacketType Type { get { return PacketType.InitiateUpload; } }
+-        public FileDataBlock FileData;
+-        public AgentDataBlock AgentData;
+-
+-        public InitiateUploadPacket()
+-        {
+-            Header = new LowHeader();
+-            Header.ID = 468;
+-            Header.Reliable = true;
+-            FileData = new FileDataBlock();
+-            AgentData = new AgentDataBlock();
+-        }
+-
+-        public InitiateUploadPacket(byte[] bytes, ref int i)
+-        {
+-            int packetEnd = bytes.Length - 1;
+-            Header = new LowHeader(bytes, ref i, ref packetEnd);
+-            FileData = new FileDataBlock(bytes, ref i);
+-            AgentData = new AgentDataBlock(bytes, ref i);
+-        }
+-
+-        public InitiateUploadPacket(Header head, byte[] bytes, ref int i)
+-        {
+-            Header = head;
+-            FileData = new FileDataBlock(bytes, ref i);
+-            AgentData = new AgentDataBlock(bytes, ref i);
+-        }
+-
+-        public override byte[] ToBytes()
+-        {
+-            int length = 8;
+-            length += FileData.Length;            length += AgentData.Length;;
+-            if (header.AckList.Length &gt; 0) { length += header.AckList.Length * 4 + 1; }
+-            byte[] bytes = new byte[length];
+-            int i = 0;
+-            header.ToBytes(bytes, ref i);
+-            FileData.ToBytes(bytes, ref i);
+-            AgentData.ToBytes(bytes, ref i);
+-            if (header.AckList.Length &gt; 0) { header.AcksToBytes(bytes, ref i); }
+-            return bytes;
+-        }
+-
+-        public override string ToString()
+-        {
+-            string output = &quot;--- InitiateUpload ---&quot; + Environment.NewLine;
+-                output += FileData.ToString() + &quot;&quot; + Environment.NewLine;
+-                output += AgentData.ToString() + &quot;&quot; + Environment.NewLine;
+-            return output;
+-        }
+-
+-    }
+-
+-    /// &lt;exclude/&gt;
+     public class InitiateDownloadPacket : Packet
+     {
+         /// &lt;exclude/&gt;
+@@ -65807,7 +65629,7 @@
+         public InitiateDownloadPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 469;
++            Header.ID = 468;
+             Header.Reliable = true;
+             FileData = new FileDataBlock();
+             AgentData = new AgentDataBlock();
+@@ -65992,7 +65814,7 @@
+         public SystemMessagePacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 470;
++            Header.ID = 469;
+             Header.Reliable = true;
+             Header.Zerocoded = true;
+             MethodData = new MethodDataBlock();
+@@ -66127,7 +65949,7 @@
+         public MapLayerRequestPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 471;
++            Header.ID = 470;
+             Header.Reliable = true;
+             AgentData = new AgentDataBlock();
+         }
+@@ -66300,7 +66122,7 @@
+         public MapLayerReplyPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 472;
++            Header.ID = 471;
+             Header.Reliable = true;
+             AgentData = new AgentDataBlock();
+             LayerData = new LayerDataBlock[0];
+@@ -66493,7 +66315,7 @@
+         public MapBlockRequestPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 473;
++            Header.ID = 472;
+             Header.Reliable = true;
+             PositionData = new PositionDataBlock();
+             AgentData = new AgentDataBlock();
+@@ -66675,7 +66497,7 @@
+         public MapNameRequestPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 474;
++            Header.ID = 473;
+             Header.Reliable = true;
+             NameData = new NameDataBlock();
+             AgentData = new AgentDataBlock();
+@@ -66875,7 +66697,7 @@
+         public MapBlockReplyPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 475;
++            Header.ID = 474;
+             Header.Reliable = true;
+             Data = new DataBlock[0];
+             AgentData = new AgentDataBlock();
+@@ -67066,7 +66888,7 @@
+         public MapItemRequestPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 476;
++            Header.ID = 475;
+             Header.Reliable = true;
+             RequestData = new RequestDataBlock();
+             AgentData = new AgentDataBlock();
+@@ -67311,7 +67133,7 @@
+         public MapItemReplyPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 477;
++            Header.ID = 476;
+             Header.Reliable = true;
+             RequestData = new RequestDataBlock();
+             Data = new DataBlock[0];
+@@ -67547,7 +67369,7 @@
+         public SendPostcardPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 478;
++            Header.ID = 477;
+             Header.Reliable = true;
+             AgentData = new AgentDataBlock();
+         }
+@@ -67658,7 +67480,7 @@
+         public ParcelMediaCommandMessagePacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 487;
++            Header.ID = 486;
+             Header.Reliable = true;
+             CommandBlock = new CommandBlockBlock();
+         }
+@@ -67777,7 +67599,7 @@
+         public ParcelMediaUpdatePacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 488;
++            Header.ID = 487;
+             Header.Reliable = true;
+             DataBlock = new DataBlockBlock();
+         }
+@@ -67957,7 +67779,7 @@
+         public LandStatRequestPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 489;
++            Header.ID = 488;
+             Header.Reliable = true;
+             RequestData = new RequestDataBlock();
+             AgentData = new AgentDataBlock();
+@@ -68192,7 +68014,7 @@
+         public LandStatReplyPacket()
+         {
+             Header = new LowHeader();
+-            Header.ID = 490;
++            Header.ID = 489;
+             Header.Reliable = true;
+             RequestData = new RequestDataBlock();
+             ReportData = new ReportDataBlock[0];
+@@ -70271,6 +70093,7 @@
+         public class ObjectDataBlock
+         {
+             public int OwnershipCost;
++            public ulong CreationDate;
+             public byte AggregatePermTexturesOwner;
+             private byte[] _sitname;
+             public byte[] SitName
+@@ -70352,7 +70175,7 @@
+             {
+                 get
+                 {
+-                    int length = 166;
++                    int length = 174;
+                     if (SitName != null) { length += 1 + SitName.Length; }
+                     if (Name != null) { length += 1 + Name.Length; }
+                     if (TextureID != null) { length += 1 + TextureID.Length; }
+@@ -70369,6 +70192,7 @@
+                 try
+                 {
+                     OwnershipCost = (int)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    CreationDate = (ulong)((ulong)bytes[i++] + ((ulong)bytes[i++] &lt;&lt; 8) + ((ulong)bytes[i++] &lt;&lt; 16) + ((ulong)bytes[i++] &lt;&lt; 24) + ((ulong)bytes[i++] &lt;&lt; 32) + ((ulong)bytes[i++] &lt;&lt; 40) + ((ulong)bytes[i++] &lt;&lt; 48) + ((ulong)bytes[i++] &lt;&lt; 56));
+                     AggregatePermTexturesOwner = (byte)bytes[i++];
+                     length = (ushort)bytes[i++];
+                     _sitname = new byte[length];
+@@ -70417,6 +70241,14 @@
+                 bytes[i++] = (byte)((OwnershipCost &gt;&gt; 8) % 256);
+                 bytes[i++] = (byte)((OwnershipCost &gt;&gt; 16) % 256);
+                 bytes[i++] = (byte)((OwnershipCost &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)(CreationDate % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 24) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 32) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 40) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 48) % 256);
++                bytes[i++] = (byte)((CreationDate &gt;&gt; 56) % 256);
+                 bytes[i++] = AggregatePermTexturesOwner;
+                 if(SitName == null) { Console.WriteLine(&quot;Warning: SitName is null, in &quot; + this.GetType()); }
+                 bytes[i++] = (byte)SitName.Length;
+@@ -70488,6 +70320,7 @@
+             {
+                 string output = &quot;-- ObjectData --&quot; + Environment.NewLine;
+                 output += &quot;OwnershipCost: &quot; + OwnershipCost.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;CreationDate: &quot; + CreationDate.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += &quot;AggregatePermTexturesOwner: &quot; + AggregatePermTexturesOwner.ToString() + &quot;&quot; + Environment.NewLine;
+                 output += Helpers.FieldToString(SitName, &quot;SitName&quot;) + &quot;&quot; + Environment.NewLine;
+                 output += &quot;ObjectID: &quot; + ObjectID.ToString() + &quot;&quot; + Environment.NewLine;
+
+Modified: trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -30,57 +30,41 @@
+ 
+ namespace ParcelDownloader
+ {
+-	/// &lt;summary&gt;
+-	/// Summary description for ParcelDownload.
+-	/// &lt;/summary&gt;
+ 	class ParcelDownload
+ 	{
+-		static SecondLife client;
+-
+-		/// &lt;summary&gt;
+-		/// The main entry point for the application.
+-		/// &lt;/summary&gt;
+ 		[STAThread]
+ 		static void Main(string[] args)
+ 		{
+-
+ 			if (args.Length &lt; 3)
+ 			{
+-				Console.WriteLine(&quot;Usage: ParcelDownloader [loginfirstname] [loginlastname] [password]&quot;);
++				Console.WriteLine(&quot;Usage: ParcelDownloader [firstname] [lastname] [password]&quot;);
+ 				return;
+ 			}
+ 
+-			client = new SecondLife();
++			SecondLife client = new SecondLife();
+ 
+-            Dictionary&lt;string, object&gt; loginParams = client.Network.DefaultLoginValues(args[0], args[1], args[2], 
+-                &quot;00:00:00:00:00:00&quot;, &quot;last&quot;, &quot;Win&quot;, &quot;0&quot;, &quot;ParcelDownload&quot;, &quot;Adam \&quot;Zaius\&quot; Frisby &lt;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">adam at gwala.net</A>&gt;&quot;);
+-
+-			if (!client.Network.Login(loginParams))
++			if (!client.Network.Login(args[0], args[1], args[2], &quot;ParcelDownload&quot;, &quot;libsecondlife&quot;))
+ 			{
+ 				// Login failed
+ 				Console.WriteLine(&quot;ERROR: &quot; + client.Network.LoginError);
+ 				return;
+ 			}
+ 
+-			// The magic happens in these three lines
+-			client.Network.CurrentSim.Region.FillParcels();			// Tell libsl to download parcels
+-			System.Threading.Thread.Sleep(10000);		// Give it some time to do it
+-			client.Tick();								// Let things happen
++			// FIXME: Use libsecondlife.Utilities to download parcel information from the current sim
+ 
+ 			// Dump some info about our parcels
+-            foreach (int pkey in client.Network.CurrentSim.Region.Parcels.Keys) 
+-			{
+-                Parcel parcel = (Parcel)client.Network.CurrentSim.Region.Parcels[pkey];
+-				// Probably should comment this out :-)
+-                //parcel.Buy(client, false, LLUUID.Zero);
+-				Console.WriteLine(&quot;&lt;Parcel&gt;&quot;);
+-				Console.WriteLine(&quot;\tName: &quot; + parcel.Name);
+-				Console.WriteLine(&quot;\tSize: &quot; + parcel.Area);
+-				Console.WriteLine(&quot;\tDesc: &quot; + parcel.Desc);
+-			}
++            //foreach (int pkey in client.Network.CurrentSim.Region.Parcels.Keys) 
++            //{
++            //    Parcel parcel = (Parcel)client.Network.CurrentSim.Region.Parcels[pkey];
++            //    // Probably should comment this out :-)
++            //    //parcel.Buy(client, false, LLUUID.Zero);
++            //    Console.WriteLine(&quot;&lt;Parcel&gt;&quot;);
++            //    Console.WriteLine(&quot;\tName: &quot; + parcel.Name);
++            //    Console.WriteLine(&quot;\tSize: &quot; + parcel.Area);
++            //    Console.WriteLine(&quot;\tDesc: &quot; + parcel.Desc);
++            //}
+ 
+ 			client.Network.Logout();
+-			return;
+ 		}
+ 	}
+ }
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Assets.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -108,14 +108,15 @@
+     {
+         /// &lt;summary&gt;&lt;/summary&gt;
+         Unknown = 0,
++        /// &lt;summary&gt;Request arbitrary system files off the server&lt;/summary&gt;
++        [Obsolete]
++        File = 1,
++        /// &lt;summary&gt;Request assets from the asset server&lt;/summary&gt;
++        Asset = 2,
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        File,
++        SimInventoryItem = 3,
+         /// &lt;summary&gt;&lt;/summary&gt;
+-        Asset,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        SimInventoryItem,
+-        /// &lt;summary&gt;&lt;/summary&gt;
+-        SimEstate
++        SimEstate = 4
+     }
+ 
+     /// &lt;summary&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-19 10:43:30 UTC (rev 858)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2007-01-19 13:15:12 UTC (rev 859)
+@@ -416,4 +416,106 @@
+                 GroupsLookupEvents[avatarID].Set();
+         }
+     }
++
++    public class ParcelDownloader
++    {
++        private SecondLife Client;
++        /// &lt;summary&gt;Dictionary of 64x64 arrays of parcels which have been successfully downloaded 
++        /// for each simulator (and their LocalID's, 0 = Null)&lt;/summary&gt;
++        private Dictionary&lt;Simulator, int[,]&gt; ParcelMarked = new Dictionary&lt;Simulator, int[,]&gt;();
++        private Dictionary&lt;Simulator, Dictionary&lt;int, Parcel&gt;&gt; Parcels = new Dictionary&lt;Simulator, Dictionary&lt;int, Parcel&gt;&gt;();
++
++        /// &lt;summary&gt;
++        /// Default constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client&lt;/param&gt;
++        public ParcelDownloader(SecondLife client)
++        {
++            Client = client;
++
++            Client.Parcels.OnParcelProperties += new ParcelManager.ParcelPropertiesCallback(Parcels_OnParcelProperties);
++        }
++
++        public void DownloadSimParcels(Simulator simulator)
++        {
++            lock (ParcelMarked)
++            {
++                if (!ParcelMarked.ContainsKey(simulator))
++                {
++                    ParcelMarked[simulator] = new int[64, 64];
++                    Parcels[simulator] = new Dictionary&lt;int, Parcel&gt;();
++                }
++            }
++
++            Client.Parcels.ParcelPropertiesRequest(simulator, 0.0f, 0.0f, 0.0f, 0.0f, -10000, false);
++        }
++
++        private void Parcels_OnParcelProperties(Parcel parcel)
++        {
++            if (ParcelMarked.ContainsKey(parcel.Simulator))
++            {
++                int x, y, index, subindex;
++                byte val;
++                bool hasTriggered = false;
++                int[,] markers = ParcelMarked[parcel.Simulator];
++                Dictionary&lt;int, Parcel&gt; parcels = Parcels[parcel.Simulator];
++
++                // Mark this area as downloaded
++                for (x = 0; x &lt; 64; x++)
++                {
++                    for (y = 0; y &lt; 64; y++)
++                    {
++                        if (markers[y, x] == 0)
++                        {
++                            index = ((x * 64) + y);
++                            subindex = index % 8;
++                            index /= 8;
++
++                            val = parcel.Bitmap[index];
++
++                            markers[y, x] = ((val &gt;&gt; subindex) &amp; 1) == 1 ? parcel.LocalID : 0;
++                        }
++                    }
++                }
++
++                for (x = 0; x &lt; 64; x++)
++                {
++                    for (y = 0; y &lt; 64; y++)
++                    {
++                        if (markers[x, y] == 0)
++                        {
++                            Client.Parcels.ParcelPropertiesRequest(parcel.Simulator,
++                                (y * 4.0f) + 4.0f,
++                                (x * 4.0f) + 4.0f,
++                                (y * 4.0f),
++                                (x * 4.0f),
++                                -10000,
++                                false);
++
++                            hasTriggered = true;
++                            goto Done;
++                        }
++                    }
++                }
++
++            Done:
++
++                if (!parcels.ContainsKey(parcel.LocalID))
++                {
++                    parcels[parcel.LocalID] = parcel;
++                }
++
++                // This map is complete, fire callback
++                if (!hasTriggered)
++                {
++                    // FIXME: Fire a callback indicating we finished downloading all the parcels
++                }
++            }
++            else
++            {
++                Client.Log(&quot;ParcelDownloader: Got parcel properties from a sim we're not downloading&quot;,
++                    Helpers.LogLevel.Info);
++            }
++        }
++    }
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000281.html">[Libsecondlife-commits] [Patch #1826] ImportCommand rezzes at	position of bot (more reliable)
+</A></li>
+	<LI>Next message: <A HREF="000283.html">[Libsecondlife-commits] r860 - in trunk/libsecondlife-cs: .	examples/TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#282">[ date ]</a>
+              <a href="thread.html#282">[ thread ]</a>
+              <a href="subject.html#282">[ subject ]</a>
+              <a href="author.html#282">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

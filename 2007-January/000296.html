@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r868%20-%0A%09trunk/libsecondlife-cs/examples/TestClient/Commands&In-Reply-To=%3C200701220118.l0M1IciV025401%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000295.html">
+   <LINK REL="Next"  HREF="000297.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r868%20-%0A%09trunk/libsecondlife-cs/examples/TestClient/Commands&In-Reply-To=%3C200701220118.l0M1IciV025401%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r868 -	trunk/libsecondlife-cs/examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 22 02:18:38 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000295.html">[Libsecondlife-commits] r867 - in trunk/libsecondlife-cs: .	AssetSystem VisualParamGenerator examples/TestClient	examples/TestClient/Commands libsecondlife.Utilities
+</A></li>
+        <LI>Next message: <A HREF="000297.html">[Libsecondlife-commits] r869 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-22 02:18:38 +0100 (Mon, 22 Jan 2007)
+New Revision: 868
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs
+Log:
+Commented everything in research command out as nant isn't setup to link libsecondlife.Utilities in with TestClient?
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs	2007-01-22 01:15:08 UTC (rev 867)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ResearchCommand.cs	2007-01-22 01:18:38 UTC (rev 868)
+@@ -2,8 +2,8 @@
+ using System.Collections.Generic;
+ using System.Threading;
+ using libsecondlife;
+-using libsecondlife.Utilities.Assets;
+-using libsecondlife.Utilities.Appearance;
++//using libsecondlife.Utilities.Assets;
++//using libsecondlife.Utilities.Appearance;
+ using libsecondlife.Packets;
+ 
+ namespace libsecondlife.TestClient
+@@ -11,62 +11,62 @@
+     public class ResearchCommand : Command
+     {
+         private ManualResetEvent AssetReceived = new ManualResetEvent(false);
+-        AssetManager manager;
+-        AppearanceManager appearance;
++        //AssetManager manager;
++        //AppearanceManager appearance;
+ 
+         public ResearchCommand(TestClient testClient)
+         {
+             Name = &quot;research&quot;;
+             Description = &quot;Does important research for the betterment of mankind&quot;;
+ 
+-            manager = new AssetManager(testClient);
+-            manager.OnAssetReceived += new AssetManager.AssetReceivedCallback(manager_OnAssetReceived);
+-            appearance = new AppearanceManager(testClient, manager);
+-            appearance.OnAgentWearables += new AppearanceManager.AgentWearablesCallback(appearance_OnAgentWearables);
++            //manager = new AssetManager(testClient);
++            //manager.OnAssetReceived += new AssetManager.AssetReceivedCallback(manager_OnAssetReceived);
++            //appearance = new AppearanceManager(testClient, manager);
++            //appearance.OnAgentWearables += new AppearanceManager.AgentWearablesCallback(appearance_OnAgentWearables);
+         }
+ 
+         public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+-            Dictionary&lt;WearableType, LLUUID&gt; wearables = new Dictionary&lt;WearableType, LLUUID&gt;();
+-            for (int i = 0; i &lt; AppearanceManager.WEARABLE_COUNT; i++)
+-            {
+-                wearables[(WearableType)i] = LLUUID.Zero;
+-            }
+-            wearables[WearableType.Shirt] = new LLUUID(&quot;4fcf0807-b173-5b4e-90fe-d83d84986b59&quot;);
+-            appearance.SendAgentWearables(wearables);
++            //Dictionary&lt;WearableType, LLUUID&gt; wearables = new Dictionary&lt;WearableType, LLUUID&gt;();
++            //for (int i = 0; i &lt; AppearanceManager.WEARABLE_COUNT; i++)
++            //{
++            //    wearables[(WearableType)i] = LLUUID.Zero;
++            //}
++            //wearables[WearableType.Shirt] = new LLUUID(&quot;4fcf0807-b173-5b4e-90fe-d83d84986b59&quot;);
++            //appearance.SendAgentWearables(wearables);
+ 
+-            return &quot;Wearing the payload&quot;;
++            //return &quot;Wearing the payload&quot;;
+ 
+-            libsecondlife.AssetSystem.AssetWearable asset = new libsecondlife.AssetSystem.AssetWearable(
+-                LLUUID.Zero, (sbyte)AssetType.Bodypart, new byte[0]);
+-            string exploit = String.Empty;
+-            for (int i = 0; i &lt; 3000; i++)
+-                exploit += &quot;A&quot;;
+-            asset.Name = exploit;
+-            asset.Type = (sbyte)WearableType.Shirt;
+-            LLUUID newasset = Client.Assets.UploadAsset(asset);
++            //libsecondlife.AssetSystem.AssetWearable asset = new libsecondlife.AssetSystem.AssetWearable(
++            //    LLUUID.Zero, (sbyte)AssetType.Bodypart, new byte[0]);
++            //string exploit = String.Empty;
++            //for (int i = 0; i &lt; 3000; i++)
++            //    exploit += &quot;A&quot;;
++            //asset.Name = exploit;
++            //asset.Type = (sbyte)WearableType.Shirt;
++            //LLUUID newasset = Client.Assets.UploadAsset(asset);
+ 
+-            return &quot;Created Bodypart &quot; + newasset.ToStringHyphenated();
++            //return &quot;Created Bodypart &quot; + newasset.ToStringHyphenated();
+             
+ 
+-            if (args.Length != 1)
+-            {
+-                appearance.RequestAgentWearables();
++            //if (args.Length != 1)
++            //{
++            //    appearance.RequestAgentWearables();
+ 
+-                return &quot;Appearance fetch complete&quot;;
+-            }
++            //    return &quot;Appearance fetch complete&quot;;
++            //}
+ 
+-            LLUUID id;
+-            try
+-            {
+-                id = new LLUUID(args[0]);
+-            }
+-            catch (Exception)
+-            {
+-                return &quot;Need a proper UUID&quot;;
+-            }
++            //LLUUID id;
++            //try
++            //{
++            //    id = new LLUUID(args[0]);
++            //}
++            //catch (Exception)
++            //{
++            //    return &quot;Need a proper UUID&quot;;
++            //}
+ 
+-            manager.RequestAsset(id, AssetType.Bodypart, ChannelType.Asset, SourceType.Asset, 125000.0f);
++            //manager.RequestAsset(id, AssetType.Bodypart, ChannelType.Asset, SourceType.Asset, 125000.0f);
+ 
+             //Random random = new Random();
+             //byte r, g, b;
+@@ -99,28 +99,28 @@
+             return &quot;Research complete&quot;;
+         }
+ 
+-        void appearance_OnAgentWearables(Dictionary&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearables)
+-        {
+-            foreach (KeyValuePair&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearable in wearables)
+-            {
+-                Console.WriteLine(&quot;Received a WearableType &quot; + wearable.Key.ToString() + &quot;, AssetID: &quot; +
+-                    wearable.Value.Key.ToStringHyphenated());
+-            }
+-        }
++        //void appearance_OnAgentWearables(Dictionary&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearables)
++        //{
++        //    foreach (KeyValuePair&lt;WearableType, KeyValuePair&lt;LLUUID, LLUUID&gt;&gt; wearable in wearables)
++        //    {
++        //        Console.WriteLine(&quot;Received a WearableType &quot; + wearable.Key.ToString() + &quot;, AssetID: &quot; +
++        //            wearable.Value.Key.ToStringHyphenated());
++        //    }
++        //}
+ 
+-        void manager_OnAssetReceived(AssetTransfer asset)
+-        {
+-            if (asset.Success)
+-            {
+-                Console.WriteLine(&quot;Downloaded &quot; + asset.ID.ToStringHyphenated() + Environment.NewLine + 
+-                    Helpers.FieldToUTF8String(asset.AssetData));
+-            }
+-            else
+-            {
+-                Console.WriteLine(&quot;Failed to retrieve asset &quot; + asset.ID.ToStringHyphenated(), asset.Transferred +
+-                    &quot; bytes were transferred&quot;);
+-            }
+-        }
++        //void manager_OnAssetReceived(AssetTransfer asset)
++        //{
++        //    if (asset.Success)
++        //    {
++        //        Console.WriteLine(&quot;Downloaded &quot; + asset.ID.ToStringHyphenated() + Environment.NewLine + 
++        //            Helpers.FieldToUTF8String(asset.AssetData));
++        //    }
++        //    else
++        //    {
++        //        Console.WriteLine(&quot;Failed to retrieve asset &quot; + asset.ID.ToStringHyphenated(), asset.Transferred +
++        //            &quot; bytes were transferred&quot;);
++        //    }
++        //}
+ 
+         //private void FetchInventoryReplyHandler(Packet packet, Simulator simulator)
+         //{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000295.html">[Libsecondlife-commits] r867 - in trunk/libsecondlife-cs: .	AssetSystem VisualParamGenerator examples/TestClient	examples/TestClient/Commands libsecondlife.Utilities
+</A></li>
+	<LI>Next message: <A HREF="000297.html">[Libsecondlife-commits] r869 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#296">[ date ]</a>
+              <a href="thread.html#296">[ thread ]</a>
+              <a href="subject.html#296">[ subject ]</a>
+              <a href="author.html#296">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

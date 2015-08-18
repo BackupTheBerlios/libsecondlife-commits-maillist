@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r809 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r809%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701070241.l072fLRR027303%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000212.html">
+   <LINK REL="Next"  HREF="000214.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r809 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r809%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200701070241.l072fLRR027303%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r809 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  7 03:41:21 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000212.html">[Libsecondlife-commits] [Patch #1805] caps fix - no longer cokes on	&lt;?xml
+</A></li>
+        <LI>Next message: <A HREF="000214.html">[Libsecondlife-commits] r810 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#213">[ date ]</a>
+              <a href="thread.html#213">[ thread ]</a>
+              <a href="subject.html#213">[ subject ]</a>
+              <a href="author.html#213">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2007-01-07 03:41:20 +0100 (Sun, 07 Jan 2007)
+New Revision: 809
+
+Modified:
+   trunk/libsecondlife-cs/MainAvatarStatus.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+Log:
+* MainAvatarStatus sends AgentUpdate packets as unreliable now (technically it should be distinguishing between actions like sitting/flying and normal movement and send accordingly)
+* Moved the ordering of the OnCurrentSimChanged callbacks around a bit, so the library is aware we're connected and some other things happen before the callback is fired
+
+Modified: trunk/libsecondlife-cs/MainAvatarStatus.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 00:32:34 UTC (rev 808)
++++ trunk/libsecondlife-cs/MainAvatarStatus.cs	2007-01-07 02:41:20 UTC (rev 809)
+@@ -39,7 +39,6 @@
+         /// &lt;/summary&gt; 
+         public class MainAvatarStatus
+         {
+-
+             private SecondLife Client;
+             private static uint agentControls;
+             /// &lt;summary&gt;
+@@ -98,6 +97,8 @@
+             public void SendUpdate()
+             {
+                 AgentUpdatePacket update = new AgentUpdatePacket();
++                update.Header.Reliable = false;
++
+                 update.AgentData.AgentID = Client.Network.AgentID;
+                 update.AgentData.SessionID = Client.Network.SessionID;
+                 update.AgentData.HeadRotation = Camera.HeadRotation;
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-07 00:32:34 UTC (rev 808)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-07 02:41:20 UTC (rev 809)
+@@ -1196,21 +1196,30 @@
+                 }
+ 
+                 simulator.Region.Handle = regionHandle;
+-                Simulator OldSim = CurrentSim;
++                Simulator oldSim = CurrentSim;
+                 CurrentSim = simulator;
+-                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
+ 
+                 // Simulator is successfully connected, add it to the list and set it as default
+                 Simulators.Add(simulator);
+ 
++                // Mark that we are now officially connected to the grid
++                connected = true;
++
++                // Start a timer that checks if we've been disconnected
++                DisconnectTimer.Start();
++
+                 // Move our agent in to the sim to complete the connection
+                 Client.Self.CompleteAgentMovement(simulator);
+ 
++                // Send a couple packets that are useful right after login
+                 SendInitialPackets();
++                
++                // Fire an event for connecting to the grid
++                if (OnConnected != null) OnConnected(this.Client);
+ 
+-                DisconnectTimer.Start();
+-                connected = true;
+-                if (OnConnected != null) OnConnected(this.Client);
++                // Fire an event that the current simulator has changed
++                if (OnCurrentSimChanged != null) OnCurrentSimChanged(oldSim);
++
+                 return true;
+             }
+             catch (Exception e)
+@@ -1243,16 +1252,19 @@
+                 Simulators.Add(simulator);
+             }
+ 
++            // Mark that we are connected to the grid (in case we weren't before)
++            connected = true;
++
++            // Start a timer that checks if we've been disconnected
++            DisconnectTimer.Start();
++
+             if (setDefault)
+             {
+-                Simulator OldSim = CurrentSim;
++                Simulator oldSim = CurrentSim;
+                 CurrentSim = simulator;
+-                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
+-
++                if (OnCurrentSimChanged != null &amp;&amp; simulator != oldSim) OnCurrentSimChanged(oldSim);
+             }
+ 
+-            DisconnectTimer.Start();
+-            connected = true;
+             return simulator;
+         }
+ 
+@@ -1399,10 +1411,12 @@
+ 
+             if (CurrentSim != null)
+             {
++                Simulator oldSim = CurrentSim;
++
+                 DisconnectSim(CurrentSim);
+-                Simulator OldSim = CurrentSim;
+                 CurrentSim = null;
+-                if (OnCurrentSimChanged != null) OnCurrentSimChanged(OldSim);
++
++                if (OnCurrentSimChanged != null) OnCurrentSimChanged(oldSim);
+             }
+         }
+ 
+@@ -1411,9 +1425,6 @@
+             // Request the economy data
+             SendPacket(new EconomyDataRequestPacket());
+ 
+-            // TODO: Should the appearance manager be handling this?
+-            //Client.Avatar.SetHeightWidth(676, 909);
+-
+             // TODO: A movement class should be handling this
+             Avatar.AgentUpdateFlags controlFlags = Avatar.AgentUpdateFlags.AGENT_CONTROL_FINISH_ANIM;
+             LLVector3 position = new LLVector3(128, 128, 32);
+@@ -1427,7 +1438,6 @@
+             Client.Self.SetAlwaysRun(false);
+         }
+ 
+-
+         private void DisconnectTimer_Elapsed(object sender, ElapsedEventArgs ev)
+         {
+             if (connected)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000212.html">[Libsecondlife-commits] [Patch #1805] caps fix - no longer cokes on	&lt;?xml
+</A></li>
+	<LI>Next message: <A HREF="000214.html">[Libsecondlife-commits] r810 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#213">[ date ]</a>
+              <a href="thread.html#213">[ thread ]</a>
+              <a href="subject.html#213">[ subject ]</a>
+              <a href="author.html#213">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

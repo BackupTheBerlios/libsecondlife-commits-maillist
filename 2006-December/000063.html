@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r705 - trunk/libsecondlife-cs
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r705%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612110038.kBB0cb8V028217%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000062.html">
+   <LINK REL="Next"  HREF="000064.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r705 - trunk/libsecondlife-cs</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r705%20-%20trunk/libsecondlife-cs&In-Reply-To=%3C200612110038.kBB0cb8V028217%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r705 - trunk/libsecondlife-cs">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 11 01:38:37 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000062.html">[Libsecondlife-commits] r704 - trunk/libsecondlife-cs/examples
+</A></li>
+        <LI>Next message: <A HREF="000064.html">[Libsecondlife-commits] r706 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-11 01:38:36 +0100 (Mon, 11 Dec 2006)
+New Revision: 705
+
+Modified:
+   trunk/libsecondlife-cs/libsecondlife.sln
+Log:
+Removed solution folders from the project file, they are not supported in Visual C# Express 2005 (a sad day indeed)
+
+Modified: trunk/libsecondlife-cs/libsecondlife.sln
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.sln	2006-12-11 00:30:18 UTC (rev 704)
++++ trunk/libsecondlife-cs/libsecondlife.sln	2006-12-11 00:38:36 UTC (rev 705)
+@@ -38,8 +38,6 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLIRC&quot;, &quot;..\applications\SLIRC\SLIRC.csproj&quot;, &quot;{8855EB2F-BC4C-485A-A577-0989EB16BFDC}&quot;
+ EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;InventoryImageAssets&quot;, &quot;InventoryImageAssets&quot;, &quot;{AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_MultiImageUpload&quot;, &quot;examples\IA_MultiImageUpload\IA_MultiImageUpload.csproj&quot;, &quot;{8598E42A-DCBC-4224-9503-5694F17B2F45}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLProxy&quot;, &quot;..\SLProxy\SLProxy.csproj&quot;, &quot;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&quot;
+@@ -50,10 +48,6 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;BodyPartMorphGenerator&quot;, &quot;examples\BodyPartMorphGenerator\BodyPartMorphGenerator.csproj&quot;, &quot;{98C44481-3F15-4305-840D-037EA0D9C221}&quot;
+ EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;Tools and Examples&quot;, &quot;Tools and Examples&quot;, &quot;{F35EF72F-4302-4924-A162-10447B94F635}&quot;
+-EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;SL Proxy&quot;, &quot;SL Proxy&quot;, &quot;{C754652B-2ACB-4D47-8914-834E17919132}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;TestClient&quot;, &quot;examples\TestClient\TestClient.csproj&quot;, &quot;{B87682F6-B2D7-4C4D-A529-400C24FD4880}&quot;
+ EndProject
+ Global
+@@ -166,27 +160,4 @@
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+ 	EndGlobalSection
+-	GlobalSection(NestedProjects) = preSolution
+-		{FC19D5F6-076E-4923-8456-9B0E00E22896} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{66FFD34E-652C-4EF5-81FE-06AD011169D2} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{B5AC6795-E426-4BC3-950F-D7B2970E2394} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{F460FAB3-0D12-4873-89EB-2696818764B8} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{4EF98AD4-B3B3-42B0-9273-13A614A823F7} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{8855EB2F-BC4C-485A-A577-0989EB16BFDC} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{F6258A68-C624-46A0-BA73-B55D21BB0A3B} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{B87682F6-B2D7-4C4D-A529-400C24FD4880} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{E185E4E1-62D2-430C-A94C-E8E38190805B} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{E464B963-46E3-4E1A-A36F-9C640C880E68} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{98C44481-3F15-4305-840D-037EA0D9C221} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{6222B134-AE5F-489A-8A77-423A721B7C62} = {C754652B-2ACB-4D47-8914-834E17919132}
+-		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504} = {C754652B-2ACB-4D47-8914-834E17919132}
+-		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D} = {C754652B-2ACB-4D47-8914-834E17919132}
+-	EndGlobalSection
+ EndGlobal
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000062.html">[Libsecondlife-commits] r704 - trunk/libsecondlife-cs/examples
+</A></li>
+	<LI>Next message: <A HREF="000064.html">[Libsecondlife-commits] r706 - in trunk/libsecondlife-cs: .	mapgenerator
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r857 -	trunk/libsecondlife-cs/examples/TestClient
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r857%20-%0A%09trunk/libsecondlife-cs/examples/TestClient&In-Reply-To=%3C200701191009.l0JA9Sik016946%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000276.html">
+   <LINK REL="Next"  HREF="000278.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r857 -	trunk/libsecondlife-cs/examples/TestClient</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r857%20-%0A%09trunk/libsecondlife-cs/examples/TestClient&In-Reply-To=%3C200701191009.l0JA9Sik016946%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r857 -	trunk/libsecondlife-cs/examples/TestClient">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 19 11:09:28 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000276.html">[Libsecondlife-commits] [Patch #1832] TestClient parsing	improvements--don't mangle my quotes! :-)
+</A></li>
+        <LI>Next message: <A HREF="000278.html">[Libsecondlife-commits] [Patch #1828] Add MovetoCommand.cs to	TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#277">[ date ]</a>
+              <a href="thread.html#277">[ thread ]</a>
+              <a href="subject.html#277">[ subject ]</a>
+              <a href="author.html#277">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-19 11:09:23 +0100 (Fri, 19 Jan 2007)
+New Revision: 857
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Parsing.cs
+Log:
+I found this one hiding under the bed.
+
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Parsing.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Parsing.cs	2007-01-19 10:05:16 UTC (rev 856)
++++ trunk/libsecondlife-cs/examples/TestClient/Parsing.cs	2007-01-19 10:09:23 UTC (rev 857)
+@@ -0,0 +1,61 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++
++namespace libsecondlife.TestClient {
++    class Parsing {
++        public static string[] ParseArguments(string str) {
++            List&lt;string&gt; list = new List&lt;string&gt;();
++            string current = &quot;&quot;;
++            string trimmed = null;
++            bool withinQuote = false;
++            bool escaped = false;
++            foreach (char c in str) {
++                if (c == '&quot;') {
++                    if (escaped) {
++                        current += '&quot;';
++                        escaped = false;
++                    } else {
++                        current += '&quot;';
++                        withinQuote = !withinQuote;
++                    }
++                } else if (c == ' ' || c == '\t') {
++                    if (escaped || withinQuote) {
++                        current += c;
++                        escaped = false;
++                    } else {
++                        trimmed = current.Trim();
++                        if (trimmed.StartsWith(&quot;\&quot;&quot;) &amp;&amp; trimmed.EndsWith(&quot;\&quot;&quot;)) {
++                            trimmed = trimmed.Remove(0, 1);
++                            trimmed = trimmed.Remove(trimmed.Length - 1);
++                            trimmed = trimmed.Trim();
++                        }
++                        if (trimmed.Length &gt; 0)
++                            list.Add(trimmed);
++                        current = &quot;&quot;;
++                    }
++                } else if (c == '\\') {
++                    if (escaped) {
++                        current += '\\';
++                        escaped = false;
++                    } else {
++                        escaped = true;
++                    }
++                } else {
++                    if (escaped)
++                        throw new FormatException(c.ToString() + &quot; is not an escapable character.&quot;);
++                    current += c;
++                }
++            }
++            trimmed = current.Trim();
++            if (trimmed.StartsWith(&quot;\&quot;&quot;) &amp;&amp; trimmed.EndsWith(&quot;\&quot;&quot;)) {
++                trimmed = trimmed.Remove(0, 1);
++                trimmed = trimmed.Remove(trimmed.Length - 1);
++                trimmed = trimmed.Trim();
++            }
++            if (trimmed.Length &gt; 0)
++                list.Add(trimmed);
++            return list.ToArray();
++        }
++    }
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000276.html">[Libsecondlife-commits] [Patch #1832] TestClient parsing	improvements--don't mangle my quotes! :-)
+</A></li>
+	<LI>Next message: <A HREF="000278.html">[Libsecondlife-commits] [Patch #1828] Add MovetoCommand.cs to	TestClient
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#277">[ date ]</a>
+              <a href="thread.html#277">[ thread ]</a>
+              <a href="subject.html#277">[ subject ]</a>
+              <a href="author.html#277">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

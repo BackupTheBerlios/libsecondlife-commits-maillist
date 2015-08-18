@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r790 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r790%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701031854.l03IsIDS031823%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000181.html">
+   <LINK REL="Next"  HREF="000183.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r790 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r790%20-%20in%20trunk/libsecondlife-cs%3A%0A%09AssetSystem%20InventorySystem&In-Reply-To=%3C200701031854.l03IsIDS031823%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r790 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan  3 19:54:18 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000181.html">[Libsecondlife-commits] [Patch #1797] Patch to slproxy.sln
+</A></li>
+        <LI>Next message: <A HREF="000183.html">[Libsecondlife-commits] r791 - trunk/applications
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-03 19:54:14 +0100 (Wed, 03 Jan 2007)
+New Revision: 790
+
+Added:
+   trunk/libsecondlife-cs/AssetSystem/AssetScript.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+Log:
+r787 redux
+
+Added: trunk/libsecondlife-cs/AssetSystem/AssetScript.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetScript.cs	2007-01-03 18:22:20 UTC (rev 789)
++++ trunk/libsecondlife-cs/AssetSystem/AssetScript.cs	2007-01-03 18:54:14 UTC (rev 790)
+@@ -0,0 +1,43 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++
++namespace libsecondlife.AssetSystem
++{
++    public class AssetScript : Asset
++    {
++        private string _Source;
++        public string Source
++        {
++            get { return _Source; }
++            set
++            {
++                _Source = value.Replace(&quot;\r&quot;, &quot;&quot;);
++                setAsset(_Source);
++            }
++        }
++
++        public AssetScript(LLUUID assetID, string source)
++            : base(assetID, Asset.ASSET_TYPE_SCRIPT, false, null)
++        {
++            _Source = source;
++            setAsset(source);
++        }
++
++        public AssetScript(LLUUID assetID, byte[] assetData)
++            : base(assetID, Asset.ASSET_TYPE_SCRIPT, false, assetData)
++        {
++            _Source = System.Text.Encoding.UTF8.GetString(assetData).Trim();
++        }
++
++        private void setAsset(string source)
++        {
++            // Assume this is a string, add 1 for the null terminator
++            byte[] stringBytes = System.Text.Encoding.UTF8.GetBytes(source);
++            byte[] assetData = new byte[stringBytes.Length + 1];
++            Array.Copy(stringBytes, 0, assetData, 0, stringBytes.Length);
++            SetAssetData(assetData);
++        }
++
++    }
++}
+
+Added: trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-03 18:22:20 UTC (rev 789)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryScript.cs	2007-01-03 18:54:14 UTC (rev 790)
+@@ -0,0 +1,138 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife.AssetSystem;
++
++namespace libsecondlife.InventorySystem
++{
++    public class InventoryScript : InventoryItem
++    {
++        public string Source
++        {
++            get
++            {
++                if ( Asset != null )
++                {
++                    return ((AssetScript)Asset).Source;
++                }
++                else
++                {
++                    if ( (AssetID != null) &amp;&amp; (AssetID != LLUUID.Zero) )
++                    {
++                        base.iManager.AssetManager.GetInventoryAsset(this);
++                        return ((AssetScript)Asset).Source;
++                    }
++                }
++                return null;
++            }
++            set
++            {
++                base._Asset = new AssetScript(LLUUID.Random(), value);
++                LLUUID TransactionID = base.iManager.AssetManager.UploadAsset(Asset);
++                base.SetAssetTransactionIDs(Asset.AssetID, TransactionID);
++            }
++        }
++
++        public InventoryScript(InventoryManager manager, string name, string description, LLUUID folderID, LLUUID uuidOwnerCreater)
++            : base(manager, name, description, folderID, 10, 10, uuidOwnerCreater)
++        {
++        }
++
++        public InventoryScript(InventoryManager manager, InventoryItem ii)
++            : base(manager, ii.Name, ii.Description, ii.FolderID, ii.InvType, ii.Type, ii.CreatorID)
++        {
++            if ( ii.InvType != 10 || ii.Type != Asset.ASSET_TYPE_SCRIPT )
++                throw new Exception(&quot;The InventoryItem cannot be converted to a Script, wrong InvType/Type.&quot;);
++            this.iManager = manager;
++            this._ItemID = ii._ItemID;
++            this._Asset = ii._Asset;
++            this._AssetID = ii._AssetID;
++            this._BaseMask = ii._BaseMask;
++            this._CRC = ii._CRC;
++            this._CreationDate = ii._CreationDate;
++            this._EveryoneMask = ii._EveryoneMask;
++            this._Flags = ii._Flags;
++            this._GroupID = ii._GroupID;
++            this._GroupMask = ii._GroupMask;
++            this._GroupOwned = ii._GroupOwned;
++            this._InvType = ii._InvType;
++            this._NextOwnerMask = ii._NextOwnerMask;
++            this._OwnerID = ii._OwnerID;
++            this._OwnerMask = ii._OwnerMask;
++            this._SalePrice = ii._SalePrice;
++            this._SaleType = ii._SaleType;
++            this._Type = ii._Type;
++        }
++
++        internal override void SetAssetData(byte[] assetData)
++        {
++            if ( _Asset == null )
++            {
++                if ( AssetID == null )
++                {
++                    _Asset = new AssetScript(AssetID, assetData);
++                }
++                else
++                {
++                    _Asset = new AssetScript(LLUUID.Random(), assetData);
++                    _AssetID = _Asset.AssetID;
++                }
++            }
++            else
++            {
++                _Asset.SetAssetData(assetData);
++            }
++        }
++
++        public override string GetDisplayType()
++        {
++            return &quot;Script&quot;;
++        }
++
++        override public string toXML(bool outputAssets)
++        {
++            string output = &quot;&lt;script &quot;;
++
++            output += &quot;name = '&quot; + xmlSafe(Name) + &quot;' &quot;;
++            output += &quot;uuid = '&quot; + ItemID + &quot;' &quot;;
++            output += &quot;invtype = '&quot; + InvType + &quot;' &quot;;
++            output += &quot;type = '&quot; + Type + &quot;' &quot;;
++
++
++
++            output += &quot;description = '&quot; + xmlSafe(Description) + &quot;' &quot;;
++            output += &quot;crc = '&quot; + CRC + &quot;' &quot;;
++            output += &quot;debug = '&quot; + InventoryPacketHelper.InventoryUpdateCRC(this) + &quot;' &quot;;
++            output += &quot;ownerid = '&quot; + OwnerID + &quot;' &quot;;
++            output += &quot;creatorid = '&quot; + CreatorID + &quot;' &quot;;
++
++            output += &quot;assetid = '&quot; + AssetID + &quot;' &quot;;
++            output += &quot;groupid = '&quot; + GroupID + &quot;' &quot;;
++
++            output += &quot;groupowned = '&quot; + GroupOwned + &quot;' &quot;;
++            output += &quot;creationdate = '&quot; + CreationDate + &quot;' &quot;;
++            output += &quot;flags = '&quot; + Flags + &quot;' &quot;;
++
++            output += &quot;saletype = '&quot; + SaleType + &quot;' &quot;;
++            output += &quot;saleprice = '&quot; + SalePrice + &quot;' &quot;;
++            output += &quot;basemask = '&quot; + BaseMask + &quot;' &quot;;
++            output += &quot;everyonemask = '&quot; + EveryoneMask + &quot;' &quot;;
++            output += &quot;nextownermask = '&quot; + NextOwnerMask + &quot;' &quot;;
++            output += &quot;groupmask = '&quot; + GroupMask + &quot;' &quot;;
++            output += &quot;ownermask = '&quot; + OwnerMask + &quot;' &quot;;
++
++            output += &quot;&gt;&quot;;
++
++            if ( outputAssets )
++            {
++                output += xmlSafe(Source);
++            }
++
++            output += &quot;&lt;/script&gt;&quot;;
++
++
++            return output;
++        }
++
++    }
++}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000181.html">[Libsecondlife-commits] [Patch #1797] Patch to slproxy.sln
+</A></li>
+	<LI>Next message: <A HREF="000183.html">[Libsecondlife-commits] r791 - trunk/applications
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#182">[ date ]</a>
+              <a href="thread.html#182">[ thread ]</a>
+              <a href="subject.html#182">[ subject ]</a>
+              <a href="author.html#182">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

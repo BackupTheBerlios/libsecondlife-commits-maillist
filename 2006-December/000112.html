@@ -1,0 +1,1626 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r745 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_InventoryManager
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r745%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612202220.kBKMK7Lw014061%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000111.html">
+   <LINK REL="Next"  HREF="000113.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r745 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_InventoryManager</H1>
+    <B>mcortez at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r745%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09AssetSystem%20InventorySystem%20examples/IA_InventoryManager&In-Reply-To=%3C200612202220.kBKMK7Lw014061%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r745 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem examples/IA_InventoryManager">mcortez at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 20 23:20:07 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000111.html">[Libsecondlife-commits] r744 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000113.html">[Libsecondlife-commits] r746 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: mcortez
+Date: 2006-12-20 23:19:52 +0100 (Wed, 20 Dec 2006)
+New Revision: 745
+
+Added:
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable_Body.cs
+   trunk/libsecondlife-cs/AssetSystem/AssetWearable_Clothing.cs
+   trunk/libsecondlife-cs/AssetSystem/BodyPart_Depricated.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+Removed:
+   trunk/libsecondlife-cs/AssetSystem/BodyPart.cs
+Modified:
+   trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+   trunk/libsecondlife-cs/AssetSystem/Asset.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryBase.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+   trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+   trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+   trunk/libsecondlife-cs/libsecondlife.csproj
+Log:
++ Bring wearable Assets and Inventory items into the same framework as all the rest of the I&amp;A stuff
++ Updated iManager LS/DIR command to support displaying of /assetid /itemid /type
+
+Modified: trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/AppearanceManager.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -63,52 +63,51 @@
+                     continue;
+                 }
+ 
+-                sbyte Type = 13;
+ 
++                AssetWearable wearableAsset;
++
+                 switch (wdb.WearableType)
+                 {
+                     case 0:
+                     case 1:
+                     case 2:
+                     case 3:
+-                        Type = 13;
++                        wearableAsset = new AssetWearable_Body(wdb.AssetID, null);
+                         break;
+                     default:
+-                        Type = 5;
++                        wearableAsset = new AssetWearable_Clothing(wdb.AssetID, null);
+                         break;
+                 }
+ 
+-                Asset asset = new Asset(wdb.AssetID, Type, null);
++                
+ 
+-                AManager.GetInventoryAsset(asset);
+-                if (asset.AssetData.Length == 0)
++                AManager.GetInventoryAsset(wearableAsset);
++                if (wearableAsset.AssetData.Length == 0)
+                 {
+                     Console.WriteLine(&quot;Retrieval failed&quot;);
+                 }
+ 
+                 try
+                 {
+-                    BodyPart bp = new BodyPart(asset.AssetData);
+-
+-                    foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in bp.textures)
++                    foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in wearableAsset.Textures)
+                     {
+                         AgentTextureEntry.CreateFace(texture.Key).TextureID = texture.Value;
+                     }
+ 
+-                    foreach (KeyValuePair&lt;uint, float&gt; kvp in bp.parameters)
++                    foreach (KeyValuePair&lt;uint, float&gt; kvp in wearableAsset.Parameters)
+                     {
+-                        AgentAppearanceParams[kvp.Key] = bp.parameters[kvp.Key];
++                        AgentAppearanceParams[kvp.Key] = kvp.Value;
+                     }
+                 }
+                 catch (Exception e)
+                 {
+                     Console.WriteLine(&quot;ItemID: &quot; + wdb.ItemID);
+                     Console.WriteLine(&quot;WearableType : &quot; + wdb.WearableType);
+-                    Console.WriteLine(&quot;Retrieving as type: &quot; + asset.Type);
++                    Console.WriteLine(&quot;Retrieving as type: &quot; + wearableAsset.Type);
+ 
+                     Console.WriteLine(e.Message);
+                     Console.WriteLine(e.StackTrace);
+-                    Console.WriteLine(asset.AssetDataToString());
++                    Console.WriteLine(wearableAsset.AssetDataToString());
+                 }
+             }
+ 
+@@ -127,6 +126,8 @@
+                     case 6:
+                     case 7:
+                     case 12:
++                    case 13:
++                    case 14:
+                     case 15:
+                     case 16:
+                     case 17:
+@@ -145,13 +146,15 @@
+             te2.CreateFace(17).TextureID = AgentTextureEntry.GetFace(17).TextureID;
+             te2.CreateFace(16).TextureID = AgentTextureEntry.GetFace(16).TextureID;
+             te2.CreateFace(15).TextureID = AgentTextureEntry.GetFace(15).TextureID;
+-            te2.CreateFace(2).TextureID = AgentTextureEntry.GetFace(2).TextureID;
++            te2.CreateFace(14).TextureID = AgentTextureEntry.GetFace(14).TextureID;
++            te2.CreateFace(13).TextureID = AgentTextureEntry.GetFace(13).TextureID;
+             te2.CreateFace(12).TextureID = AgentTextureEntry.GetFace(12).TextureID;
+             te2.CreateFace(7).TextureID = AgentTextureEntry.GetFace(7).TextureID;
+             te2.CreateFace(6).TextureID = AgentTextureEntry.GetFace(6).TextureID;
+             te2.CreateFace(5).TextureID = AgentTextureEntry.GetFace(5).TextureID;
+             te2.CreateFace(4).TextureID = AgentTextureEntry.GetFace(4).TextureID;
+             te2.CreateFace(3).TextureID = AgentTextureEntry.GetFace(3).TextureID;
++            te2.CreateFace(2).TextureID = AgentTextureEntry.GetFace(2).TextureID;
+             te2.CreateFace(1).TextureID = AgentTextureEntry.GetFace(1).TextureID;
+             te2.CreateFace(0).TextureID = AgentTextureEntry.GetFace(0).TextureID;
+ 
+
+Modified: trunk/libsecondlife-cs/AssetSystem/Asset.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/Asset.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/Asset.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -36,7 +36,9 @@
+ 	public class Asset
+ 	{
+ 		public const sbyte ASSET_TYPE_NOTECARD = 7;
+-		public const sbyte ASSET_TYPE_IMAGE    = 0;
++        public const sbyte ASSET_TYPE_IMAGE    = 0;
++        public const sbyte ASSET_TYPE_WEARABLE_BODY = 13;
++        public const sbyte ASSET_TYPE_WEARABLE_CLOTHING = 5;
+ 
+ 		public LLUUID AssetID;
+ 
+
+Added: trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -0,0 +1,382 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++
++using libsecondlife;
++
++namespace libsecondlife.AssetSystem
++{
++	/// &lt;summary&gt;
++    /// Asset for wearables such as Socks, Eyes, Gloves, Hair, Pants, Shape, Shirt, Shoes, Skin, Jacket, Skirt, Underpants
++	/// &lt;/summary&gt;
++	internal class AssetWearable : Asset
++	{
++		public new byte[] AssetData
++		{
++			get
++			{
++				return base.AssetData;
++			}
++
++            set
++            {
++                base.AssetData = value;
++                UpdateFromAssetData();
++            }
++		}
++
++        private string _Name = &quot;&quot;;
++        public string Name
++        {
++            get { return _Name; }
++            set
++            {
++                _Name = value;
++            }
++        }
++        private uint _TypeFromAsset = 0;
++        public uint TypeFromAsset
++        {
++            get { return _TypeFromAsset; }
++            set
++            {
++                _TypeFromAsset = value;
++            }
++        }
++
++        private string _Sale_Type = &quot;not&quot;;
++        public string Sale_Type
++        {
++            get { return _Sale_Type; }
++            set
++            {
++                _Sale_Type = value;
++            }
++        }
++
++        private uint _Sale_Price = 10;
++        public uint Sale_Price
++        {
++            get { return _Sale_Price; }
++            set
++            {
++                _Sale_Price = value;
++            }
++        }
++
++        private LLUUID _Creator_ID = new LLUUID();
++        public LLUUID Creator_ID
++        {
++            get { return _Creator_ID; }
++            set
++            {
++                _Creator_ID = value;
++            }
++        }
++        private LLUUID _Owner_ID = new LLUUID();
++        public LLUUID Owner_ID
++        {
++            get { return _Owner_ID; }
++            set
++            {
++                _Owner_ID = value;
++            }
++        }
++        private LLUUID _Last_Owner_ID = new LLUUID();
++        public LLUUID Last_Owner_ID
++        {
++            get { return _Last_Owner_ID; }
++            set
++            {
++                _Last_Owner_ID = value;
++            }
++        }
++        private LLUUID _Group_ID = new LLUUID();
++        public LLUUID Group_ID
++        {
++            get { return _Group_ID; }
++            set
++            {
++                _Group_ID = value;
++            }
++        }
++
++        private uint _Permission_Base_Mask = 0;
++        public uint Permission_Base_Mask
++        {
++            get { return _Permission_Base_Mask; }
++            set
++            {
++                _Permission_Base_Mask = value;
++            }
++        }
++
++        private uint _Permission_Owner_Mask = 0;
++        public uint Permission_Owner_Mask
++        {
++            get { return _Permission_Owner_Mask; }
++            set
++            {
++                _Permission_Owner_Mask = value;
++            }
++        }
++
++        private uint _Permission_Group_Mask = 0;
++        public uint Permission_Group_Mask
++        {
++            get { return _Permission_Group_Mask; }
++            set
++            {
++                _Permission_Group_Mask = value;
++            }
++        }
++
++        private uint _Permission_Everyone_Mask = 0;
++        public uint Permission_Everyone_Mask
++        {
++            get { return _Permission_Everyone_Mask; }
++            set
++            {
++                _Permission_Everyone_Mask = value;
++            }
++        }
++
++        private uint _Permission_Next_Owner_Mask = 0;
++        public uint Permission_Next_Owner_Mask
++        {
++            get { return _Permission_Next_Owner_Mask; }
++            set
++            {
++                _Permission_Next_Owner_Mask = value;
++            }
++        }
++
++        private Dictionary&lt;uint, float&gt; _Parameters = new Dictionary&lt;uint, float&gt;();
++        public Dictionary&lt;uint, float&gt; Parameters
++        {
++            get { return _Parameters; }
++            set
++            {
++                _Parameters = value;
++            }
++        }
++
++        private Dictionary&lt;uint, LLUUID&gt; _Textures = new Dictionary&lt;uint, LLUUID&gt;();
++        public Dictionary&lt;uint, LLUUID&gt; Textures
++        {
++            get { return _Textures; }
++            set
++            {
++                _Textures = value;
++            }
++        }
++
++
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;assetData&quot;&gt;&lt;/param&gt;
++        public AssetWearable(LLUUID assetID, sbyte assetType, byte[] assetData)
++            : base(assetID, assetType, false, assetData)
++		{
++		}
++
++        /// &lt;summary&gt;
++        /// Converts byte[] data from a data transfer into a bodypart class
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        internal void UpdateFromAssetData()
++        {
++            byte state = 0;
++            const byte parameters_block = 4;
++            const byte textures_block = 6;
++
++            Exception Corrupted = new Exception(&quot;Corrupted Body Part data&quot;);
++            string whole_enchilada = System.Text.Encoding.ASCII.GetString(AssetData);
++
++            //this seperates the whole enchilada into two, the header and the body.
++            string[] seperated_enchilada = whole_enchilada.Split(new string[] { &quot;permissions&quot; }, StringSplitOptions.RemoveEmptyEntries);
++            if (seperated_enchilada.Length != 2) throw Corrupted;
++
++            //this parses out the name out of the header
++            string[] header = seperated_enchilada[0].Split('\n');
++            if (header.Length &lt; 2) throw Corrupted;
++            this._Name = header[1];
++
++            seperated_enchilada[1] = &quot;permissions&quot; + seperated_enchilada[1];
++            string[] body = seperated_enchilada[1].Split('\n');
++            foreach (string blk in body)
++            {
++                string block = blk.Trim();
++                if (block == &quot;{&quot; || block == &quot;}&quot;) continue; //I hate those things..
++                if (block == &quot;&quot;) continue;
++                //use the markers...
++                if (block.StartsWith(&quot;parameters &quot;))
++                {
++                    state = parameters_block;
++                    continue;
++                }
++                else if (block.StartsWith(&quot;textures &quot;))
++                {
++                    state = textures_block;
++                    continue;
++                }
++
++                if (state == 0)
++                {
++                    if (block.StartsWith(&quot;type &quot;))
++                    {
++                        this._TypeFromAsset = uint.Parse(block.Substring(5));
++                    }
++                    else
++                    {
++                        string[] split_field = block.Split('\t');
++
++                        if (split_field.Length == 2)
++                        {
++                            switch (split_field[0])
++                            {
++                                case &quot;base_mask&quot;:
++                                    this._Permission_Base_Mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                    break;
++                                case &quot;owner_mask&quot;:
++                                    this._Permission_Owner_Mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                    break;
++                                case &quot;group_mask&quot;:
++                                    this._Permission_Group_Mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                    break;
++                                case &quot;everyone_mask&quot;:
++                                    this._Permission_Everyone_Mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                    break;
++                                case &quot;next_owner_mask&quot;:
++                                    this._Permission_Next_Owner_Mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                    break;
++                                case &quot;creator_id&quot;:
++                                    this._Creator_ID = new LLUUID(split_field[1]);
++                                    break;
++                                case &quot;owner_id&quot;:
++                                    this._Owner_ID = new LLUUID(split_field[1]);
++                                    break;
++                                case &quot;last_owner_id&quot;:
++                                    this._Last_Owner_ID = new LLUUID(split_field[1]);
++                                    break;
++                                case &quot;group_id&quot;:
++                                    this._Group_ID = new LLUUID(split_field[1]);
++                                    break;
++                                case &quot;sale_type&quot;:
++                                    this._Sale_Type = split_field[1];
++                                    break;
++                                case &quot;sale_price&quot;:
++                                    this._Sale_Price = uint.Parse(split_field[1]);
++                                    break;
++                                default: break;
++                            }
++                        }
++                    }
++                }
++                else if (state == parameters_block)
++                {
++                    string[] split_up = block.Split(' ');
++                    // if (split_up.Length != 2) throw Corrupted;
++                    if (split_up.Length == 2)
++                    {
++                        if (this._Parameters.ContainsKey(uint.Parse(split_up[0]))) this._Parameters.Remove(uint.Parse(split_up[0]));
++                        this._Parameters.Add(uint.Parse(split_up[0]), float.Parse(split_up[1]));
++                    }
++                }
++                else if (state == textures_block)
++                {
++                    string[] split_up = block.Split(' ');
++                    if (split_up.Length != 2) throw Corrupted;
++
++                    if (this._Parameters.ContainsKey(uint.Parse(split_up[0]))) this._Parameters.Remove(uint.Parse(split_up[0]));
++                    this._Textures.Add(uint.Parse(split_up[0]), new LLUUID(split_up[1]));
++                }
++
++            }
++        }
++
++        private void UpdateAssetData()
++        {
++            string data = &quot;LLWearable version 22\n&quot;;
++            data += this._Name + &quot;\n\n&quot;;
++            data += &quot;\tpermissions 0\n\t{\n&quot;;
++            data += &quot;\t\tbase_mask\t&quot; + intToHex(this._Permission_Base_Mask);
++            data += &quot;\n\t\towner_mask\t&quot; + intToHex(this._Permission_Owner_Mask);
++            data += &quot;\n\t\tgroup_mask\t&quot; + intToHex(this._Permission_Group_Mask);
++            data += &quot;\n\t\teveryone_mask\t&quot; + intToHex(this._Permission_Everyone_Mask);
++            data += &quot;\n\t\tnext_owner_mask\t&quot; + intToHex(this._Permission_Next_Owner_Mask);
++            data += &quot;\n\t\tcreator_id\t&quot; + this._Creator_ID.ToStringHyphenated();
++            data += &quot;\n\t\towner_id\t&quot; + this._Owner_ID.ToStringHyphenated();
++            data += &quot;\n\t\tlast_owner_id\t&quot; + this._Last_Owner_ID.ToStringHyphenated();
++            data += &quot;\n\t\tgroup_id\t&quot; + this._Group_ID.ToStringHyphenated();
++            data += &quot;\n\t}&quot;;
++            data += &quot;\n\tsale_info\t0&quot;;
++            data += &quot;\n\t{&quot;;
++            data += &quot;\n\t\tsale_type\t&quot; + this._Sale_Type;
++            data += &quot;\n\t\tsale_price\t&quot; + this._Sale_Price;
++            data += &quot;\n\t}&quot;;
++            data += &quot;\ntype &quot; + this._TypeFromAsset;
++            data += &quot;\nparameters &quot; + this._Parameters.Count;
++            foreach (KeyValuePair&lt;uint, float&gt; param in this._Parameters)
++            {
++                string prm = string.Format(&quot;{0:f1}&quot;, param.Value);
++                if (prm == &quot;-1.0&quot; || prm == &quot;1.0&quot; || prm == &quot;0.0&quot;)
++                {
++                    switch (prm)
++                    {
++                        case &quot;-1.0&quot;:
++                            prm = &quot;-1&quot;;
++                            break;
++                        case &quot;0.0&quot;:
++                            prm = &quot;0&quot;;
++                            break;
++                        case &quot;1.0&quot;:
++                            prm = &quot;1&quot;;
++                            break;
++                    }
++                }
++                data += &quot;\n&quot; + param.Key + &quot; &quot; + prm;
++            }
++            data += &quot;\ntextures &quot; + this._Textures.Count;
++            foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in this._Textures)
++            {
++                data += &quot;\n&quot; + texture.Key + &quot; &quot; + texture.Value.ToStringHyphenated();
++            }
++
++            this.AssetData = System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
++        }
++
++        private static string intToHex(uint i)
++        {
++            return string.Format(&quot;{0:x8}&quot;, i);
++        }
++
++	}
++}
+
+Added: trunk/libsecondlife-cs/AssetSystem/AssetWearable_Body.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable_Body.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable_Body.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++
++using libsecondlife;
++
++namespace libsecondlife.AssetSystem
++{
++	/// &lt;summary&gt;
++	/// Asset for a body wearables (Skin, Eyes, Hair, Bodyshape)
++	/// &lt;/summary&gt;
++	internal class AssetWearable_Body : AssetWearable
++	{
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;assetData&quot;&gt;&lt;/param&gt;
++        public AssetWearable_Body(LLUUID assetID, byte[] assetData)
++            : base(assetID, Asset.ASSET_TYPE_WEARABLE_BODY, assetData)
++		{
++		}
++	}
++}
+
+Added: trunk/libsecondlife-cs/AssetSystem/AssetWearable_Clothing.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/AssetWearable_Clothing.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/AssetWearable_Clothing.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without 
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names 
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++
++using libsecondlife;
++
++namespace libsecondlife.AssetSystem
++{
++	/// &lt;summary&gt;
++	/// Asset for a clothing wearables (Shirt, Pants, Socks, etc)
++	/// &lt;/summary&gt;
++	internal class AssetWearable_Clothing : AssetWearable
++	{
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;assetID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;assetData&quot;&gt;&lt;/param&gt;
++        public AssetWearable_Clothing(LLUUID assetID, byte[] assetData)
++            : base(assetID, Asset.ASSET_TYPE_WEARABLE_CLOTHING, assetData)
++		{
++		}
++	}
++}
+
+Deleted: trunk/libsecondlife-cs/AssetSystem/BodyPart.cs
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/BodyPart.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/BodyPart.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -1,227 +0,0 @@
+-using System;
+-using System.Collections.Generic;
+-using System.Text;
+-using libsecondlife;
+-using libsecondlife.Packets;
+-
+-namespace libsecondlife.AssetSystem
+-{
+-    public class BodyPart
+-    {
+-        public string name = &quot;&quot;;
+-        public uint type = 0;
+-
+-        public string sale_type = &quot;not&quot;;
+-        public uint sale_price = 10;
+-
+-        public LLUUID creator_id = new LLUUID();
+-        public LLUUID owner_id = new LLUUID();
+-        public LLUUID last_owner_id = new LLUUID();
+-        public LLUUID group_id = new LLUUID();
+-
+-        public uint base_mask = 0;
+-        public uint owner_mask = 0;
+-        public uint group_mask = 0;
+-        public uint everyone_mask = 0;
+-        public uint next_owner_mask = 0;
+-
+-        public Dictionary&lt;uint, float&gt; parameters = new Dictionary&lt;uint, float&gt;();
+-        public Dictionary&lt;uint, LLUUID&gt; textures = new Dictionary&lt;uint, LLUUID&gt;();
+-        
+-        private static string intToHex(uint i)
+-        {
+-            return string.Format(&quot;{0:x8}&quot;, i);
+-        }
+-
+-        public static byte[] BodyPartToByteData(BodyPart bp)
+-        {
+-            string data = &quot;LLWearable version 22\n&quot;;
+-            data += bp.name + &quot;\n\n&quot;;
+-            data += &quot;\tpermissions 0\n\t{\n&quot;;
+-            data += &quot;\t\tbase_mask\t&quot; + intToHex(bp.base_mask);
+-            data += &quot;\n\t\towner_mask\t&quot; + intToHex(bp.owner_mask);
+-            data += &quot;\n\t\tgroup_mask\t&quot; + intToHex(bp.group_mask);
+-            data += &quot;\n\t\teveryone_mask\t&quot; + intToHex(bp.everyone_mask);
+-            data += &quot;\n\t\tnext_owner_mask\t&quot; + intToHex(bp.next_owner_mask);
+-            data += &quot;\n\t\tcreator_id\t&quot; + bp.creator_id.ToStringHyphenated();
+-            data += &quot;\n\t\towner_id\t&quot; + bp.owner_id.ToStringHyphenated();
+-            data += &quot;\n\t\tlast_owner_id\t&quot; + bp.last_owner_id.ToStringHyphenated();
+-            data += &quot;\n\t\tgroup_id\t&quot; + bp.group_id.ToStringHyphenated();
+-            data += &quot;\n\t}&quot;;
+-            data += &quot;\n\tsale_info\t0&quot;;
+-            data += &quot;\n\t{&quot;;
+-            data += &quot;\n\t\tsale_type\t&quot; + bp.sale_type;
+-            data += &quot;\n\t\tsale_price\t&quot; + bp.sale_price;
+-            data += &quot;\n\t}&quot;;
+-            data += &quot;\ntype &quot; + bp.type;
+-            data += &quot;\nparameters &quot; + bp.parameters.Count;
+-            foreach (KeyValuePair&lt;uint, float&gt; param in bp.parameters)
+-            {
+-                string prm = string.Format(&quot;{0:f1}&quot;, param.Value);
+-                if(prm == &quot;-1.0&quot; || prm == &quot;1.0&quot; || prm == &quot;0.0&quot;)
+-                {
+-                    switch(prm)
+-                    {
+-                        case &quot;-1.0&quot;:
+-                            prm = &quot;-1&quot;;
+-                            break;
+-                        case &quot;0.0&quot;:
+-                            prm = &quot;0&quot;;
+-                            break;
+-                        case &quot;1.0&quot;:
+-                            prm = &quot;1&quot;;
+-                            break;
+-                    }
+-                }
+-                data += &quot;\n&quot; + param.Key + &quot; &quot; + prm;
+-            }
+-            data += &quot;\ntextures &quot; + bp.textures.Count;
+-            foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in bp.textures)
+-            {
+-                data += &quot;\n&quot; + texture.Key + &quot; &quot; + texture.Value.ToStringHyphenated();
+-            }
+-
+-            return System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
+-        }
+-        /// &lt;summary&gt;
+-        /// Converts byte[] data from a data transfer into a bodypart class
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public static BodyPart ByteDataToBodyPart(byte[] data)
+-        {
+-            BodyPart bp = new BodyPart(); 
+-
+-            byte state = 0;
+-            const byte parameters_block = 4;
+-            const byte textures_block = 6;
+-            
+-            Exception Corrupted = new Exception(&quot;Corrupted Body Part data&quot;);
+-            string whole_enchilada = System.Text.Encoding.ASCII.GetString(data);
+-            
+-            //this seperates the whole enchilada into two, the header and the body.
+-            string[] seperated_enchilada = whole_enchilada.Split(new string[] { &quot;permissions&quot; }, StringSplitOptions.RemoveEmptyEntries);
+-            if (seperated_enchilada.Length != 2) throw Corrupted;
+-
+-            //this parses out the name out of the header
+-            string[] header = seperated_enchilada[0].Split('\n');
+-            if (header.Length &lt; 2) throw Corrupted;
+-            bp.name = header[1];
+-
+-            seperated_enchilada[1] = &quot;permissions&quot; + seperated_enchilada[1];
+-            string[] body = seperated_enchilada[1].Split('\n');
+-            foreach(string blk in body)
+-            {
+-               string block = blk.Trim();
+-               if (block == &quot;{&quot; || block == &quot;}&quot;) continue; //I hate those things..
+-               if (block == &quot;&quot;) continue;
+-               //use the markers...
+-               if(block.StartsWith(&quot;parameters &quot;))
+-               {
+-                   state = parameters_block; 
+-                   continue;
+-               }
+-               else if(block.StartsWith(&quot;textures &quot;))
+-               {
+-                   state = textures_block;
+-                   continue;
+-               }
+-               
+-               if(state == 0)
+-               {
+-                   if(block.StartsWith(&quot;type &quot;))
+-                   {
+-                       bp.type = uint.Parse(block.Substring(5));
+-                   }
+-                   else
+-                   {
+-                       string[] split_field = block.Split('\t');
+-                       
+-                       if(split_field.Length == 2)
+-                       {
+-                           switch(split_field[0])
+-                           {
+-                               case &quot;base_mask&quot;:
+-                                   bp.base_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
+-                                   break;
+-                               case &quot;owner_mask&quot;:
+-                                   bp.owner_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
+-                                   break;
+-                               case &quot;group_mask&quot;:
+-                                   bp.group_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
+-                                   break;
+-                               case &quot;everyone_mask&quot;:
+-                                   bp.everyone_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
+-                                   break;
+-                               case &quot;next_owner_mask&quot;:
+-                                   bp.next_owner_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
+-                                   break;
+-                               case &quot;creator_id&quot;:
+-                                   bp.creator_id = new LLUUID(split_field[1]);
+-                                   break;
+-                               case &quot;owner_id&quot;:
+-                                   bp.owner_id = new LLUUID(split_field[1]);
+-                                   break;
+-                               case &quot;last_owner_id&quot;:
+-                                   bp.last_owner_id = new LLUUID(split_field[1]);
+-                                   break;
+-                               case &quot;group_id&quot;:
+-                                   bp.group_id = new LLUUID(split_field[1]);
+-                                   break;
+-                               case &quot;sale_type&quot;:
+-                                   bp.sale_type = split_field[1];
+-                                   break;
+-                               case &quot;sale_price&quot;:
+-                                   bp.sale_price = uint.Parse(split_field[1]);
+-                                   break;
+-                               default: break;
+-                           }
+-                       }
+-                   }
+-               }
+-               else if (state == parameters_block)
+-               {
+-                   string[] split_up = block.Split(' ');
+-                   // if (split_up.Length != 2) throw Corrupted;
+-                   if (split_up.Length == 2)
+-                   {
+-                       if (bp.parameters.ContainsKey(uint.Parse(split_up[0]))) bp.parameters.Remove(uint.Parse(split_up[0]));
+-                       bp.parameters.Add(uint.Parse(split_up[0]), float.Parse(split_up[1]));
+-                   }
+-               }
+-               else if (state == textures_block)
+-               {
+-                   string[] split_up = block.Split(' ');
+-                   if (split_up.Length != 2) throw Corrupted;
+-
+-                   if (bp.parameters.ContainsKey(uint.Parse(split_up[0]))) bp.parameters.Remove(uint.Parse(split_up[0]));
+-                   bp.textures.Add(uint.Parse(split_up[0]), new LLUUID(split_up[1]));
+-               }
+-               
+-            }
+-
+-            return bp;
+-        }
+-        public BodyPart() { } //blank construction
+-
+-        public BodyPart(byte[] data)
+-        {
+-            BodyPart bp = BodyPart.ByteDataToBodyPart(data);
+-            this.base_mask = bp.base_mask;
+-            this.creator_id = bp.creator_id;
+-            this.everyone_mask = bp.everyone_mask;
+-            this.group_id = bp.group_id;
+-            this.group_mask = bp.group_mask;
+-            this.last_owner_id = bp.last_owner_id;
+-            this.name = bp.name;
+-            this.next_owner_mask = bp.next_owner_mask;
+-            this.owner_id = bp.owner_id;
+-            this.owner_mask = bp.owner_mask;
+-            this.parameters = bp.parameters;
+-            this.textures = bp.textures;
+-            this.type = bp.type;
+-            this.sale_price = bp.sale_price;
+-            this.sale_type = bp.sale_type;
+-        }
+-    }
+-}
+
+Copied: trunk/libsecondlife-cs/AssetSystem/BodyPart_Depricated.cs (from rev 744, trunk/libsecondlife-cs/AssetSystem/BodyPart.cs)
+===================================================================
+--- trunk/libsecondlife-cs/AssetSystem/BodyPart.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/AssetSystem/BodyPart_Depricated.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -0,0 +1,227 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.AssetSystem
++{
++    class BodyPart_Deprecated
++    {
++        public string name = &quot;&quot;;
++        public uint type = 0;
++
++        public string sale_type = &quot;not&quot;;
++        public uint sale_price = 10;
++
++        public LLUUID creator_id = new LLUUID();
++        public LLUUID owner_id = new LLUUID();
++        public LLUUID last_owner_id = new LLUUID();
++        public LLUUID group_id = new LLUUID();
++
++        public uint base_mask = 0;
++        public uint owner_mask = 0;
++        public uint group_mask = 0;
++        public uint everyone_mask = 0;
++        public uint next_owner_mask = 0;
++
++        public Dictionary&lt;uint, float&gt; parameters = new Dictionary&lt;uint, float&gt;();
++        public Dictionary&lt;uint, LLUUID&gt; textures = new Dictionary&lt;uint, LLUUID&gt;();
++        
++        private static string intToHex(uint i)
++        {
++            return string.Format(&quot;{0:x8}&quot;, i);
++        }
++
++        public static byte[] BodyPartToByteData(BodyPart_Deprecated bp)
++        {
++            string data = &quot;LLWearable version 22\n&quot;;
++            data += bp.name + &quot;\n\n&quot;;
++            data += &quot;\tpermissions 0\n\t{\n&quot;;
++            data += &quot;\t\tbase_mask\t&quot; + intToHex(bp.base_mask);
++            data += &quot;\n\t\towner_mask\t&quot; + intToHex(bp.owner_mask);
++            data += &quot;\n\t\tgroup_mask\t&quot; + intToHex(bp.group_mask);
++            data += &quot;\n\t\teveryone_mask\t&quot; + intToHex(bp.everyone_mask);
++            data += &quot;\n\t\tnext_owner_mask\t&quot; + intToHex(bp.next_owner_mask);
++            data += &quot;\n\t\tcreator_id\t&quot; + bp.creator_id.ToStringHyphenated();
++            data += &quot;\n\t\towner_id\t&quot; + bp.owner_id.ToStringHyphenated();
++            data += &quot;\n\t\tlast_owner_id\t&quot; + bp.last_owner_id.ToStringHyphenated();
++            data += &quot;\n\t\tgroup_id\t&quot; + bp.group_id.ToStringHyphenated();
++            data += &quot;\n\t}&quot;;
++            data += &quot;\n\tsale_info\t0&quot;;
++            data += &quot;\n\t{&quot;;
++            data += &quot;\n\t\tsale_type\t&quot; + bp.sale_type;
++            data += &quot;\n\t\tsale_price\t&quot; + bp.sale_price;
++            data += &quot;\n\t}&quot;;
++            data += &quot;\ntype &quot; + bp.type;
++            data += &quot;\nparameters &quot; + bp.parameters.Count;
++            foreach (KeyValuePair&lt;uint, float&gt; param in bp.parameters)
++            {
++                string prm = string.Format(&quot;{0:f1}&quot;, param.Value);
++                if(prm == &quot;-1.0&quot; || prm == &quot;1.0&quot; || prm == &quot;0.0&quot;)
++                {
++                    switch(prm)
++                    {
++                        case &quot;-1.0&quot;:
++                            prm = &quot;-1&quot;;
++                            break;
++                        case &quot;0.0&quot;:
++                            prm = &quot;0&quot;;
++                            break;
++                        case &quot;1.0&quot;:
++                            prm = &quot;1&quot;;
++                            break;
++                    }
++                }
++                data += &quot;\n&quot; + param.Key + &quot; &quot; + prm;
++            }
++            data += &quot;\ntextures &quot; + bp.textures.Count;
++            foreach (KeyValuePair&lt;uint, LLUUID&gt; texture in bp.textures)
++            {
++                data += &quot;\n&quot; + texture.Key + &quot; &quot; + texture.Value.ToStringHyphenated();
++            }
++
++            return System.Text.Encoding.ASCII.GetBytes(data.ToCharArray());
++        }
++        /// &lt;summary&gt;
++        /// Converts byte[] data from a data transfer into a bodypart class
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;data&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public static BodyPart_Deprecated ByteDataToBodyPart(byte[] data)
++        {
++            BodyPart_Deprecated bp = new BodyPart_Deprecated(); 
++
++            byte state = 0;
++            const byte parameters_block = 4;
++            const byte textures_block = 6;
++            
++            Exception Corrupted = new Exception(&quot;Corrupted Body Part data&quot;);
++            string whole_enchilada = System.Text.Encoding.ASCII.GetString(data);
++            
++            //this seperates the whole enchilada into two, the header and the body.
++            string[] seperated_enchilada = whole_enchilada.Split(new string[] { &quot;permissions&quot; }, StringSplitOptions.RemoveEmptyEntries);
++            if (seperated_enchilada.Length != 2) throw Corrupted;
++
++            //this parses out the name out of the header
++            string[] header = seperated_enchilada[0].Split('\n');
++            if (header.Length &lt; 2) throw Corrupted;
++            bp.name = header[1];
++
++            seperated_enchilada[1] = &quot;permissions&quot; + seperated_enchilada[1];
++            string[] body = seperated_enchilada[1].Split('\n');
++            foreach(string blk in body)
++            {
++               string block = blk.Trim();
++               if (block == &quot;{&quot; || block == &quot;}&quot;) continue; //I hate those things..
++               if (block == &quot;&quot;) continue;
++               //use the markers...
++               if(block.StartsWith(&quot;parameters &quot;))
++               {
++                   state = parameters_block; 
++                   continue;
++               }
++               else if(block.StartsWith(&quot;textures &quot;))
++               {
++                   state = textures_block;
++                   continue;
++               }
++               
++               if(state == 0)
++               {
++                   if(block.StartsWith(&quot;type &quot;))
++                   {
++                       bp.type = uint.Parse(block.Substring(5));
++                   }
++                   else
++                   {
++                       string[] split_field = block.Split('\t');
++                       
++                       if(split_field.Length == 2)
++                       {
++                           switch(split_field[0])
++                           {
++                               case &quot;base_mask&quot;:
++                                   bp.base_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                   break;
++                               case &quot;owner_mask&quot;:
++                                   bp.owner_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                   break;
++                               case &quot;group_mask&quot;:
++                                   bp.group_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                   break;
++                               case &quot;everyone_mask&quot;:
++                                   bp.everyone_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                   break;
++                               case &quot;next_owner_mask&quot;:
++                                   bp.next_owner_mask = uint.Parse(split_field[1], System.Globalization.NumberStyles.HexNumber);
++                                   break;
++                               case &quot;creator_id&quot;:
++                                   bp.creator_id = new LLUUID(split_field[1]);
++                                   break;
++                               case &quot;owner_id&quot;:
++                                   bp.owner_id = new LLUUID(split_field[1]);
++                                   break;
++                               case &quot;last_owner_id&quot;:
++                                   bp.last_owner_id = new LLUUID(split_field[1]);
++                                   break;
++                               case &quot;group_id&quot;:
++                                   bp.group_id = new LLUUID(split_field[1]);
++                                   break;
++                               case &quot;sale_type&quot;:
++                                   bp.sale_type = split_field[1];
++                                   break;
++                               case &quot;sale_price&quot;:
++                                   bp.sale_price = uint.Parse(split_field[1]);
++                                   break;
++                               default: break;
++                           }
++                       }
++                   }
++               }
++               else if (state == parameters_block)
++               {
++                   string[] split_up = block.Split(' ');
++                   // if (split_up.Length != 2) throw Corrupted;
++                   if (split_up.Length == 2)
++                   {
++                       if (bp.parameters.ContainsKey(uint.Parse(split_up[0]))) bp.parameters.Remove(uint.Parse(split_up[0]));
++                       bp.parameters.Add(uint.Parse(split_up[0]), float.Parse(split_up[1]));
++                   }
++               }
++               else if (state == textures_block)
++               {
++                   string[] split_up = block.Split(' ');
++                   if (split_up.Length != 2) throw Corrupted;
++
++                   if (bp.parameters.ContainsKey(uint.Parse(split_up[0]))) bp.parameters.Remove(uint.Parse(split_up[0]));
++                   bp.textures.Add(uint.Parse(split_up[0]), new LLUUID(split_up[1]));
++               }
++               
++            }
++
++            return bp;
++        }
++        public BodyPart_Deprecated() { } //blank construction
++
++        public BodyPart_Deprecated(byte[] data)
++        {
++            BodyPart_Deprecated bp = BodyPart_Deprecated.ByteDataToBodyPart(data);
++            this.base_mask = bp.base_mask;
++            this.creator_id = bp.creator_id;
++            this.everyone_mask = bp.everyone_mask;
++            this.group_id = bp.group_id;
++            this.group_mask = bp.group_mask;
++            this.last_owner_id = bp.last_owner_id;
++            this.name = bp.name;
++            this.next_owner_mask = bp.next_owner_mask;
++            this.owner_id = bp.owner_id;
++            this.owner_mask = bp.owner_mask;
++            this.parameters = bp.parameters;
++            this.textures = bp.textures;
++            this.type = bp.type;
++            this.sale_price = bp.sale_price;
++            this.sale_type = bp.sale_type;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryBase.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryBase.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryBase.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -33,6 +33,11 @@
+         abstract public string toXML(bool outputAssets);
+ 
+         /// &lt;summary&gt;
++        /// Get a short string describing this item's type
++        /// &lt;/summary&gt;
++        abstract public string GetDisplayType();
++
++        /// &lt;summary&gt;
+         /// Utility function to simply making text XML safe
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;str&quot;&gt;&lt;/param&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryFolder.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -115,6 +115,22 @@
+             return dr;
+         }
+ 
++        /// &lt;summary&gt;
++        /// Request a download of this folder's content information.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;Recurse&quot;&gt;Indicate if we should recursively download content information.&lt;/param&gt;
++        /// &lt;param name=&quot;Items&quot;&gt;Indicate if item data should be downloaded too (true), or only folders(false)&lt;/param&gt;
++        /// &lt;returns&gt;The Request object for this download&lt;/returns&gt;
++        public DownloadRequest_Folder BeginDownloadContents(bool recurse, bool items)
++        {
++            _Contents.Clear();
++
++            DownloadRequest_Folder dr = new DownloadRequest_Folder(FolderID, recurse, items);
++            iManager.RequestFolder(dr);
++
++            return dr;
++        }
++
+         public InventoryFolder CreateFolder(string name)
+         {
+             return base.iManager.FolderCreate(name, FolderID);
+@@ -167,6 +183,11 @@
+             return items;
+         }
+ 
++        public override string GetDisplayType()
++        {
++            return &quot;Folder&quot;;
++        }
++
+         /// &lt;summary&gt;
+         /// Output this folder as XML
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryImage.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -10,7 +10,6 @@
+ 	/// &lt;/summary&gt;
+ 	public class InventoryImage : InventoryItem
+ 	{
+-
+ 		public byte[] J2CData
+ 		{
+ 			get
+@@ -78,11 +77,11 @@
+ 
+ 		override internal void SetAssetData( byte[] assetData )
+ 		{
+-			if( Asset == null )
++			if( _Asset == null )
+ 			{
+-				if( AssetID != null )
++				if( _AssetID != null )
+ 				{
+-					_Asset = new AssetImage( AssetID, assetData );
++					_Asset = new AssetImage( _AssetID, assetData );
+ 				} 
+ 				else 
+ 				{
+@@ -97,6 +96,12 @@
+ 
+ 		}
+ 
++        public override string GetDisplayType()
++        {
++            return &quot;Image&quot;;
++        }
++
++
+         /// &lt;summary&gt;
+         /// Output this image as XML
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryItem.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -450,6 +450,11 @@
+             }
+         }
+ 
++        public override string GetDisplayType()
++        {
++            return &quot;Unknown_Item&quot;;
++        }
++
+         /// &lt;summary&gt;
+         /// Output this item as XML
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryManager.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -550,6 +550,18 @@
+                                 invItem = temp;
+                             }
+ 
++                            if ((invItem.InvType == 18) &amp;&amp; 
++                                (
++                                    (invItem.Type == Asset.ASSET_TYPE_WEARABLE_BODY)
++                                    || (invItem.Type == Asset.ASSET_TYPE_WEARABLE_CLOTHING)
++                                )
++                               )
++
++                            {
++                                InventoryItem temp = new InventoryWearable(this, invItem);
++                                invItem = temp;
++                            }
++
+                             ifolder._Contents.Add(invItem);
+                         }
+                     }
+
+Modified: trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryNotecard.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -108,6 +108,12 @@
+ 
+ 		}
+ 
++
++        public override string GetDisplayType()
++        {
++            return &quot;Notecard&quot;;
++        }
++
+         /// &lt;summary&gt;
+         /// Output this item as XML
+         /// &lt;/summary&gt;
+
+Added: trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs
+===================================================================
+--- trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/InventorySystem/InventoryWearable.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -0,0 +1,171 @@
++using System;
++
++using libsecondlife;
++using libsecondlife.AssetSystem;
++
++namespace libsecondlife.InventorySystem
++{
++	/// &lt;summary&gt;
++	/// Summary description for InventoryNotecard.
++	/// &lt;/summary&gt;
++	public class InventoryWearable : InventoryItem
++	{
++        // Wearable Inventory/Asset constants
++        public enum WearableAssetType { Socks = 7, Eyes = 3, Gloves = 9, Hair = 2, Pants = 5, Shape = 0, Shirt = 4, Shoes = 6, Skin = 1, Jacket = 8, Skirt = 12, Underpants = 11 };
++        public enum WearableType : sbyte { Clothing = 5, Body = 13 };
++
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;manager&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;name&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;description&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;folderID&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;uuidOwnerCreater&quot;&gt;&lt;/param&gt;
++        internal InventoryWearable(InventoryManager manager, string name, string description, LLUUID folderID, LLUUID uuidOwnerCreater, WearableType wtype) 
++			: base(manager, name, description, folderID, 18, (sbyte)wtype, uuidOwnerCreater)
++		{
++
++		}
++
++        /// &lt;summary&gt;
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;manager&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;ii&quot;&gt;&lt;/param&gt;
++        internal InventoryWearable(InventoryManager manager, InventoryItem ii)
++			: base( manager, ii._Name, ii._Description, ii._FolderID, ii._InvType, ii._Type, ii._CreatorID)
++		{
++			if( (ii.InvType != 18) )
++			{
++				throw new Exception(&quot;The InventoryItem cannot be converted to a Wearable, wrong InvType.&quot;);
++			}
++
++			this.iManager = manager;
++            this._ItemID = ii._ItemID;
++			this._Asset = ii._Asset;
++			this._AssetID = ii._AssetID;
++			this._BaseMask = ii._BaseMask;
++			this._CRC = ii._CRC;
++			this._CreationDate = ii._CreationDate;
++			this._EveryoneMask = ii._EveryoneMask;
++			this._Flags = ii._Flags;
++			this._GroupID = ii._GroupID;
++			this._GroupMask = ii._GroupMask;
++			this._GroupOwned = ii._GroupOwned;
++			this._InvType = ii._InvType;
++			this._NextOwnerMask = ii._NextOwnerMask;
++			this._OwnerID = ii._OwnerID;
++			this._OwnerMask = ii._OwnerMask;
++			this._SalePrice = ii._SalePrice;
++			this._SaleType = ii._SaleType;
++			this._Type = ii._Type;
++		}
++
++        override internal void SetAssetData(byte[] assetData)
++        {
++            // Must reference all variables by internal _private names, so as not to trigger accessor code
++            if (_Asset == null)
++            {
++                if (_AssetID != null)
++                {
++                    if (_Type == (sbyte)WearableType.Clothing)
++                    {
++                        _Asset = new AssetWearable_Clothing(_AssetID, assetData);
++                    }
++                    else
++                    {
++                        _Asset = new AssetWearable_Body(_AssetID, assetData);
++                    }
++                }
++                else
++                {
++                    if (_Type == (sbyte)WearableType.Clothing)
++                    {
++                        _Asset = new AssetWearable_Clothing(LLUUID.Random(), assetData);
++                    }
++                    else
++                    {
++                        _Asset = new AssetWearable_Body(LLUUID.Random(), assetData);
++                    }
++                    _AssetID = _Asset.AssetID;
++                }
++            }
++            else
++            {
++                Asset.AssetData = assetData;
++            }
++
++        }
++
++        public override string GetDisplayType()
++        {
++            return &quot;Wearable_&quot; + ((_Type == (sbyte)WearableType.Clothing) ? &quot;Clothing&quot; : &quot;Body&quot;);;
++        }
++
++
++        /// &lt;summary&gt;
++        /// Output this image as XML
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;outputAssets&quot;&gt;Include an asset data as well, TRUE/FALSE&lt;/param&gt;
++        override public string toXML(bool outputAssets)
++        {
++            string output = &quot;&lt;wearable &quot;;
++
++            output += &quot;name = '&quot; + xmlSafe(Name) + &quot;' &quot;;
++            output += &quot;uuid = '&quot; + ItemID + &quot;' &quot;;
++
++            if (Type == (sbyte)WearableType.Body)
++            {
++                output += &quot;wearabletype = 'Body' &quot;;
++            }
++            else if (Type == (sbyte)WearableType.Clothing)
++            {
++                output += &quot;wearabletype = 'Clothing' &quot;;
++            }
++            else
++            {
++                output += &quot;wearabletype = 'Unknown' &quot;;
++            }
++
++            output += &quot;invtype = '&quot; + InvType + &quot;' &quot;;
++            output += &quot;type = '&quot; + Type + &quot;' &quot;;
++
++
++
++            output += &quot;description = '&quot; + xmlSafe(Description) + &quot;' &quot;;
++            output += &quot;crc = '&quot; + CRC + &quot;' &quot;;
++            
++            output += &quot;ownerid = '&quot; + OwnerID + &quot;' &quot;;
++            output += &quot;creatorid = '&quot; + CreatorID + &quot;' &quot;;
++
++            output += &quot;assetid = '&quot; + AssetID + &quot;' &quot;;
++            output += &quot;groupid = '&quot; + GroupID + &quot;' &quot;;
++
++            output += &quot;groupowned = '&quot; + GroupOwned + &quot;' &quot;;
++            output += &quot;creationdate = '&quot; + CreationDate + &quot;' &quot;;
++            output += &quot;flags = '&quot; + Flags + &quot;' &quot;;
++
++            output += &quot;saletype = '&quot; + SaleType + &quot;' &quot;;
++            output += &quot;saleprice = '&quot; + SalePrice + &quot;' &quot;;
++            output += &quot;basemask = '&quot; + BaseMask + &quot;' &quot;;
++            output += &quot;everyonemask = '&quot; + EveryoneMask + &quot;' &quot;;
++            output += &quot;nextownermask = '&quot; + NextOwnerMask + &quot;' &quot;;
++            output += &quot;groupmask = '&quot; + GroupMask + &quot;' &quot;;
++            output += &quot;ownermask = '&quot; + OwnerMask + &quot;' &quot;;
++
++            output += &quot;&gt;\n&quot;;
++
++            if (outputAssets)
++            {
++                output += xmlSafe(base.Asset.AssetDataToString());
++            }
++
++            output += &quot;&lt;/image&gt;&quot;;
++
++
++            return output;
++        }
++
++	}
++}
+
+Modified: trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/examples/IA_InventoryManager/iManager.cs	2006-12-20 22:19:52 UTC (rev 745)
+@@ -30,9 +30,6 @@
+         private char[] cmdSeperators = { ' ' };
+         private string curDirectory = &quot;/&quot;;
+ 
+-        private string TYPE_DIR  = &quot;&lt;DIR&gt;  &quot;;
+-        private string TYPE_ITEM = &quot;&lt;ITEM&gt; &quot;;
+-
+         private SecondLife _Client;
+         private AppearanceManager aManager;
+ 
+@@ -78,6 +75,9 @@
+         {
+             System.Threading.Thread.Sleep(1000);
+ 
++            // Download directory tree
++            _Client.Inventory.getRootFolder().BeginDownloadContents(true, false);
++
+             Console.WriteLine(&quot;==================================================================&quot;);
+             Console.WriteLine(&quot;The Inventory Manager program provides a simple shell for working with your Second Life[tm] Avatar.&quot;);
+             Console.WriteLine();
+@@ -217,7 +217,7 @@
+         private void help()
+         {
+             Console.WriteLine(&quot;Currently available commands are: &quot;);
+-            Console.WriteLine(&quot;LS          - List contents of the current directory.&quot;);
++            Console.WriteLine(&quot;LS          - List contents of the current directory. Options: /itemid /assetid /type&quot;);
+             Console.WriteLine(&quot;CD          - Change directory.&quot;);
+             Console.WriteLine(&quot;MKDIR       - Make a new directory.&quot;);
+             Console.WriteLine(&quot;RMDIR       - Remove directory.&quot;);
+@@ -686,6 +686,26 @@
+ 
+         private void ls(string[] cmdLine)
+         {
++            bool displayType = false;
++            bool displayItemID = false;
++            bool displayAssetID = false;
++
++            foreach( string option in cmdLine )
++            {
++                if( option.ToLower().Equals(&quot;/itemid&quot;) )
++                {
++                    displayItemID = true;
++                }
++                if( option.ToLower().Equals(&quot;/assetid&quot;) )
++                {
++                    displayAssetID = true;
++                }
++                if( option.ToLower().Equals(&quot;/type&quot;) )
++                {
++                    displayType = true;
++                }
++            }
++
+             Console.WriteLine(&quot;Contents of: &quot; + curDirectory);
+             Console.WriteLine(&quot;--------------------------------------------------&quot;);
+             if (!curDirectory.Equals(&quot;/&quot;))
+@@ -700,12 +720,42 @@
+                 if (ib is InventoryFolder)
+                 {
+                     InventoryFolder folder = (InventoryFolder)ib;
+-                    Console.WriteLine(TYPE_DIR + &quot;&lt;&quot; + folder.FolderID.ToStringHyphenated() + &quot;&gt; &quot; + folder.Name);
++                    StringBuilder output = new StringBuilder(&quot;[DIR] &quot;);
++
++                    if( displayItemID )
++                    {
++                        output.Append(&quot;&lt;itemid:&quot; + folder.FolderID.ToStringHyphenated() + &quot;&gt; &quot;);
++                    }
++                    if( displayType )
++                    {
++                        output.Append(&quot;&lt;type:&quot; + folder.GetDisplayType() + &quot;&gt; &quot;);
++                    }
++
++                    output.Append(folder.Name);
++
++                    Console.WriteLine( output );
+                 }
+                 else
+                 {
+                     InventoryItem item = (InventoryItem)ib;
+-                    Console.WriteLine(TYPE_ITEM + &quot;&lt;&quot; + item.ItemID.ToStringHyphenated() + &quot;&gt; &quot; + item.Name);
++                    StringBuilder output = new StringBuilder();
++
++                    if (displayItemID)
++                    {
++                        output.Append(&quot;&lt;itemid:&quot; + item.ItemID.ToStringHyphenated() + &quot;&gt; &quot;);
++                    }
++                    if (displayAssetID)
++                    {
++                        output.Append(&quot;&lt;assetid:&quot; + item.AssetID.ToStringHyphenated() + &quot;&gt; &quot;);
++                    }
++                    if (displayType)
++                    {
++                        output.Append(&quot;&lt;type:&quot; + item.GetDisplayType() + &quot;&gt; &quot;);
++                    }
++
++                    output.Append(item.Name);
++
++                    Console.WriteLine(output);
+                 }
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/libsecondlife.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-20 05:39:19 UTC (rev 744)
++++ trunk/libsecondlife-cs/libsecondlife.csproj	2006-12-20 22:19:52 UTC (rev 745)
+@@ -99,7 +99,9 @@
+     &lt;Compile Include=&quot;AssetSystem\AssetPacketHelpers.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequestDownload.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\AssetRequestUpload.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;AssetSystem\BodyPart.cs&quot; /&gt;
++    &lt;Compile Include=&quot;AssetSystem\AssetWearable.cs&quot; /&gt;
++    &lt;Compile Include=&quot;AssetSystem\AssetWearable_Body.cs&quot; /&gt;
++    &lt;Compile Include=&quot;AssetSystem\AssetWearable_Clothing.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\_BodyShapeParams_.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImageManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;AssetSystem\ImagePacketHelpers.cs&quot; /&gt;
+@@ -108,6 +110,7 @@
+     &lt;/Compile&gt;
+     &lt;Compile Include=&quot;AvatarManager.cs&quot; /&gt;
+     &lt;Compile Include=&quot;InventorySystem\DownloadRequest_Folder.cs&quot; /&gt;
++    &lt;Compile Include=&quot;InventorySystem\InventoryWearable.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatarStatus.cs&quot; /&gt;
+     &lt;Compile Include=&quot;MainAvatar.cs&quot; /&gt;
+     &lt;Compile Include=&quot;EstateTools.cs&quot;&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000111.html">[Libsecondlife-commits] r744 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000113.html">[Libsecondlife-commits] r746 - in trunk/libsecondlife-cs: .	AssetSystem InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

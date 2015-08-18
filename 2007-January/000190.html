@@ -1,0 +1,990 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r796 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r796%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200701040541.l045frZo011301%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000189.html">
+   <LINK REL="Next"  HREF="000191.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r796 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands</H1>
+    <B>lonecoder at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r796%20-%20in%0A%09trunk/libsecondlife-cs/examples/TestClient%3A%20.%20Commands&In-Reply-To=%3C200701040541.l045frZo011301%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r796 - in	trunk/libsecondlife-cs/examples/TestClient: . Commands">lonecoder at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan  4 06:41:53 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000189.html">[Libsecondlife-commits] r795 - in branches/aditi/libsecondlife-cs:	. mapgenerator
+</A></li>
+        <LI>Next message: <A HREF="000191.html">[Libsecondlife-commits] r797 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#190">[ date ]</a>
+              <a href="thread.html#190">[ thread ]</a>
+              <a href="subject.html#190">[ subject ]</a>
+              <a href="author.html#190">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lonecoder
+Date: 2007-01-04 06:41:23 +0100 (Thu, 04 Jan 2007)
+New Revision: 796
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Command.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+Log:
+TestClient: Cleaned up Command-&gt;Client references.
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Command.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Command.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Command.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -10,7 +10,7 @@
+     {
+ 		public string Name;
+ 		public string Description;
+-		public TestClient TestClient;
++		public TestClient Client;
+ 
+ 		public abstract string Execute(string[] args, LLUUID fromAgentID);
+ 
+@@ -22,7 +22,7 @@
+ 		/// &lt;summary&gt;
+ 		/// Called twice per second, when Command.Active is set to true.
+ 		/// &lt;/summary&gt;
+-		public virtual void Think(SecondLife Client)
++		public virtual void Think()
+ 		{
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -9,14 +9,10 @@
+ {
+     public class SetAppearanceCommand : Command
+     {
+-        SecondLife Client;
+         AppearanceManager aManager;
+ 
+ 		public SetAppearanceCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;setapp&quot;;
+             Description = &quot;Set appearance to what's stored in the DB.&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -7,13 +7,8 @@
+ {
+     public class BalanceCommand: Command
+     {
+-        SecondLife Client;
+-
+         public BalanceCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;balance&quot;;
+ 			Description = &quot;Shows the amount of L$.&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,7 +8,6 @@
+ {
+     public class CloneProfileCommand : Command
+     {
+-        SecondLife Client;
+         Avatar.Properties Properties;
+         Avatar.Interests Interests;
+         bool ReceivedProperties = false;
+@@ -17,12 +16,9 @@
+ 
+         public CloneProfileCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
++            testClient.Avatars.OnAvatarInterests += new AvatarManager.AvatarInterestsCallback(Avatars_OnAvatarInterests);
++            testClient.Avatars.OnAvatarProperties += new AvatarManager.AvatarPropertiesCallback(Avatars_OnAvatarProperties);
+ 
+-            Client.Avatars.OnAvatarInterests += new AvatarManager.AvatarInterestsCallback(Avatars_OnAvatarInterests);
+-            Client.Avatars.OnAvatarProperties += new AvatarManager.AvatarPropertiesCallback(Avatars_OnAvatarProperties);
+-
+             Name = &quot;cloneprofile&quot;;
+             Description = &quot;Clones another avatars profile as closely as possible. WARNING: This command will &quot; +
+                 &quot;destroy your existing profile! Usage: cloneprofile [targetuuid]&quot;;
+@@ -85,4 +81,4 @@
+             }
+         }
+     }
+-}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class EchoMasterCommand: Command
+     {
+-        SecondLife Client;
+-
+         public EchoMasterCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;echoMaster&quot;;
+ 			Description = &quot;Repeat everything that master says.&quot;;
+ 		}
+@@ -37,9 +32,9 @@
+ 
+ 		void Self_OnChat(string message, byte audible, byte type, byte sourcetype, string fromName, LLUUID id, LLUUID ownerid, LLVector3 position)
+ 		{
+-			if (message.Length &gt; 0 &amp;&amp; TestClient.Master == fromName)
++			if (message.Length &gt; 0 &amp;&amp; Client.Master == fromName)
+ 			{
+-			    TestClient.Self.Chat(message, 0, MainAvatar.ChatType.Normal);
++			    Client.Self.Chat(message, 0, MainAvatar.ChatType.Normal);
+ 			}
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -10,16 +10,13 @@
+ {
+     public class ExportCommand : Command
+     {
+-        SecondLife Client;
+         ManualResetEvent GotPermissionsEvent = new ManualResetEvent(false);
+         ObjectProperties Properties = null;
+         bool GotPermissions = false;
+ 
+         public ExportCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-            Client.Objects.OnObjectProperties += new ObjectManager.ObjectPropertiesFamilyCallback(Objects_OnObjectProperties);
++            testClient.Objects.OnObjectProperties += new ObjectManager.ObjectPropertiesFamilyCallback(Objects_OnObjectProperties);
+ 
+             Name = &quot;export&quot;;
+             Description = &quot;Exports an object to an xml file. Usage: export uuid outputfile.xml&quot;;
+@@ -44,11 +41,11 @@
+                 return &quot;Usage: export uuid outputfile.xml&quot;;
+             }
+             
+-            lock (TestClient.SimPrims)
++            lock (Client.SimPrims)
+             {
+-                if (TestClient.SimPrims.ContainsKey(Client.Network.CurrentSim))
++                if (Client.SimPrims.ContainsKey(Client.Network.CurrentSim))
+                 {
+-                    foreach (PrimObject prim in TestClient.SimPrims[Client.Network.CurrentSim].Values)
++                    foreach (PrimObject prim in Client.SimPrims[Client.Network.CurrentSim].Values)
+                     {
+                         if (prim.ID == id)
+                         {
+@@ -104,11 +101,11 @@
+ 					{
+ 						List&lt;PrimObject&gt; prims = new List&lt;PrimObject&gt;();
+ 
+-						lock (TestClient.SimPrims)
++						lock (Client.SimPrims)
+ 						{
+-							if (TestClient.SimPrims.ContainsKey(Client.Network.CurrentSim))
++							if (Client.SimPrims.ContainsKey(Client.Network.CurrentSim))
+ 							{
+-								foreach (PrimObject prim in TestClient.SimPrims[Client.Network.CurrentSim].Values)
++								foreach (PrimObject prim in Client.SimPrims[Client.Network.CurrentSim].Values)
+ 								{
+ 									if (prim.LocalID == localid || prim.ParentID == localid)
+ 									{
+@@ -141,7 +138,7 @@
+             else
+             {
+                 return &quot;Couldn't find UUID &quot; + id.ToString() + &quot; in the &quot; + 
+-                    TestClient.SimPrims[Client.Network.CurrentSim].Count + 
++                    Client.SimPrims[Client.Network.CurrentSim].Count + 
+                     &quot;objects currently indexed in the current simulator&quot;;
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -9,13 +9,8 @@
+ {
+     public class ExportOutfitCommand : Command
+     {
+-        SecondLife Client;
+-
+         public ExportOutfitCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;exportoutfit&quot;;
+             Description = &quot;Exports an avatars outfit to an xml file. Usage: exportoutfit avataruuid outputfile.xml&quot;;
+         }
+@@ -36,9 +31,9 @@
+                 return &quot;Usage: exportoutfit avataruuid outputfile.xml&quot;;
+             }
+ 
+-            lock (TestClient.Appearances)
++            lock (Client.Appearances)
+             {
+-                if (TestClient.Appearances.ContainsKey(id))
++                if (Client.Appearances.ContainsKey(id))
+                 {
+                     try
+                     {
+@@ -47,7 +42,7 @@
+ 						XmlWriter writer = XmlWriter.Create(args[1], settings);
+ 						try
+ 						{
+-							TestClient.Appearances[id].ToXml(writer);
++							Client.Appearances[id].ToXml(writer);
+ 						}
+ 						finally
+ 						{
+@@ -68,4 +63,4 @@
+             }
+         }
+     }
+-}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,14 +8,10 @@
+ {
+     public class FindSimCommand : Command
+     {
+-        SecondLife Client;
+         Dictionary&lt;SecondLife, bool&gt; GridDataCached = new Dictionary&lt;SecondLife, bool&gt;();
+ 
+         public FindSimCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;findsim&quot;;
+             Description = &quot;Searches for a simulator and returns information about it. Usage: findsim [Simulator Name]&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class FollowCommand: Command
+     {
+-        SecondLife Client;
+-
+ 		public FollowCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;follow&quot;;
+ 			Description = &quot;Follow another avatar. (usage: follow [FirstName LastName])  If no target is set then will follow master.&quot;;
+ 		}
+@@ -27,7 +22,7 @@
+ 			target = target.TrimEnd();
+ 
+ 			if (target.Length == 0)
+-				target = TestClient.Master;
++				target = Client.Master;
+ 
+             if (target.Length &gt; 0)
+             {
+@@ -48,7 +43,7 @@
+ 
+         bool Follow(string name)
+         {
+-            foreach (Avatar av in TestClient.AvatarList.Values)
++            foreach (Avatar av in Client.AvatarList.Values)
+             {
+                 if (av.Name == name)
+ 				{
+@@ -61,14 +56,14 @@
+             return false;
+         }
+ 
+-		public override void Think(SecondLife Client)
++		public override void Think()
+ 		{
+             if (Helpers.VecDist(followAvatar.Position, Client.Self.Position) &gt; DISTANCE_BUFFER)
+             {
+                 //move toward target
+-           	LLVector3 avPos = followAvatar.Position; 
+-		Client.Self.AutoPilot((ulong)avPos.X + (ulong)TestClient.regionX, (ulong)avPos.Y + (ulong)TestClient.regionY, avPos.Z);
+-	    }
++           		LLVector3 avPos = followAvatar.Position; 
++				Client.Self.AutoPilot((ulong)avPos.X + (ulong)Client.regionX, (ulong)avPos.Y + (ulong)Client.regionY, avPos.Z);
++			}
+ 			//else
+ 			//{
+ 			//    //stop at current position
+@@ -76,7 +71,7 @@
+ 			//    client.Self.AutoPilot((ulong)myPos.x, (ulong)myPos.y, myPos.Z);
+ 			//}
+ 
+-			base.Think(Client);
++			base.Think();
+ 		}
+ 
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class GiveAllCommand: Command
+     {
+-        SecondLife Client;
+-
+ 		public GiveAllCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;giveAll&quot;;
+ 			Description = &quot;Gives you all it's money.&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,14 +8,10 @@
+ {
+     public class GotoCommand: Command
+     {
+-        SecondLife Client;
+         private bool EstateLookupFinished = false;
+ 
+         public GotoCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;goto&quot;;
+ 			Description = &quot;Teleport to a location (e.g. \&quot;goto Hooper/100/100/30\&quot;)&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class HelpCommand: Command
+     {
+-        SecondLife Client;
+-
+         public HelpCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;help&quot;;
+ 			Description = &quot;Lists available commands.&quot;;
+ 		}
+@@ -23,7 +18,7 @@
+ 		{
+ 			StringBuilder result = new StringBuilder();
+ 			result.AppendFormat(&quot;\n\nHELP\nClient accept teleport lures from master and group members.\n&quot;);
+-			foreach (Command c in TestClient.Commands.Values)
++			foreach (Command c in Client.Commands.Values)
+ 			{
+ 				result.AppendFormat(&quot;{0} - {1}\n&quot;, c.Name, c.Description);
+ 			}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,18 +8,14 @@
+ {
+     public class ImCommand : Command
+     {
+-        SecondLife Client;
+         string ToAvatarName = String.Empty;
+         ManualResetEvent NameSearchEvent = new ManualResetEvent(false);
+         Dictionary&lt;string, LLUUID&gt; Name2Key = new Dictionary&lt;string, LLUUID&gt;();
+ 
+         public ImCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
++            testClient.Avatars.OnAvatarNameSearch += new AvatarManager.AvatarNameSearchCallback(Avatars_OnAvatarNameSearch);
+ 
+-            Client.Avatars.OnAvatarNameSearch += new AvatarManager.AvatarNameSearchCallback(Avatars_OnAvatarNameSearch);
+-
+             Name = &quot;im&quot;;
+             Description = &quot;Instant message someone. Usage: im [firstname] [lastname] [message]&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -29,7 +29,6 @@
+ 
+     public class ImportCommand : Command
+     {
+-        SecondLife Client;
+         PrimObject currentPrim;
+         LLVector3 currentPosition;
+         SecondLife currentClient;
+@@ -42,9 +41,6 @@
+ 
+         public ImportCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;import&quot;;
+             Description = &quot;Import prims from an exported xml file. Usage: import [filename.xml]&quot;;
+             primDone = new ManualResetEvent(false);
+@@ -81,7 +77,7 @@
+ 
+             if (!registeredCreateEvent)
+             {
+-                TestClient.OnPrimCreated += new TestClient.PrimCreatedCallback(TestClient_OnPrimCreated);
++                Client.OnPrimCreated += new TestClient.PrimCreatedCallback(TestClient_OnPrimCreated);
+                 registeredCreateEvent = true;
+             }
+ 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -10,14 +10,10 @@
+ {
+     public class ImportOutfitCommand : Command
+     {
+-        SecondLife Client;
+         private uint SerialNum = 1;
+ 
+         public ImportOutfitCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;importoutfit&quot;;
+             Description = &quot;Imports an appearance from an xml file. Usage: importoutfit inputfile.xml&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class JumpCommand: Command
+     {
+-        SecondLife Client;
+-
+         public JumpCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;jump&quot;;
+ 			Description = &quot;Teleports to the specified height. (e.g. \&quot;jump 1000\&quot;)&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -9,13 +9,8 @@
+ {
+     public class LoadCommand: Command
+     {
+-        SecondLife Client;
+-
+         public LoadCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;load&quot;;
+ 			Description = &quot;Loads commands from a dll. (Usage: load AssemblyNameWithoutExtension)&quot;;
+ 		}
+@@ -26,7 +21,7 @@
+ 				return &quot;Usage: load AssemblyNameWithoutExtension&quot;;
+ 
+ 			string filename = AppDomain.CurrentDomain.BaseDirectory + args[0] + &quot;.dll&quot;;
+-			TestClient.RegisterAllCommands(Assembly.LoadFile(filename));
++			Client.RegisterAllCommands(Assembly.LoadFile(filename));
+             return &quot;Assembly &quot; + filename + &quot; loaded.&quot;;
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class LocationCommand: Command
+     {
+-        SecondLife Client;
+-
+         public LocationCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;location&quot;;
+ 			Description = &quot;Show the location.&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -10,7 +10,6 @@
+     {
+         public LoginCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+             Name = &quot;login&quot;;
+             Description = &quot;Logs in another avatar&quot;;
+         }
+@@ -20,7 +19,7 @@
+             if (args.Length != 3)
+                 return &quot;usage: login firstname lastname password&quot;;
+ 
+-            SecondLife newClient = TestClient.ClientManager.Login(args);
++            SecondLife newClient = Client.ClientManager.Login(args);
+ 
+             if (newClient.Network.Connected)
+             {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class LogoutCommand : Command
+     {
+-        SecondLife Client;
+-
+         public LogoutCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;logout&quot;;
+             Description = &quot;Log this avatar out&quot;;
+         }
+@@ -22,7 +17,7 @@
+         public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             string name = Client.ToString();
+-			TestClient.ClientManager.Logout(TestClient);
++			Client.ClientManager.Logout(Client);
+             return &quot;Logged &quot; + name + &quot; out&quot;;
+         }
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,7 +8,6 @@
+ {
+     public class PacketLogCommand : Command
+     {
+-        SecondLife Client;
+         List&lt;Packet&gt; Packets = new List&lt;Packet&gt;();
+         bool Done = false;
+         int Count = 0;
+@@ -16,9 +15,6 @@
+ 
+         public PacketLogCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;packetlog&quot;;
+             Description = &quot;Logs a given number of packets to an xml file. Usage: packetlog 10 tenpackets.xml&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class PrimCountCommand: Command
+     {
+-        SecondLife Client;
+-
+         public PrimCountCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;primCount&quot;;
+ 			Description = &quot;Shows the number of prims that have been received.&quot;;
+ 		}
+@@ -23,9 +18,9 @@
+ 		{
+             int count = 0;
+ 
+-            lock (TestClient.SimPrims)
++            lock (Client.SimPrims)
+             {
+-                foreach (Dictionary&lt;uint, PrimObject&gt; prims in TestClient.SimPrims.Values)
++                foreach (Dictionary&lt;uint, PrimObject&gt; prims in Client.SimPrims.Values)
+                 {
+                     count += prims.Count;
+                 }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,21 +8,16 @@
+ {
+     public class QuitCommand: Command
+     {
+-        SecondLife Client;
+-
+         public QuitCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;quit&quot;;
+ 			Description = &quot;Log all avatars out and shut down&quot;;
+ 		}
+ 
+         public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+-			TestClient.ClientManager.LogoutAll();
+-            TestClient.ClientManager.Running = false;
++			Client.ClientManager.LogoutAll();
++            Client.ClientManager.Running = false;
+             return &quot;All avatars logged out&quot;;
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class SayCommand: Command
+     {
+-        SecondLife Client;
+-
+         public SayCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;say&quot;;
+ 			Description = &quot;Say something.  (usage: say (optional channel) whatever)&quot;;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,14 +8,10 @@
+ {
+     public class SetMasterCommand: Command
+     {
+-        SecondLife Client;
+ 		public DateTime Created = DateTime.Now;
+ 
+         public SetMasterCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;setMaster&quot;;
+ 			Description = &quot;Sets the user name of the master user.  The master user can IM to run commands.&quot;;
+ 		}
+@@ -25,11 +21,11 @@
+ 			string masterName = String.Empty;
+ 			for (int ct = 0; ct &lt; args.Length;ct++)
+ 				masterName = masterName + args[ct] + &quot; &quot;;
+-			TestClient.Master = masterName.TrimEnd();
++			Client.Master = masterName.TrimEnd();
+ 
+-			foreach (Avatar av in TestClient.AvatarList.Values)
++			foreach (Avatar av in Client.AvatarList.Values)
+ 			{
+-			    if (av.Name == TestClient.Master)
++			    if (av.Name == Client.Master)
+ 			    {
+ 			        Client.Self.InstantMessage(av.ID, &quot;You are now my master.  IM me with \&quot;help\&quot; for a command list.&quot;);
+ 			        break;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class ShoutCommand : Command
+     {
+-        SecondLife Client;
+-
+         public ShoutCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;shout&quot;;
+             Description = &quot;Shout something.&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class SitCommand: Command
+     {
+-        SecondLife Client;
+-
+         public SitCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;sit&quot;;
+ 			Description = &quot;Attempt to sit on the closest prim&quot;;
+ 		}
+@@ -24,11 +19,11 @@
+ 		    PrimObject closest = null;
+ 		    double closestDistance = Double.MaxValue;
+ 
+-		    lock (TestClient.SimPrims)
++		    lock (Client.SimPrims)
+ 		    {
+-                if (TestClient.SimPrims.ContainsKey(Client.Network.CurrentSim))
++                if (Client.SimPrims.ContainsKey(Client.Network.CurrentSim))
+                 {
+-                    foreach (PrimObject p in TestClient.SimPrims[Client.Network.CurrentSim].Values)
++                    foreach (PrimObject p in Client.SimPrims[Client.Network.CurrentSim].Values)
+                     {
+                         float distance = Helpers.VecDist(Client.Self.Position, p.Position);
+ 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class TreeCommand: Command
+     {
+-        SecondLife Client;
+-
+         public TreeCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;tree&quot;;
+ 			Description = &quot;Rez a tree.&quot;;
+ 		}
+@@ -33,7 +28,7 @@
+ 		            treePosition.Z += 3.0f;
+ 
+ 		            Client.Objects.AddTree(Client.Network.CurrentSim, new LLVector3(0.5f, 0.5f, 0.5f),
+-		                LLQuaternion.Identity, treePosition, tree, TestClient.GroupID, false);
++		                LLQuaternion.Identity, treePosition, tree, Client.GroupID, false);
+ 
+ 		            return &quot;Attempted to rez a &quot; + treeName + &quot; tree&quot;;
+ 		        }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,14 +8,10 @@
+ {
+     public class UptimeCommand : Command
+     {
+-        SecondLife Client;
+         public DateTime Created = DateTime.Now;
+ 
+         public UptimeCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;uptime&quot;;
+             Description = &quot;Shows the login name, login time and length of time logged on.&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class WhisperCommand : Command
+     {
+-        SecondLife Client;
+-
+         public WhisperCommand(TestClient testClient)
+         {
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+             Name = &quot;whisper&quot;;
+             Description = &quot;Whisper something.&quot;;
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -8,13 +8,8 @@
+ {
+     public class WhoCommand: Command
+     {
+-        SecondLife Client;
+-
+         public WhoCommand(TestClient testClient)
+ 		{
+-            TestClient = testClient;
+-            Client = (SecondLife)TestClient;
+-
+ 			Name = &quot;who&quot;;
+ 			Description = &quot;Lists seen avatars.&quot;;
+ 		}
+@@ -22,7 +17,7 @@
+         public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+-			foreach (Avatar av in TestClient.AvatarList.Values)
++			foreach (Avatar av in Client.AvatarList.Values)
+ 			{
+ 				result.AppendFormat(&quot;\n{0} {1} {2}/{3} ID: {4}&quot;, av.Name, av.GroupName, av.CurrentRegion != null ? av.CurrentRegion.Name : String.Empty, av.Position, av.ID);
+ 			}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-04 01:42:38 UTC (rev 795)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2007-01-04 05:41:23 UTC (rev 796)
+@@ -88,6 +88,7 @@
+ 
+         private void RegisterCommand(Command command)
+         {
++			command.Client = this;
+ 			if (!Commands.ContainsKey(command.Name.ToLower()))
+ 			{
+ 				Commands.Add(command.Name.ToLower(), command);
+@@ -159,7 +160,7 @@
+ 
+             foreach (Command c in Commands.Values)
+                 if (c.Active)
+-                    c.Think(this);
++                    c.Think();
+         }
+ 
+         private void AgentDataUpdateHandler(Packet packet, Simulator sim)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000189.html">[Libsecondlife-commits] r795 - in branches/aditi/libsecondlife-cs:	. mapgenerator
+</A></li>
+	<LI>Next message: <A HREF="000191.html">[Libsecondlife-commits] r797 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#190">[ date ]</a>
+              <a href="thread.html#190">[ thread ]</a>
+              <a href="subject.html#190">[ subject ]</a>
+              <a href="author.html#190">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

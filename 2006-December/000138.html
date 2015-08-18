@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r766 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r766%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612272155.kBRLta3s003485%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000137.html">
+   <LINK REL="Next"  HREF="000139.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r766 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r766%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612272155.kBRLta3s003485%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r766 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec 27 22:55:36 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000137.html">[Libsecondlife-commits] r765 - branches/aditi/data
+</A></li>
+        <LI>Next message: <A HREF="000139.html">[Libsecondlife-commits] r767 - in trunk: . applications	applications/Decoder applications/SLProxy	applications/SecondGlance libsecondlife-cs	libsecondlife-cs/mapgenerator	libsecondlife-cs/mapgenerator/Properties
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-27 22:55:35 +0100 (Wed, 27 Dec 2006)
+New Revision: 766
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+Log:
+* Fixed a bug in SetAvatarInformation() where the AboutText wasn't being set
+* Added FindSimCommand to TestClient that searches for a simulator name and returns the region handle and X/Y coords
+* Added CloneProfileCommand to TestClient that demos the avatar profile commands in libsl
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-27 21:55:35 UTC (rev 766)
+@@ -384,6 +384,7 @@
+             apup.AgentData.SessionID = Client.Network.SessionID;
+ 
+             apup.PropertiesData = new AvatarPropertiesUpdatePacket.PropertiesDataBlock();
++            apup.PropertiesData.AboutText = Helpers.StringToField(this.ProfileProperties.AboutText);
+             apup.PropertiesData.AllowPublish = this.ProfileProperties.AllowPublish;
+             apup.PropertiesData.FLAboutText = Helpers.StringToField(this.ProfileProperties.FirstLifeText);
+             apup.PropertiesData.FLImageID = this.ProfileProperties.FirstLifeImage;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-12-27 21:55:35 UTC (rev 766)
+@@ -1,6 +1,5 @@
+ using System;
+ using System.Collections.Generic;
+-using System.Text;
+ using libsecondlife;
+ using libsecondlife.Packets;
+ 
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/CloneProfileCommand.cs	2006-12-27 21:55:35 UTC (rev 766)
+@@ -0,0 +1,88 @@
++using System;
++using System.Collections.Generic;
++using System.Threading;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class CloneProfileCommand : Command
++    {
++        SecondLife Client;
++        Avatar.Properties Properties;
++        Avatar.Interests Interests;
++        bool ReceivedProperties = false;
++        bool ReceivedInterests = false;
++        ManualResetEvent ReceivedProfileEvent = new ManualResetEvent(false);
++
++        public CloneProfileCommand(TestClient testClient)
++        {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
++            Client.Avatars.OnAvatarInterests += new AvatarManager.AvatarInterestsCallback(Avatars_OnAvatarInterests);
++            Client.Avatars.OnAvatarProperties += new AvatarManager.AvatarPropertiesCallback(Avatars_OnAvatarProperties);
++
++            Name = &quot;cloneprofile&quot;;
++            Description = &quot;Clones another avatars profile as closely as possible. WARNING: This command will &quot; +
++                &quot;destroy your existing profile! Usage: cloneprofile [targetuuid]&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length != 1)
++                return Description;
++
++            LLUUID targetID;
++            ReceivedProperties = false;
++            ReceivedInterests = false;
++
++            try
++            {
++                targetID = new LLUUID(args[0]);
++            }
++            catch (Exception)
++            {
++                return Description;
++            }
++
++            Client.Avatars.RequestAvatarProperties(targetID);
++
++            ReceivedProfileEvent.Reset();
++            ReceivedProfileEvent.WaitOne(5000, false);
++
++            if (!ReceivedInterests || !ReceivedProperties)
++                return &quot;Failed to retrieve a complete profile for that UUID&quot;;
++
++            Client.Self.ProfileInterests = Interests;
++            Client.Self.ProfileProperties = Properties;
++            Client.Self.SetAvatarInformation();
++
++            return &quot;Synchronized our profile to the profile of &quot; + targetID.ToStringHyphenated();
++        }
++
++        void Avatars_OnAvatarProperties(LLUUID avatarID, Avatar.Properties properties)
++        {
++            lock (ReceivedProfileEvent)
++            {
++                Properties = properties;
++                ReceivedProperties = true;
++
++                if (ReceivedInterests &amp;&amp; ReceivedProperties)
++                    ReceivedProfileEvent.Set();
++            }
++        }
++
++        void Avatars_OnAvatarInterests(LLUUID avatarID, Avatar.Interests interests)
++        {
++            lock (ReceivedProfileEvent)
++            {
++                Interests = interests;
++                ReceivedInterests = true;
++
++                if (ReceivedInterests &amp;&amp; ReceivedProperties)
++                    ReceivedProfileEvent.Set();
++            }
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FindSimCommand.cs	2006-12-27 21:55:35 UTC (rev 766)
+@@ -0,0 +1,59 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class FindSimCommand : Command
++    {
++        SecondLife Client;
++        Dictionary&lt;SecondLife, bool&gt; GridDataCached = new Dictionary&lt;SecondLife, bool&gt;();
++
++        public FindSimCommand(TestClient testClient)
++        {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
++            Name = &quot;findsim&quot;;
++            Description = &quot;Searches for a simulator and returns information about it. Usage: findsim [Simulator Name]&quot;;
++        }
++
++        public override string Execute(string[] args, LLUUID fromAgentID)
++        {
++            if (args.Length &lt; 1)
++                return &quot;Usage: findsim [Simulator Name]&quot;;
++
++            string simName = string.Empty;
++            for (int i = 0; i &lt; args.Length; i++)
++                simName += args[i] + &quot; &quot;;
++            simName = simName.TrimEnd().ToLower();
++
++            if (!GridDataCached.ContainsKey(Client))
++            {
++                GridDataCached[Client] = false;
++            }
++
++            if (!GridDataCached[Client])
++            {
++                Client.Grid.AddAllSims();
++                System.Threading.Thread.Sleep(5000);
++                GridDataCached[Client] = true;
++            }
++
++            int attempts = 0;
++            GridRegion region = null;
++            while (region == null &amp;&amp; attempts++ &lt; 5)
++            {
++                region = Client.Grid.GetGridRegion(simName);
++            }
++
++            if (region != null)
++                return &quot;Found &quot; + region.Name + &quot;: handle=&quot; + region.RegionHandle +
++                    &quot;(&quot; + region.X + &quot;,&quot; + region.Y + &quot;)&quot;;
++            else
++                return &quot;Lookup of &quot; + simName + &quot; failed&quot;;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-27 21:55:35 UTC (rev 766)
+@@ -10,6 +10,10 @@
+ {
+     public class TestClient : SecondLife
+     {
++        public delegate void PrimCreatedCallback(Simulator simulator, PrimObject prim);
++
++        public event PrimCreatedCallback OnPrimCreated;
++
+         public Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims;
+         public LLUUID GroupID = LLUUID.Zero;
+         public Dictionary&lt;LLUUID, GroupMember&gt; GroupMembers;
+@@ -18,12 +22,9 @@
+ 		public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
+         public Dictionary&lt;string, object&gt; SharedValues = new Dictionary&lt;string, object&gt;();
+         public bool Running = true;
+-	    public string Master = &quot;&quot;;
++	    public string Master = String.Empty;
+ 		public ClientManager ClientManager;
+ 
+-        public delegate void PrimCreatedCallback(Simulator simulator, PrimObject prim);
+-        public event PrimCreatedCallback OnPrimCreated;
+-
+         private LLQuaternion bodyRotation = LLQuaternion.Identity;
+         private LLVector3 forward = new LLVector3(0, 0.9999f, 0);
+         private LLVector3 left = new LLVector3(0.9999f, 0, 0);
+@@ -31,7 +32,6 @@
+         private int DrawDistance = 64;
+         private System.Timers.Timer updateTimer;
+ 
+-
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-27 15:27:49 UTC (rev 765)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-27 21:55:35 UTC (rev 766)
+@@ -37,8 +37,10 @@
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\AppearanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\CloneProfileCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\FindSimCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000137.html">[Libsecondlife-commits] r765 - branches/aditi/data
+</A></li>
+	<LI>Next message: <A HREF="000139.html">[Libsecondlife-commits] r767 - in trunk: . applications	applications/Decoder applications/SLProxy	applications/SecondGlance libsecondlife-cs	libsecondlife-cs/mapgenerator	libsecondlife-cs/mapgenerator/Properties
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#138">[ date ]</a>
+              <a href="thread.html#138">[ thread ]</a>
+              <a href="subject.html#138">[ subject ]</a>
+              <a href="author.html#138">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

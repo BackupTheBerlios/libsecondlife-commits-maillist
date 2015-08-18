@@ -1,0 +1,974 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r748 - in trunk/libsecondlife-cs:	examples/TestClient examples/TestClient/Commands libsecondlife.Tests
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r748%20-%20in%20trunk/libsecondlife-cs%3A%0A%09examples/TestClient%20examples/TestClient/Commands%20libsecondlife.Tests&In-Reply-To=%3C200612210853.kBL8rAfd010717%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000114.html">
+   <LINK REL="Next"  HREF="000116.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r748 - in trunk/libsecondlife-cs:	examples/TestClient examples/TestClient/Commands libsecondlife.Tests</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r748%20-%20in%20trunk/libsecondlife-cs%3A%0A%09examples/TestClient%20examples/TestClient/Commands%20libsecondlife.Tests&In-Reply-To=%3C200612210853.kBL8rAfd010717%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r748 - in trunk/libsecondlife-cs:	examples/TestClient examples/TestClient/Commands libsecondlife.Tests">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 21 09:53:10 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000114.html">[Libsecondlife-commits] r747 - in trunk/libsecondlife-cs:	AssetSystem examples/TestClient
+</A></li>
+        <LI>Next message: <A HREF="000116.html">[Libsecondlife-commits] r749 -	trunk/libsecondlife-cs/examples/IA_ImageTool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#115">[ date ]</a>
+              <a href="thread.html#115">[ thread ]</a>
+              <a href="subject.html#115">[ subject ]</a>
+              <a href="author.html#115">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-21 09:53:08 +0100 (Thu, 21 Dec 2006)
+New Revision: 748
+
+Modified:
+   trunk/libsecondlife-cs/examples/TestClient/Command.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj
+Log:
+* Refactored TestClient, all Commands now have a reference to the SecondLife class that is in charge of them
+* ExportCommand will only export objects owned by the bot (will add master support soon)
+* libsecondlife.Tests project file references the latest available NUnit
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Command.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Command.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Command.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -12,7 +12,7 @@
+ 		public string Description;
+ 		public TestClient TestClient;
+ 
+-		public abstract string Execute(SecondLife client, string[] args, LLUUID fromAgentID);
++		public abstract string Execute(string[] args, LLUUID fromAgentID);
+ 
+ 		/// &lt;summary&gt;
+ 		/// When set to true, think will be called.
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/AppearanceCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -9,15 +9,19 @@
+ {
+     public class SetAppearanceCommand : Command
+     {
++        SecondLife Client;
+         AppearanceManager aManager;
+ 
+-		public SetAppearanceCommand()
++		public SetAppearanceCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;setapp&quot;;
+             Description = &quot;Set appearance to what's stored in the DB.&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (aManager == null)
+                 aManager = new AppearanceManager(Client);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/BalanceCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class BalanceCommand: Command
+     {
+-		public BalanceCommand()
++        SecondLife Client;
++
++        public BalanceCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;balance&quot;;
+ 			Description = &quot;Shows the amount of L$.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			return Client.ToString() + &quot; has L$: &quot; + Client.Self.Balance;
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class EchoMasterCommand: Command
+     {
+-		public EchoMasterCommand()
++        SecondLife Client;
++
++        public EchoMasterCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;echoMaster&quot;;
+ 			Description = &quot;Repeat everything that master says.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (!Active)
+ 			{
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -2,6 +2,7 @@
+ using System.Collections.Generic;
+ using System.IO;
+ using System.Xml;
++using System.Threading;
+ using libsecondlife;
+ using libsecondlife.Packets;
+ 
+@@ -9,13 +10,22 @@
+ {
+     public class ExportCommand : Command
+     {
+-        public ExportCommand()
++        SecondLife Client;
++        ManualResetEvent GotPermissionsEvent = new ManualResetEvent(false);
++        ObjectProperties Properties = null;
++        bool GotPermissions = false;
++
++        public ExportCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++            Client.Objects.OnObjectProperties += new ObjectManager.ObjectPropertiesFamilyCallback(Objects_OnObjectProperties);
++
+             Name = &quot;export&quot;;
+             Description = &quot;Exports an object to an xml file. Usage: export uuid outputfile.xml&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 2)
+                 return &quot;Usage: export uuid outputfile.xml&quot;;
+@@ -59,6 +69,31 @@
+             
+             if (localid != 0)
+             {
++                // Check for export permission first
++                Client.Objects.RequestObjectPropertiesFamily(Client.Network.CurrentSim, id);
++                GotPermissionsEvent.WaitOne(5000, false);
++
++                if (!GotPermissions)
++                {
++                    return &quot;Couldn't fetch permissions for the requested object, try again&quot;;
++                }
++                else 
++                {
++                    GotPermissions = false;
++
++                    if (Properties == null)
++                    {
++                        return &quot;Null object properties returned, may be a bug. Try again&quot;;
++                    }
++
++                    if (Properties.OwnerID != Client.Network.AgentID)
++                    {
++                        // We need a MasterID field, those exports should be allowed as well
++                        return &quot;That object is owned by &quot; + Properties.OwnerID + &quot;, we don't have permission &quot; +
++                            &quot;to export it&quot;;
++                    }
++                }
++
+                 try
+                 {
+ 					XmlWriterSettings settings = new XmlWriterSettings();
+@@ -109,5 +144,12 @@
+                     &quot;objects currently indexed in the current simulator&quot;;
+             }
+         }
++
++        void Objects_OnObjectProperties(Simulator simulator, ObjectProperties properties)
++        {
++            Properties = properties;
++            GotPermissions = true;
++            GotPermissionsEvent.Set();
++        }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -9,13 +9,18 @@
+ {
+     public class ExportOutfitCommand : Command
+     {
+-        public ExportOutfitCommand()
++        SecondLife Client;
++
++        public ExportOutfitCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;exportoutfit&quot;;
+             Description = &quot;Exports an avatars outfit to an xml file. Usage: exportoutfit avataruuid outputfile.xml&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 2)
+                 return &quot;Usage: exportoutfit avataruuid outputfile.xml&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class FollowCommand: Command
+     {
+-		public FollowCommand()
++        SecondLife Client;
++
++		public FollowCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;follow&quot;;
+ 			Description = &quot;Follow another avatar. (usage: follow [FirstName LastName])  If no target is set then will follow master.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			string target = String.Empty;
+ 			for (int ct = 0; ct &lt; args.Length; ct++)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GiveAllCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class GiveAllCommand: Command
+     {
+-		public GiveAllCommand()
++        SecondLife Client;
++
++		public GiveAllCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;giveAll&quot;;
+ 			Description = &quot;Gives you all it's money.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (fromAgentID == null)
+ 				return &quot;Unable to send money to console.  This command only works when IMed.&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/GotoCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,15 +8,19 @@
+ {
+     public class GotoCommand: Command
+     {
++        SecondLife Client;
+         private bool EstateLookupFinished = false;
+ 
+-		public GotoCommand()
++        public GotoCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;goto&quot;;
+ 			Description = &quot;Teleport to a location (e.g. \&quot;goto Hooper/100/100/30\&quot;)&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+                 return &quot;usage: Destination should be specified as sim/x/y/z&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/HelpCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class HelpCommand: Command
+     {
+-		public HelpCommand()
++        SecondLife Client;
++
++        public HelpCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;help&quot;;
+ 			Description = &quot;Lists available commands.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+ 			result.AppendFormat(&quot;\n\nHELP\nClient accept teleport lures from master and group members.\n&quot;);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/IMCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -7,15 +7,19 @@
+ {
+     public class ImCommand : Command
+     {
++        SecondLife Client;
+         bool DirLookupComplete = false;
+ 
+-        public ImCommand()
++        public ImCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;im&quot;;
+             Description = &quot;Instant message someone. Usage: im [firstname] [lastname] [message]&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             return &quot;FIXME&quot;;
+             // How do we register the callback only once for each client?
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -29,6 +29,7 @@
+ 
+     public class ImportCommand : Command
+     {
++        SecondLife Client;
+         PrimObject currentPrim;
+         LLVector3 currentPosition;
+         SecondLife currentClient;
+@@ -39,15 +40,18 @@
+         bool rezzingRootPrim = false;
+         bool linking = false;
+ 
+-        public ImportCommand()
++        public ImportCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;import&quot;;
+             Description = &quot;Import prims from an exported xml file. Usage: import [filename.xml]&quot;;
+             primDone = new ManualResetEvent(false);
+             registeredCreateEvent = false;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 1)
+                 return &quot;Usage: import inputfile.xml&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportOutfitCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -10,15 +10,19 @@
+ {
+     public class ImportOutfitCommand : Command
+     {
++        SecondLife Client;
+         private uint SerialNum = 1;
+ 
+-        public ImportOutfitCommand()
++        public ImportOutfitCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;importoutfit&quot;;
+             Description = &quot;Imports an appearance from an xml file. Usage: importoutfit inputfile.xml&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 1)
+                 return &quot;Usage: importoutfit inputfile.xml&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/JumpCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class JumpCommand: Command
+     {
+-		public JumpCommand()
++        SecondLife Client;
++
++        public JumpCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;jump&quot;;
+ 			Description = &quot;Teleports to the specified height. (e.g. \&quot;jump 1000\&quot;)&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length != 1)
+                 return &quot;usage: jump 1000&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoadCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -9,13 +9,18 @@
+ {
+     public class LoadCommand: Command
+     {
+-		public LoadCommand()
++        SecondLife Client;
++
++        public LoadCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;load&quot;;
+ 			Description = &quot;Loads commands from a dll. (Usage: load AssemblyNameWithoutExtension)&quot;;
+ 		}
+ 
+-		public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++		public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			if (args.Length &lt; 1)
+ 				return &quot;Usage: load AssemblyNameWithoutExtension&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LocationCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class LocationCommand: Command
+     {
+-		public LocationCommand()
++        SecondLife Client;
++
++        public LocationCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;location&quot;;
+ 			Description = &quot;Show the location.&quot;;
+ 		}
+ 
+-		public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++		public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+             return &quot;CurrentSim: '&quot; + Client.Network.CurrentSim.Region.Name + &quot;' Position: &quot; + Client.Self.Position.ToString();
+ 		}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,14 @@
+ {
+     public class LoginCommand : Command
+     {
+-        public LoginCommand()
++        public LoginCommand(TestClient testClient)
+         {
++            TestClient = testClient;
+             Name = &quot;login&quot;;
+             Description = &quot;Logs in another avatar&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 3)
+                 return &quot;usage: login firstname lastname password&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class LogoutCommand : Command
+     {
+-        public LogoutCommand()
++        SecondLife Client;
++
++        public LogoutCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;logout&quot;;
+             Description = &quot;Log this avatar out&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             string name = Client.ToString();
+ 			TestClient.ClientManager.Logout(TestClient);
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PacketLogCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,18 +8,22 @@
+ {
+     public class PacketLogCommand : Command
+     {
++        SecondLife Client;
+         List&lt;Packet&gt; Packets = new List&lt;Packet&gt;();
+         bool Done = false;
+         int Count = 0;
+         int Total = 0;
+ 
+-        public PacketLogCommand()
++        public PacketLogCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;packetlog&quot;;
+             Description = &quot;Logs a given number of packets to an xml file. Usage: packetlog 10 tenpackets.xml&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             if (args.Length != 2)
+                 return &quot;Usage: packetlog 10 tenpackets.xml&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/PrimCountCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class PrimCountCommand: Command
+     {
+-		public PrimCountCommand()
++        SecondLife Client;
++
++        public PrimCountCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;primCount&quot;;
+ 			Description = &quot;Shows the number of prims that have been received.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+             int count = 0;
+ 
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class QuitCommand: Command
+     {
+-		public QuitCommand()
++        SecondLife Client;
++
++        public QuitCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;quit&quot;;
+ 			Description = &quot;Log all avatars out and shut down&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			TestClient.ClientManager.LogoutAll();
+             TestClient.ClientManager.Running = false;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class SayCommand: Command
+     {
+-		public SayCommand()
++        SecondLife Client;
++
++        public SayCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;say&quot;;
+ 			Description = &quot;Say something.  (usage: say (optional channel) whatever)&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+             int channel = 0;
+             int startIndex = 0;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,15 +8,19 @@
+ {
+     public class SetMasterCommand: Command
+     {
++        SecondLife Client;
+ 		public DateTime Created = DateTime.Now;
+ 
+-		public SetMasterCommand()
++        public SetMasterCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;setMaster&quot;;
+ 			Description = &quot;Sets the user name of the master user.  The master user can IM to run commands.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			string masterName = String.Empty;
+ 			for (int ct = 0; ct &lt; args.Length;ct++)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ShoutCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class ShoutCommand : Command
+     {
+-        public ShoutCommand()
++        SecondLife Client;
++
++        public ShoutCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;shout&quot;;
+             Description = &quot;Shout something.&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             int channel = 0;
+             int startIndex = 0;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class SitCommand: Command
+     {
+-		public SitCommand()
++        SecondLife Client;
++
++        public SitCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;sit&quot;;
+ 			Description = &quot;Attempt to sit on the closest prim&quot;;
+ 		}
+ 			
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 		    PrimObject closest = null;
+ 		    double closestDistance = Double.MaxValue;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/TreeCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class TreeCommand: Command
+     {
+-		public TreeCommand()
++        SecondLife Client;
++
++        public TreeCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;tree&quot;;
+ 			Description = &quot;Rez a tree.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 		    if (args.Length == 1)
+ 		    {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/UptimeCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,15 +8,19 @@
+ {
+     public class UptimeCommand : Command
+     {
++        SecondLife Client;
+         public DateTime Created = DateTime.Now;
+ 
+-        public UptimeCommand()
++        public UptimeCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;uptime&quot;;
+             Description = &quot;Shows the login name, login time and length of time logged on.&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             string name = Client.ToString();
+             return &quot;I am &quot; + name + &quot;, Up Since: &quot; + Created + &quot; (&quot; + (DateTime.Now - Created) + &quot;)&quot;;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhisperCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class WhisperCommand : Command
+     {
+-        public WhisperCommand()
++        SecondLife Client;
++
++        public WhisperCommand(TestClient testClient)
+         {
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+             Name = &quot;whisper&quot;;
+             Description = &quot;Whisper something.&quot;;
+         }
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+         {
+             int channel = 0;
+             int startIndex = 0;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -8,13 +8,18 @@
+ {
+     public class WhoCommand: Command
+     {
+-		public WhoCommand()
++        SecondLife Client;
++
++        public WhoCommand(TestClient testClient)
+ 		{
++            TestClient = testClient;
++            Client = (SecondLife)TestClient;
++
+ 			Name = &quot;who&quot;;
+ 			Description = &quot;Lists seen avatars.&quot;;
+ 		}
+ 
+-        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++        public override string Execute(string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+ 			foreach (Avatar av in TestClient.AvatarList.Values)
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-21 08:53:08 UTC (rev 748)
+@@ -68,11 +68,19 @@
+         {
+             foreach (Type t in assembly.GetTypes())
+             {
+-                if (t.IsSubclassOf(typeof(Command)))
++                try
+                 {
+-                    Command command = (Command)t.GetConstructor(new Type[0]).Invoke(new object[0]);
+-                    RegisterCommand(command);
++                    if (t.IsSubclassOf(typeof(Command)))
++                    {
++                        ConstructorInfo info = t.GetConstructor(new Type[] { typeof(TestClient) });
++                        Command command = (Command)info.Invoke(new object[] { this });
++                        RegisterCommand(command);
++                    }
+                 }
++                catch (Exception e)
++                {
++                    Console.WriteLine(e.ToString());
++                }
+             }
+         }
+ 
+@@ -80,7 +88,6 @@
+         {
+ 			if (!Commands.ContainsKey(command.Name.ToLower()))
+ 			{
+-				command.TestClient = this;
+ 				Commands.Add(command.Name.ToLower(), command);
+ 			}
+         }
+@@ -131,7 +138,7 @@
+             {
+                 string[] args = new string[tokens.Length - 1];
+                 Array.Copy(tokens, 1, args, 0, args.Length);
+-                string response = response = Commands[firstToken].Execute(this, args, fromAgentID);
++                string response = response = Commands[firstToken].Execute(args, fromAgentID);
+ 
+                 if (response.Length &gt; 0)
+                 {
+
+Modified: trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj	2006-12-20 23:55:13 UTC (rev 747)
++++ trunk/libsecondlife-cs/libsecondlife.Tests/libsecondlife.Tests.csproj	2006-12-21 08:53:08 UTC (rev 748)
+@@ -31,7 +31,7 @@
+     &lt;OutputPath&gt;..\..\bin\&lt;/OutputPath&gt;
+   &lt;/PropertyGroup&gt;
+   &lt;ItemGroup&gt;
+-    &lt;Reference Include=&quot;nunit.framework, Version=2.2.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77&quot; /&gt;
++    &lt;Reference Include=&quot;nunit.framework, Version=2.2.9.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL&quot; /&gt;
+     &lt;Reference Include=&quot;System&quot; /&gt;
+     &lt;Reference Include=&quot;System.Data&quot; /&gt;
+     &lt;Reference Include=&quot;System.Xml&quot; /&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000114.html">[Libsecondlife-commits] r747 - in trunk/libsecondlife-cs:	AssetSystem examples/TestClient
+</A></li>
+	<LI>Next message: <A HREF="000116.html">[Libsecondlife-commits] r749 -	trunk/libsecondlife-cs/examples/IA_ImageTool
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#115">[ date ]</a>
+              <a href="thread.html#115">[ thread ]</a>
+              <a href="subject.html#115">[ subject ]</a>
+              <a href="author.html#115">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

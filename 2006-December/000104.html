@@ -1,0 +1,919 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r737 - in trunk/libsecondlife-cs: .	examples/TestClient libsecondlife.Tests	libsecondlife.Utilities libsecondlife.Utilities/Properties
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r737%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20libsecondlife.Tests%0A%09libsecondlife.Utilities%20libsecondlife.Utilities/Properties&In-Reply-To=%3C200612180120.kBI1KGMG018366%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000103.html">
+   <LINK REL="Next"  HREF="000105.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r737 - in trunk/libsecondlife-cs: .	examples/TestClient libsecondlife.Tests	libsecondlife.Utilities libsecondlife.Utilities/Properties</H1>
+    <B>jhurliman at BerliOS</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r737%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20libsecondlife.Tests%0A%09libsecondlife.Utilities%20libsecondlife.Utilities/Properties&In-Reply-To=%3C200612180120.kBI1KGMG018366%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r737 - in trunk/libsecondlife-cs: .	examples/TestClient libsecondlife.Tests	libsecondlife.Utilities libsecondlife.Utilities/Properties">jhurliman at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec 18 02:20:16 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000103.html">[Libsecondlife-commits] r736 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000105.html">[Libsecondlife-commits] r738 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#104">[ date ]</a>
+              <a href="thread.html#104">[ thread ]</a>
+              <a href="subject.html#104">[ subject ]</a>
+              <a href="author.html#104">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: jhurliman
+Date: 2006-12-18 02:20:10 +0100 (Mon, 18 Dec 2006)
+New Revision: 737
+
+Added:
+   trunk/libsecondlife-cs/libsecondlife.Tests/
+   trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Properties/
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Properties/AssemblyInfo.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+   trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj
+Removed:
+   trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs
+   trunk/libsecondlife-cs/tests/
+Modified:
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.sln
+Log:
+* Added libsecondlife.Utilities, for all your awesome code that doesn't directly have to do with moving data between the client and the network
+* Renamed the tests folder to libsecondlife.Tests
+* More NetworkManager hardening code, should throw less warnings now
+* Fixed the solution file (again) to be VS C# Express compatible, and removed a missing project reference
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-18 01:20:10 UTC (rev 737)
+@@ -342,11 +342,12 @@
+         {
+             /// &lt;summary&gt;Whispers (5m radius)&lt;/summary&gt;
+             Whisper = 0,
+-            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
++            /// &lt;summary&gt;Normal chat (10/20m radius), what the official viewer typically sends&lt;/summary&gt;
+             Normal = 1,
+             /// &lt;summary&gt;Shouting! (100m radius)&lt;/summary&gt;
+             Shout = 2,
+-            /// &lt;summary&gt;Normal chat (10/20m radius) - Why is this here twice?&lt;/summary&gt;
++            /// &lt;summary&gt;Say chat (10/20m radius) - The official viewer will 
++            /// print &quot;[4:15] You say, hey&quot; instead of &quot;[4:15] You: hey&quot;&lt;/summary&gt;
+             Say = 3,
+             /// &lt;summary&gt;Event message when an Avatar has begun to type&lt;/summary&gt;
+             StartTyping = 4,
+@@ -1068,6 +1069,7 @@
+                 Client.DebugLog(&quot;TeleportFinish received from &quot; + simulator.ToString());
+ 
+                 TeleportFinishPacket finish = (TeleportFinishPacket)packet;
++                Simulator previousSim = Client.Network.CurrentSim;
+ 
+                 // Connect to the new sim
+                 Simulator sim = Client.Network.Connect(new IPAddress((long)finish.Info.SimIP), finish.Info.SimPort,
+@@ -1085,6 +1087,9 @@
+                     move.AgentData.CircuitCode = simulator.CircuitCode;
+                     Client.Network.SendPacket(move, sim);
+ 
++                    // Disconnect from the previous sim
++                    Client.Network.DisconnectSim(previousSim);
++
+                     Client.Log(&quot;Moved to new sim &quot; + sim.ToString(), Helpers.LogLevel.Info);
+ 
+                     if (OnBeginTeleport != null)
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2006-12-18 01:20:10 UTC (rev 737)
+@@ -182,30 +182,36 @@
+         /// &lt;/summary&gt;
+         public void Disconnect()
+         {
+-            connected = false;
++            if (!connected)
++            {
++                connected = false;
++                AckTimer.Stop();
+ 
+-            // Send the CloseCircuit notice
+-            CloseCircuitPacket close = new CloseCircuitPacket();
++                // Send the CloseCircuit notice
++                CloseCircuitPacket close = new CloseCircuitPacket();
+ 
+-            try
+-            {
+-                Connection.Send(close.ToBytes());
+-            }
+-            catch (SocketException)
+-            {
+-                // There's a high probability of this failing if the network is
+-                // disconnected, so don't even bother logging the error
+-            }
++                if (Connection.Connected)
++                {
++                    try
++                    {
++                        Connection.Send(close.ToBytes());
++                    }
++                    catch (SocketException)
++                    {
++                        // There's a high probability of this failing if the network is
++                        // disconnected, so don't even bother logging the error
++                    }
++                }
+ 
+-            try
+-            {
+-                // Shut the socket communication down
+-                Connection.Shutdown(SocketShutdown.Both);
++                try
++                {
++                    // Shut the socket communication down
++                    Connection.Shutdown(SocketShutdown.Both);
++                }
++                catch (SocketException)
++                {
++                }
+             }
+-            catch (SocketException e)
+-            {
+-                Client.Log(e.ToString(), Helpers.LogLevel.Error);
+-            }
+         }
+ 
+         /// &lt;summary&gt;
+@@ -221,9 +227,9 @@
+             if (!connected &amp;&amp; packet.Type != PacketType.UseCircuitCode)
+             {
+                 Client.Log(&quot;Trying to send a &quot; + packet.Type.ToString() + &quot; packet when the socket is closed&quot;,
+-                    Helpers.LogLevel.Warning);
++                    Helpers.LogLevel.Info);
+ 
+-                throw new NotConnectedException();
++                return;
+             }
+ 
+             if (packet.Header.AckList.Length &gt; 0)
+@@ -310,11 +316,12 @@
+                     Connection.Send(buffer, bytes, SocketFlags.None);
+                 }
+             }
+-            catch (SocketException e)
++            catch (SocketException)
+             {
+-                Client.Log(e.ToString(), Helpers.LogLevel.Error);
++                Client.Log(&quot;Tried to send a &quot; + packet.Type.ToString() + &quot; on a closed socket&quot;, 
++                    Helpers.LogLevel.Warning);
+ 
+-                // FIXME: Assume this socket is dead and Disconnect()
++                Disconnect();
+             }
+         }
+ 
+@@ -373,7 +380,7 @@
+         {
+             lock (PendingAcks)
+             {
+-                if (PendingAcks.Count &gt; 0)
++                if (connected &amp;&amp; PendingAcks.Count &gt; 0)
+                 {
+                     if (PendingAcks.Count &gt; 250)
+                     {
+@@ -1252,17 +1259,24 @@
+         /// &lt;param name=&quot;sim&quot;&gt;&lt;/param&gt;
+         public void DisconnectSim(Simulator sim)
+         {
+-            sim.Disconnect();
++            if (sim != null)
++            {
++                sim.Disconnect();
+ 
+-            // Fire the SimDisconnected event if a handler is registered
+-            if (OnSimDisconnected != null)
+-            {
+-                OnSimDisconnected(sim, DisconnectType.NetworkTimeout);
++                // Fire the SimDisconnected event if a handler is registered
++                if (OnSimDisconnected != null)
++                {
++                    OnSimDisconnected(sim, DisconnectType.NetworkTimeout);
++                }
++
++                lock (Simulators)
++                {
++                    Simulators.Remove(sim);
++                }
+             }
+-
+-            lock (Simulators)
++            else
+             {
+-                Simulators.Remove(sim);
++                Client.Log(&quot;DisconnectSim() called with a null Simulator reference&quot;, Helpers.LogLevel.Warning);
+             }
+         }
+ 
+@@ -1280,9 +1294,9 @@
+                 foreach (Simulator simulator in Simulators)
+                 {
+                     // Don't disconnect the current sim, we'll use LogoutRequest for that
+-                    if (simulator != CurrentSim)
++                    if (simulator != null &amp;&amp; simulator != CurrentSim)
+                     {
+-                        simulator.Disconnect();
++                        DisconnectSim(simulator);
+ 
+                         // Fire the SimDisconnected event if a handler is registered
+                         if (OnSimDisconnected != null)
+@@ -1295,8 +1309,11 @@
+                 Simulators.Clear();
+             }
+ 
+-            CurrentSim.Disconnect();
+-            CurrentSim = null;
++            if (CurrentSim != null)
++            {
++                DisconnectSim(CurrentSim);
++                CurrentSim = null;
++            }
+         }
+ 
+         private void SendInitialPackets()
+@@ -1380,12 +1397,15 @@
+                 {
+                     foreach (Simulator sim in disconnectedSims)
+                     {
+-                        // This sim hasn't received any network traffic since the 
+-                        // timer last elapsed, consider it disconnected
+-                        Client.Log(&quot;Network timeout for simulator &quot; + sim.Region.Name +
+-                            &quot;, disconnecting&quot;, Helpers.LogLevel.Warning);
++                        if (sim != null)
++                        {
++                            // This sim hasn't received any network traffic since the 
++                            // timer last elapsed, consider it disconnected
++                            Client.Log(&quot;Network timeout for simulator &quot; + sim.Region.Name +
++                                &quot;, disconnecting&quot;, Helpers.LogLevel.Warning);
+ 
+-                        DisconnectSim(sim);
++                            DisconnectSim(sim);
++                        }
+                     }
+                 }
+             }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-18 01:20:10 UTC (rev 737)
+@@ -39,6 +39,7 @@
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\FindSimCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+@@ -96,4 +97,4 @@
+   &lt;Target Name=&quot;AfterBuild&quot;&gt;
+   &lt;/Target&gt;
+   --&gt;
+-&lt;/Project&gt;
+\ No newline at end of file
++&lt;/Project&gt;
+
+Copied: trunk/libsecondlife-cs/libsecondlife.Tests (from rev 720, trunk/libsecondlife-cs/tests)
+
+Deleted: trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs
+===================================================================
+--- trunk/libsecondlife-cs/tests/Tests.cs	2006-12-12 00:57:45 UTC (rev 720)
++++ trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs	2006-12-18 01:20:10 UTC (rev 737)
+@@ -1,209 +0,0 @@
+-using System;
+-using System.Collections.Generic;
+-using System.Net;
+-using libsecondlife;
+-using libsecondlife.Packets;
+-using NUnit.Framework;
+-
+-namespace libsecondlife.Tests
+-{
+-    [TestFixture]
+-    public class NetworkTests : Assert
+-    {
+-        SecondLife Client;
+-        ulong CurrentRegionHandle = 0;
+-        ulong AhernRegionHandle = 1096213093149184;
+-        ulong MorrisRegionHandle = 1096213093149183;
+-        bool DetectedObject = false;
+-        bool DoneTeleporting = false;
+-        TeleportStatus tpStatus = TeleportStatus.None;
+-        string tpMessage = &quot;&quot;;
+-
+-        public NetworkTests()
+-        {
+-            Client = new SecondLife();
+-
+-            //string startLoc = NetworkManager.StartLocation(&quot;hooper&quot;, 128, 128, 32);
+-
+-            // Register callbacks
+-            Client.Network.RegisterCallback(PacketType.ObjectUpdate, new NetworkManager.PacketCallback(ObjectUpdateHandler));
+-            Client.Self.OnTeleport += new TeleportCallback(OnTeleportHandler);
+-
+-            Client.Network.Login(&quot;Testing&quot;, &quot;Anvil&quot;, &quot;testinganvil&quot;, &quot;Unit Test Framework&quot;, //startLoc,
+-                &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;/*, false*/);
+-        }
+-
+-        ~NetworkTests()
+-        {
+-            Client.Network.Logout();
+-        }
+-
+-        [SetUp]
+-        public void Init()
+-        {
+-            Assert.IsTrue(Client.Network.Connected, &quot;Client is not connected to the grid: &quot; + Client.Network.LoginError);
+-
+-            int start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            //Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(), &quot;Logged in to sim &quot; + 
+-            //    Client.Network.CurrentSim.Region.Name + &quot; instead of Ahern&quot;);
+-        }
+-
+-        [Test]
+-        public void DetectObjects()
+-        {
+-            int start = Environment.TickCount;
+-            while (!DetectedObject)
+-            {
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
+-                    return;
+-                }
+-            }
+-        }
+-
+-        [Test]
+-        public void U64Receive()
+-        {
+-            int start = Environment.TickCount;
+-            while (CurrentRegionHandle == 0)
+-            {
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for an ObjectUpdate packet&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(CurrentRegionHandle == AhernRegionHandle, &quot;Current region is &quot; +
+-                CurrentRegionHandle + &quot; when we were expecting &quot; + AhernRegionHandle + &quot;, possible endian issue&quot;);
+-        }
+-
+-        [Test]
+-        public void Teleport()
+-        {
+-            DoneTeleporting = false;
+-            tpStatus = TeleportStatus.None;
+-
+-            Client.Self.Teleport(MorrisRegionHandle, new LLVector3(128, 128, 32));
+-
+-            int start = Environment.TickCount;
+-
+-            while (!DoneTeleporting)
+-            {
+-                System.Threading.Thread.Sleep(100);
+-
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for the first teleport to finish&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(tpStatus == TeleportStatus.Finished, &quot;Teleport status is &quot; + tpStatus.ToString() +
+-                &quot;, message=&quot; + tpMessage);
+-
+-            // Wait for the region information to come in
+-            start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            // Assert that we really did make it to our scheduled destination
+-            Assert.AreEqual(&quot;morris&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
+-                &quot;Expected to teleport to Morris, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
+-                &quot;. Possibly region full or offline?&quot;);
+-
+-            ///////////////////////////////////////////////////////////////////
+-
+-            // TODO: Add a local region teleport
+-
+-            ///////////////////////////////////////////////////////////////////
+-
+-            DoneTeleporting = false;
+-            tpStatus = TeleportStatus.None;
+-
+-            Client.Self.Teleport(AhernRegionHandle, new LLVector3(128, 128, 32));
+-
+-            start = Environment.TickCount;
+-
+-            while (!DoneTeleporting)
+-            {
+-                System.Threading.Thread.Sleep(100);
+-
+-                if (Environment.TickCount - start &gt; 10000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for the second teleport to finish&quot;);
+-                    return;
+-                }
+-            }
+-
+-            Assert.IsTrue(tpStatus == TeleportStatus.Finished, &quot;Teleport status is &quot; + tpStatus.ToString() +
+-                &quot;, message=&quot; + tpMessage);
+-
+-            // Wait for the region information to come in
+-            start = Environment.TickCount;
+-            while (Client.Network.CurrentSim.Region.Name == &quot;&quot;)
+-            {
+-                if (Environment.TickCount - start &gt; 5000)
+-                {
+-                    Assert.Fail(&quot;Timeout waiting for a RegionHandshake packet&quot;);
+-                }
+-            }
+-
+-            // Assert that we really did make it to our scheduled destination
+-            Assert.AreEqual(&quot;ahern&quot;, Client.Network.CurrentSim.Region.Name.ToLower(),
+-                &quot;Expected to teleport to Ahern, ended up in &quot; + Client.Network.CurrentSim.Region.Name +
+-                &quot;. Possibly region full or offline?&quot;);
+-        }
+-
+-        private void ObjectUpdateHandler(Packet packet, Simulator sim)
+-        {
+-            ObjectUpdatePacket update = (ObjectUpdatePacket)packet;
+-
+-            DetectedObject = true;
+-            CurrentRegionHandle = update.RegionData.RegionHandle;
+-        }
+-
+-        private void OnTeleportHandler(string message, TeleportStatus status)
+-        {
+-            switch (status)
+-            {
+-                case TeleportStatus.None:
+-                    break;
+-                case TeleportStatus.Start:
+-                    break;
+-                case TeleportStatus.Progress:
+-                    break;
+-                case TeleportStatus.Failed:
+-                    DoneTeleporting = true;
+-                    break;
+-                case TeleportStatus.Finished:
+-                    DoneTeleporting = true;
+-                    break;
+-            }
+-
+-            tpMessage = message;
+-            tpStatus = status;
+-        }
+-
+-        [TearDown]
+-        public void Shutdown()
+-        {
+-            //Client.Network.Logout();
+-            //Client = null;
+-        }
+-    }
+-}
+
+Copied: trunk/libsecondlife-cs/libsecondlife.Tests/Tests.cs (from rev 735, trunk/libsecondlife-cs/tests/Tests.cs)
+
+Added: trunk/libsecondlife-cs/libsecondlife.Utilities/Properties/AssemblyInfo.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Properties/AssemblyInfo.cs	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Properties/AssemblyInfo.cs	2006-12-18 01:20:10 UTC (rev 737)
+@@ -0,0 +1,35 @@
++&#65279;using System.Reflection;
++using System.Runtime.CompilerServices;
++using System.Runtime.InteropServices;
++
++// General Information about an assembly is controlled through the following 
++// set of attributes. Change these attribute values to modify the information
++// associated with an assembly.
++[assembly: AssemblyTitle(&quot;libsecondlife.Utilities&quot;)]
++[assembly: AssemblyDescription(&quot;&quot;)]
++[assembly: AssemblyConfiguration(&quot;&quot;)]
++[assembly: AssemblyCompany(&quot;&quot;)]
++[assembly: AssemblyProduct(&quot;libsecondlife.Utilities&quot;)]
++[assembly: AssemblyCopyright(&quot;Copyright &#169;  2006&quot;)]
++[assembly: AssemblyTrademark(&quot;&quot;)]
++[assembly: AssemblyCulture(&quot;&quot;)]
++
++// Setting ComVisible to false makes the types in this assembly not visible 
++// to COM components.  If you need to access a type in this assembly from 
++// COM, set the ComVisible attribute to true on that type.
++[assembly: ComVisible(false)]
++
++// The following GUID is for the ID of the typelib if this project is exposed to COM
++[assembly: Guid(&quot;b77aa07a-daa3-431f-b5aa-0c9c5e2151fd&quot;)]
++
++// Version information for an assembly consists of the following four values:
++//
++//      Major Version
++//      Minor Version 
++//      Build Number
++//      Revision
++//
++// You can specify all the values or you can default the Revision and Build Numbers 
++// by using the '*' as shown below:
++[assembly: AssemblyVersion(&quot;1.0.0.0&quot;)]
++[assembly: AssemblyFileVersion(&quot;1.0.0.0&quot;)]
+
+Added: trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/Utilities.cs	2006-12-18 01:20:10 UTC (rev 737)
+@@ -0,0 +1,26 @@
++using System;
++using System.Collections.Generic;
++using libsecondlife;
++
++namespace libsecondlife.Utilities
++{
++    /// &lt;summary&gt;
++    /// Keeps an up to date inventory of the currently seen objects in each
++    /// simulator
++    /// &lt;/summary&gt;
++    public class ObjectTracker
++    {
++        private SecondLife Client;
++        private Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;ulong, Dictionary&lt;uint, PrimObject&gt;&gt;();
++
++        /// &lt;summary&gt;
++        /// Default constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;A reference to the SecondLife client to track
++        /// objects for&lt;/param&gt;
++        public ObjectTracker(SecondLife client)
++        {
++            Client = client;
++        }
++    }
++}
+
+Added: trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/libsecondlife.Utilities/libsecondlife.Utilities.csproj	2006-12-18 01:20:10 UTC (rev 737)
+@@ -0,0 +1,53 @@
++&#65279;&lt;Project DefaultTargets=&quot;Build&quot; xmlns=&quot;<A HREF="http://schemas.microsoft.com/developer/msbuild/2003">http://schemas.microsoft.com/developer/msbuild/2003</A>&quot;&gt;
++  &lt;PropertyGroup&gt;
++    &lt;Configuration Condition=&quot; '$(Configuration)' == '' &quot;&gt;Debug&lt;/Configuration&gt;
++    &lt;Platform Condition=&quot; '$(Platform)' == '' &quot;&gt;AnyCPU&lt;/Platform&gt;
++    &lt;ProductVersion&gt;8.0.50727&lt;/ProductVersion&gt;
++    &lt;SchemaVersion&gt;2.0&lt;/SchemaVersion&gt;
++    &lt;ProjectGuid&gt;{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}&lt;/ProjectGuid&gt;
++    &lt;OutputType&gt;Library&lt;/OutputType&gt;
++    &lt;AppDesignerFolder&gt;Properties&lt;/AppDesignerFolder&gt;
++    &lt;RootNamespace&gt;libsecondlife.Utilities&lt;/RootNamespace&gt;
++    &lt;AssemblyName&gt;libsecondlife.Utilities&lt;/AssemblyName&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' &quot;&gt;
++    &lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
++    &lt;DebugType&gt;full&lt;/DebugType&gt;
++    &lt;Optimize&gt;false&lt;/Optimize&gt;
++    &lt;OutputPath&gt;..\..\bin\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;DEBUG;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Release|AnyCPU' &quot;&gt;
++    &lt;DebugType&gt;pdbonly&lt;/DebugType&gt;
++    &lt;Optimize&gt;true&lt;/Optimize&gt;
++    &lt;OutputPath&gt;bin\Release\&lt;/OutputPath&gt;
++    &lt;DefineConstants&gt;TRACE&lt;/DefineConstants&gt;
++    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
++  &lt;/PropertyGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Reference Include=&quot;System&quot; /&gt;
++    &lt;Reference Include=&quot;System.Data&quot; /&gt;
++    &lt;Reference Include=&quot;System.Xml&quot; /&gt;
++  &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;Compile Include=&quot;Utilities.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Properties\AssemblyInfo.cs&quot; /&gt;
++  &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;ProjectReference Include=&quot;..\libsecondlife.csproj&quot;&gt;
++      &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
++  &lt;/ItemGroup&gt;
++  &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
++  &lt;!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
++       Other similar extension points exist, see Microsoft.Common.targets.
++  &lt;Target Name=&quot;BeforeBuild&quot;&gt;
++  &lt;/Target&gt;
++  &lt;Target Name=&quot;AfterBuild&quot;&gt;
++  &lt;/Target&gt;
++  --&gt;
++&lt;/Project&gt;
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/libsecondlife.sln
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.sln	2006-12-18 01:15:31 UTC (rev 736)
++++ trunk/libsecondlife-cs/libsecondlife.sln	2006-12-18 01:20:10 UTC (rev 737)
+@@ -12,8 +12,6 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;primexport&quot;, &quot;examples\primexport\primexport.csproj&quot;, &quot;{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libsecondlife.Tests&quot;, &quot;tests\libsecondlife.Tests.csproj&quot;, &quot;{E0BCBBAE-A620-431A-9EB7-30173EAF195B}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;mapgenerator&quot;, &quot;mapgenerator\mapgenerator.csproj&quot;, &quot;{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_SimpleInventory&quot;, &quot;examples\IA_SimpleInventory\IA_SimpleInventory.csproj&quot;, &quot;{E464B963-46E3-4E1A-A36F-9C640C880E68}&quot;
+@@ -38,8 +36,6 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLIRC&quot;, &quot;..\applications\SLIRC\SLIRC.csproj&quot;, &quot;{8855EB2F-BC4C-485A-A577-0989EB16BFDC}&quot;
+ EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;InventoryImageAssets&quot;, &quot;InventoryImageAssets&quot;, &quot;{AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}&quot;
+-EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_MultiImageUpload&quot;, &quot;examples\IA_MultiImageUpload\IA_MultiImageUpload.csproj&quot;, &quot;{8598E42A-DCBC-4224-9503-5694F17B2F45}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLProxy&quot;, &quot;..\SLProxy\SLProxy.csproj&quot;, &quot;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&quot;
+@@ -50,150 +46,182 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;BodyPartMorphGenerator&quot;, &quot;examples\BodyPartMorphGenerator\BodyPartMorphGenerator.csproj&quot;, &quot;{98C44481-3F15-4305-840D-037EA0D9C221}&quot;
+ EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;Tools and Examples&quot;, &quot;Tools and Examples&quot;, &quot;{F35EF72F-4302-4924-A162-10447B94F635}&quot;
++Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;TestClient&quot;, &quot;examples\TestClient\TestClient.csproj&quot;, &quot;{B87682F6-B2D7-4C4D-A529-400C24FD4880}&quot;
+ EndProject
+-Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;SL Proxy&quot;, &quot;SL Proxy&quot;, &quot;{C754652B-2ACB-4D47-8914-834E17919132}&quot;
++Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libsecondlife.Utilities&quot;, &quot;libsecondlife.Utilities\libsecondlife.Utilities.csproj&quot;, &quot;{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;TestClient&quot;, &quot;examples\TestClient\TestClient.csproj&quot;, &quot;{B87682F6-B2D7-4C4D-A529-400C24FD4880}&quot;
++Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libsecondlife.Tests&quot;, &quot;libsecondlife.Tests\libsecondlife.Tests.csproj&quot;, &quot;{E0BCBBAE-A620-431A-9EB7-30173EAF195B}&quot;
+ EndProject
+-Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;Sit&quot;, &quot;..\..\SurveyAndSit\Sit.csproj&quot;, &quot;{C741A2FF-732C-4724-A4D3-D52324D09C8E}&quot;
+-EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
++		Debug|.NET 1.1 = Debug|.NET 1.1
+ 		Debug|Any CPU = Debug|Any CPU
++		Release|.NET 1.1 = Release|.NET 1.1
+ 		Release|Any CPU = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|.NET 1.1.ActiveCfg = Debug|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|.NET 1.1.Build.0 = Debug|.NET 1.1
+ 		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|.NET 1.1.ActiveCfg = Release|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|.NET 1.1.Build.0 = Release|.NET 1.1
+ 		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|Any CPU.Build.0 = Release|Any CPU
++		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{F6258A68-C624-46A0-BA73-B55D21BB0A3B}.Release|Any CPU.Build.0 = Release|Any CPU
++		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{FC19D5F6-076E-4923-8456-9B0E00E22896}.Release|Any CPU.Build.0 = Release|Any CPU
++		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{66FFD34E-652C-4EF5-81FE-06AD011169D2}.Release|Any CPU.Build.0 = Release|Any CPU
++		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E}.Release|Any CPU.Build.0 = Release|Any CPU
++		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|Any CPU.Build.0 = Release|Any CPU
++		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{C59B1312-57EF-4146-B6B2-1C7B6DC4638B}.Release|Any CPU.Build.0 = Release|Any CPU
++		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{E464B963-46E3-4E1A-A36F-9C640C880E68}.Release|Any CPU.Build.0 = Release|Any CPU
++		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{E185E4E1-62D2-430C-A94C-E8E38190805B}.Release|Any CPU.Build.0 = Release|Any CPU
++		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{B5AC6795-E426-4BC3-950F-D7B2970E2394}.Release|Any CPU.Build.0 = Release|Any CPU
++		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C}.Release|Any CPU.Build.0 = Release|Any CPU
++		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A}.Release|Any CPU.Build.0 = Release|Any CPU
++		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7}.Release|Any CPU.Build.0 = Release|Any CPU
++		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{F460FAB3-0D12-4873-89EB-2696818764B8}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{F460FAB3-0D12-4873-89EB-2696818764B8}.Release|Any CPU.Build.0 = Release|Any CPU
++		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{4EF98AD4-B3B3-42B0-9273-13A614A823F7}.Release|Any CPU.Build.0 = Release|Any CPU
++		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{7D4C4807-7705-48A7-9D82-F6689FBBCC8B}.Release|Any CPU.Build.0 = Release|Any CPU
++		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{A4F59DE9-E382-401D-AA8D-4557779D764E}.Release|Any CPU.Build.0 = Release|Any CPU
++		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{8855EB2F-BC4C-485A-A577-0989EB16BFDC}.Release|Any CPU.Build.0 = Release|Any CPU
++		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{8598E42A-DCBC-4224-9503-5694F17B2F45}.Release|Any CPU.Build.0 = Release|Any CPU
++		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|Any CPU.Build.0 = Release|Any CPU
++		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|Any CPU.Build.0 = Release|Any CPU
++		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|Any CPU.Build.0 = Release|Any CPU
++		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{98C44481-3F15-4305-840D-037EA0D9C221}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{98C44481-3F15-4305-840D-037EA0D9C221}.Release|Any CPU.Build.0 = Release|Any CPU
++		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Release|Any CPU.Build.0 = Release|Any CPU
+-		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+-		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+-		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+-		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Release|Any CPU.Build.0 = Release|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{CE5E06C2-2428-416B-ADC1-F1FE16A0FB27}.Release|Any CPU.Build.0 = Release|Any CPU
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|.NET 1.1.ActiveCfg = Debug|.NET 1.1
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|.NET 1.1.Build.0 = Debug|.NET 1.1
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|.NET 1.1.ActiveCfg = Release|.NET 1.1
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|.NET 1.1.Build.0 = Release|.NET 1.1
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{E0BCBBAE-A620-431A-9EB7-30173EAF195B}.Release|Any CPU.Build.0 = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+ 	EndGlobalSection
+-	GlobalSection(NestedProjects) = preSolution
+-		{FC19D5F6-076E-4923-8456-9B0E00E22896} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{66FFD34E-652C-4EF5-81FE-06AD011169D2} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{B5AC6795-E426-4BC3-950F-D7B2970E2394} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{F460FAB3-0D12-4873-89EB-2696818764B8} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{4EF98AD4-B3B3-42B0-9273-13A614A823F7} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{8855EB2F-BC4C-485A-A577-0989EB16BFDC} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{F6258A68-C624-46A0-BA73-B55D21BB0A3B} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{B87682F6-B2D7-4C4D-A529-400C24FD4880} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{C741A2FF-732C-4724-A4D3-D52324D09C8E} = {F35EF72F-4302-4924-A162-10447B94F635}
+-		{E185E4E1-62D2-430C-A94C-E8E38190805B} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{A4F59DE9-E382-401D-AA8D-4557779D764E} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{E464B963-46E3-4E1A-A36F-9C640C880E68} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{8598E42A-DCBC-4224-9503-5694F17B2F45} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{98C44481-3F15-4305-840D-037EA0D9C221} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
+-		{6222B134-AE5F-489A-8A77-423A721B7C62} = {C754652B-2ACB-4D47-8914-834E17919132}
+-		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504} = {C754652B-2ACB-4D47-8914-834E17919132}
+-		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D} = {C754652B-2ACB-4D47-8914-834E17919132}
+-	EndGlobalSection
+ EndGlobal
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000103.html">[Libsecondlife-commits] r736 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000105.html">[Libsecondlife-commits] r738 -	trunk/libsecondlife-cs/examples/TestClient/Commands
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#104">[ date ]</a>
+              <a href="thread.html#104">[ thread ]</a>
+              <a href="subject.html#104">[ subject ]</a>
+              <a href="author.html#104">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,2278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r750 - trunk/SLProxy
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r750%20-%20trunk/SLProxy&In-Reply-To=%3C200612212134.kBLLY9JZ021982%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000116.html">
+   <LINK REL="Next"  HREF="000118.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r750 - trunk/SLProxy</H1>
+    <B>qode at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r750%20-%20trunk/SLProxy&In-Reply-To=%3C200612212134.kBLLY9JZ021982%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r750 - trunk/SLProxy">qode at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec 21 22:34:09 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000116.html">[Libsecondlife-commits] r749 -	trunk/libsecondlife-cs/examples/IA_ImageTool
+</A></li>
+        <LI>Next message: <A HREF="000118.html">[Libsecondlife-commits] r751 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#117">[ date ]</a>
+              <a href="thread.html#117">[ thread ]</a>
+              <a href="subject.html#117">[ subject ]</a>
+              <a href="author.html#117">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: qode
+Date: 2006-12-21 22:34:01 +0100 (Thu, 21 Dec 2006)
+New Revision: 750
+
+Removed:
+   trunk/SLProxy/legacy/
+Modified:
+   trunk/SLProxy/Analyst.cs
+   trunk/SLProxy/Analyst.csproj
+   trunk/SLProxy/ChatConsole.cs
+   trunk/SLProxy/ChatConsole.csproj
+   trunk/SLProxy/README.txt
+   trunk/SLProxy/SLProxy.build
+   trunk/SLProxy/SLProxy.cs
+   trunk/SLProxy/SLProxy.csproj
+   trunk/SLProxy/SLProxy.sln
+Log:
+Updated SLProxy to the new and fantastic SLProxy-Pregen. *Crosses fingers*
+
+Modified: trunk/SLProxy/Analyst.cs
+===================================================================
+--- trunk/SLProxy/Analyst.cs	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/Analyst.cs	2006-12-21 21:34:01 UTC (rev 750)
+@@ -3,6 +3,7 @@
+  *   See the README for usage instructions.
+  *
+  * Copyright (c) 2006 Austin Jennings
++ * Modified by &quot;qode&quot; and &quot;mcortez&quot; on December 21st, 2006 to work with the new pregen 
+  * All rights reserved.
+  *
+  * - Redistribution and use in source and binary forms, with or without 
+@@ -30,6 +31,7 @@
+ using SLProxy;
+ using libsecondlife;
+ using Nwc.XmlRpc;
++using libsecondlife.Packets;
+ 
+ using System;
+ using System.Collections;
+@@ -39,8 +41,6 @@
+ using System.Text.RegularExpressions;
+ 
+ public class Analyst {
+-	private static SecondLife client;
+-	private static ProtocolManager protocolManager;
+ 	private static Proxy proxy;
+ 	private static Hashtable commandDelegates = new Hashtable();
+ 	private static Hashtable loggedPackets = new Hashtable();
+@@ -51,10 +51,8 @@
+ 	private static bool logLogin = false;
+ 
+ 	public static void Main(string[] args) {
+-		// configure the proxy
+-		client = new SecondLife(&quot;../data/keywords.txt&quot;, &quot;../data/message_template.msg&quot;);
+-		protocolManager = client.Protocol;
+-		ProxyConfig proxyConfig = new ProxyConfig(&quot;Analyst&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">austin.jennings at gmail.com</A>&quot;, protocolManager, args);
++		
++		ProxyConfig proxyConfig = new ProxyConfig(&quot;Analyst V2&quot;, &quot;Austin Jennings / Andrew Ortman&quot;, args);
+ 		proxy = new Proxy(proxyConfig);
+ 
+ 		// build the table of /command delegates
+@@ -65,8 +63,8 @@
+ 		proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(LoginResponse));
+ 
+ 		// add a delegate for outgoing chat
+-		proxy.AddDelegate(&quot;ChatFromViewer&quot;, Direction.Incoming, new PacketDelegate(ChatFromViewerIn));
+-		proxy.AddDelegate(&quot;ChatFromViewer&quot;, Direction.Outgoing, new PacketDelegate(ChatFromViewerOut));
++		proxy.AddDelegate(PacketType.ChatFromViewer, Direction.Incoming, new PacketDelegate(ChatFromViewerIn));
++		proxy.AddDelegate(PacketType.ChatFromViewer, Direction.Outgoing, new PacketDelegate(ChatFromViewerOut));
+ 
+ 		//  handle command line arguments
+ 		foreach (string arg in args)
+@@ -103,7 +101,7 @@
+ 
+ 	// ChatFromViewerIn: incoming ChatFromViewer delegate; shouldn't be possible, but just in case...
+ 	private static Packet ChatFromViewerIn(Packet packet, IPEndPoint sim) {
+-		if (loggedPackets.Contains(&quot;ChatFromViewer&quot;) || modifiedPackets.Contains(&quot;ChatFromViewer&quot;))
++		if (loggedPackets.Contains(PacketType.ChatFromViewer) || modifiedPackets.Contains(PacketType.ChatFromViewer))
+ 			// user has asked to log or modify this packet
+ 			return Analyze(packet, sim, Direction.Incoming);
+ 		else
+@@ -114,8 +112,8 @@
+ 	// ChatFromViewerOut: outgoing ChatFromViewer delegate; check for Analyst commands
+ 	private static Packet ChatFromViewerOut(Packet packet, IPEndPoint sim) {
+ 		// deconstruct the packet
+-		Hashtable blocks = PacketUtility.Unbuild(packet);
+-		string message = DataConvert.toChoppedString(PacketUtility.GetField(blocks, &quot;ChatData&quot;, &quot;Message&quot;));
++		ChatFromViewerPacket cpacket = (ChatFromViewerPacket) packet;
++		string message = System.Text.Encoding.UTF8.GetString(cpacket.ChatData.Message).Replace(&quot;\0&quot;, &quot;&quot;);
+ 
+ 		if (message.Length &gt; 1 &amp;&amp; message[0] == '/') {
+ 			string[] words = message.Split(' ');
+@@ -126,7 +124,7 @@
+ 			}
+ 		}
+ 
+-		if (loggedPackets.Contains(&quot;ChatFromViewer&quot;) || modifiedPackets.Contains(&quot;ChatFromViewer&quot;))
++		if (loggedPackets.Contains(PacketType.ChatFromViewer) || modifiedPackets.Contains(PacketType.ChatFromViewer))
+ 			// user has asked to log or modify this packet
+ 			return Analyze(packet, sim, Direction.Outgoing);
+ 		else
+@@ -142,12 +140,17 @@
+ 		commandDelegates[&quot;/log&quot;] = new CommandDelegate(CmdLog);
+ 		commandDelegates[&quot;/-log&quot;] = new CommandDelegate(CmdNoLog);
+ 		commandDelegates[&quot;/grep&quot;] = new CommandDelegate(CmdGrep);
+-		commandDelegates[&quot;/set&quot;] = new CommandDelegate(CmdSet);
+-		commandDelegates[&quot;/-set&quot;] = new CommandDelegate(CmdNoSet);
+-		commandDelegates[&quot;/inject&quot;] = new CommandDelegate(CmdInject);
+-		commandDelegates[&quot;/in&quot;] = new CommandDelegate(CmdInject);
++		//commandDelegates[&quot;/set&quot;] = new CommandDelegate(CmdSet);
++		//commandDelegates[&quot;/-set&quot;] = new CommandDelegate(CmdNoSet);
++		// commandDelegates[&quot;/inject&quot;] = new CommandDelegate(CmdInject);
++		// commandDelegates[&quot;/in&quot;] = new CommandDelegate(CmdInject);
+ 	}
+ 
++	private static PacketType packetTypeFromName(string name) {
++		Type packetTypeType = typeof(PacketType);
++		return (PacketType)Enum.ToObject(packetTypeType, (int)packetTypeType.GetField(name).GetValue(packetTypeType));
++	}
++
+ 	// CmdLog: handle a /log command
+ 	private static void CmdLog(string[] words) {
+ 		if (words.Length != 2)
+@@ -156,10 +159,11 @@
+ 			LogAll();
+ 			SayToUser(&quot;logging all packets&quot;);
+ 		} else {
+-			loggedPackets[words[1]] = null;
++			PacketType pType = packetTypeFromName(words[1]);
++			loggedPackets[pType] = null;
+ 			if (words[1] != &quot;ChatFromViewer&quot;) {
+-				proxy.AddDelegate(words[1], Direction.Incoming, new PacketDelegate(AnalyzeIn));
+-				proxy.AddDelegate(words[1], Direction.Outgoing, new PacketDelegate(AnalyzeOut));
++				proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
++				proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
+ 			}
+ 			SayToUser(&quot;logging &quot; + words[1]);
+ 		}
+@@ -173,12 +177,13 @@
+ 			NoLogAll();
+ 			SayToUser(&quot;stopped logging all packets&quot;);
+ 		} else {
+-			loggedPackets.Remove(words[1]);
++			PacketType pType = packetTypeFromName(words[1]);
++			loggedPackets.Remove(pType);
+ 
+ 			if (!modifiedPackets.Contains(words[1])) {
+ 				if (words[1] != &quot;ChatFromViewer&quot;) {
+-					proxy.RemoveDelegate(words[1], Direction.Incoming);
+-					proxy.RemoveDelegate(words[1], Direction.Outgoing);
++					proxy.RemoveDelegate(pType, Direction.Incoming);
++					proxy.RemoveDelegate(pType, Direction.Outgoing);
+ 				}
+ 			}
+ 
+@@ -199,7 +204,7 @@
+ 		}
+ 	}
+ 
+-	// CmdSet: handle a /set command
++/*	// CmdSet: handle a /set command
+ 	private static void CmdSet(string[] words) {
+ 		if (words.Length &lt; 5)
+ 			SayToUser(&quot;Usage: /set &lt;packet name&gt; &lt;block&gt; &lt;field&gt; &lt;value&gt;&quot;);
+@@ -264,8 +269,9 @@
+ 			SayToUser(&quot;stopped setting &quot; + words[1] + &quot;.&quot; + words[2] + &quot;.&quot; + words[3]);
+ 		} else
+ 			SayToUser(&quot;Usage: /-set &lt;packet name&gt; &lt;block&gt; &lt;field&gt;&quot;);
+-	}
++	} */
+ 
++/*
+ 	// CmdInject: handle an /inject command
+ 	private static void CmdInject(string[] words) {
+ 		if (words.Length &lt; 2)
+@@ -334,7 +340,7 @@
+ 							if (lineValue == &quot;$Value&quot;)
+ 								fields[lineField] = MagicCast(name, block, lineField, value);
+ 							else if (lineValue == &quot;$UUID&quot;)
+-								fields[lineField] = new LLUUID(true);
++								fields[lineField] = LLUUID.Random();
+ 							else if (lineValue == &quot;$AgentID&quot;)
+ 								fields[lineField] = agentID;
+ 							else if (lineValue == &quot;$SessionID&quot;)
+@@ -374,23 +380,19 @@
+ 					sr.Close();
+ 			}
+ 		}
+-	}
++	} */
+ 
+ 	// SayToUser: send a message to the user as in-world chat
+ 	private static void SayToUser(string message) {
+-		Hashtable blocks = new Hashtable();
+-		Hashtable fields;
+-		fields = new Hashtable();
+-		fields[&quot;FromName&quot;] = &quot;Analyst&quot;;
+-		fields[&quot;SourceID&quot;] = new LLUUID(true);
+-		fields[&quot;OwnerID&quot;] = agentID;
+-		fields[&quot;SourceType&quot;] = (byte)2;
+-		fields[&quot;ChatType&quot;] = (byte)1;
+-		fields[&quot;Audible&quot;] = (byte)1;
+-		fields[&quot;Position&quot;] = new LLVector3(0, 0, 0);
+-		fields[&quot;Message&quot;] = message;
+-		blocks[fields] = &quot;ChatData&quot;;
+-		Packet packet = PacketBuilder.BuildPacket(&quot;ChatFromSimulator&quot;, protocolManager, blocks, Helpers.MSG_RELIABLE);
++		ChatFromSimulatorPacket packet = new ChatFromSimulatorPacket();
++		packet.ChatData.FromName = Helpers.StringToField(&quot;Analyst&quot;);
++		packet.ChatData.SourceID = LLUUID.Random();
++		packet.ChatData.OwnerID = agentID;
++		packet.ChatData.SourceType = (byte)2;
++		packet.ChatData.ChatType = (byte)1;
++		packet.ChatData.Audible = (byte)1;
++		packet.ChatData.Position = new LLVector3(0, 0, 0);
++		packet.ChatData.Message = Helpers.StringToField(message);
+ 		proxy.InjectPacket(packet, Direction.Incoming);
+ 	}
+ 
+@@ -398,6 +400,7 @@
+ 	private struct BlockField {
+ 		public string block;
+ 		public string field;
++		
+ 
+ 		public BlockField(string block, string field) {
+ 			this.block = block;
+@@ -405,7 +408,7 @@
+ 		}
+ 	}
+ 
+-	// MagicCast: given a packet/block/field name and a string, convert the string to a value of the appropriate type
++/*	// MagicCast: given a packet/block/field name and a string, convert the string to a value of the appropriate type
+ 	private static object MagicCast(string name, string block, string field, string value) {
+ 		MapPacket packetMap;
+ 		try {
+@@ -524,7 +527,7 @@
+ 		}
+ 
+ 		throw new Exception(&quot;unknown block &quot; + name + &quot;.&quot; + block);
+-	}
++	} */
+ 
+ 	// AnalyzeIn: analyze an incoming packet
+ 	private static Packet AnalyzeIn(Packet packet, IPEndPoint endPoint) {
+@@ -538,7 +541,7 @@
+ 
+ 	// Analyze: modify and/or log a pocket
+ 	private static Packet Analyze(Packet packet, IPEndPoint endPoint, Direction direction) {
+-		if (modifiedPackets.Contains(packet.Layout.Name))
++		/* if (modifiedPackets.Contains(packet.Layout.Name))
+ 			try {
+ 				Hashtable changes = (Hashtable)modifiedPackets[packet.Layout.Name];
+ 				Hashtable blocks = PacketUtility.Unbuild(packet);
+@@ -548,9 +551,9 @@
+ 			} catch (Exception e) {
+ 				Console.WriteLine(&quot;failed to modify &quot; + packet.Layout.Name + &quot;: &quot; + e.Message);
+ 				Console.WriteLine(e.StackTrace);
+-			}
++			} */
+ 
+-		if (loggedPackets.Contains(packet.Layout.Name))
++		if (loggedPackets.Contains(packet.Type))
+ 			LogPacket(packet, endPoint, direction);
+ 
+ 		return packet;
+@@ -558,27 +561,49 @@
+ 
+ 	// LogAll: register logging delegates for all packets
+ 	private static void LogAll() {
+-		RegisterDelegates(proxy, protocolManager.LowMaps);
+-		RegisterDelegates(proxy, protocolManager.MediumMaps);
+-		RegisterDelegates(proxy, protocolManager.HighMaps);
++		Type packetTypeType = typeof(PacketType);
++		System.Reflection.MemberInfo[] packetTypes =  packetTypeType.GetMembers();
++		
++		for(int i = 0; i &lt; packetTypes.Length; i++) {
++			if(packetTypes[i].MemberType == System.Reflection.MemberTypes.Field) {
++				string name = packetTypes[i].Name;
++				PacketType pType = packetTypeFromName(name);
++				loggedPackets[pType] = null;
++				if (name != &quot;ChatFromViewer&quot;) {
++					proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
++					proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
++				}
++			}
++		}
+ 	}
+ 
+ 	// NoLogAll: unregister logging delegates for all packets
+ 	private static void NoLogAll() {
+-		UnregisterDelegates(proxy, protocolManager.LowMaps);
+-		UnregisterDelegates(proxy, protocolManager.MediumMaps);
+-		UnregisterDelegates(proxy, protocolManager.HighMaps);
++		Type packetTypeType = typeof(PacketType);
++		System.Reflection.MemberInfo[] packetTypes =  packetTypeType.GetMembers();
++		
++		for(int i = 0; i &lt; packetTypes.Length; i++) {
++			if(packetTypes[i].MemberType == System.Reflection.MemberTypes.Field) {
++				string name = packetTypes[i].Name;
++				PacketType pType = packetTypeFromName(name);
++				loggedPackets.Remove(pType);
++				if (name != &quot;ChatFromViewer&quot;) {
++					proxy.RemoveDelegate(pType, Direction.Incoming);
++					proxy.RemoveDelegate(pType, Direction.Outgoing);
++				}
++			}
++		}
+ 	}
+ 
+-	// RegisterDelegates: register delegates for each packet in an array of packet maps
++	/* // RegisterDelegates: register delegates for each packet in an array of packet maps
+ 	private static void RegisterDelegates(Proxy proxy, MapPacket[] maps) {
+ 		foreach (MapPacket map in maps)
+ 			if (map != null) {
+ 				loggedPackets[map.Name] = null;
+ 
+ 				if (map.Name != &quot;ChatFromViewer&quot;) {
+-					proxy.AddDelegate(map.Name, Direction.Incoming, new PacketDelegate(AnalyzeIn));
+-					proxy.AddDelegate(map.Name, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
++					proxy.AddDelegate(pType, Direction.Incoming, new PacketDelegate(AnalyzeIn));
++					proxy.AddDelegate(pType, Direction.Outgoing, new PacketDelegate(AnalyzeOut));
+ 				}
+ 			}
+ 	}
+@@ -594,11 +619,11 @@
+ 					proxy.RemoveDelegate(map.Name, Direction.Outgoing);
+ 				}
+ 			}
+-	}
++	} */
+ 
+ 	// LogPacket: dump a packet to the console
+ 	private static void LogPacket(Packet packet, IPEndPoint endPoint, Direction direction) {
+-		if (logGrep != null) {
++		/* if (logGrep != null) {
+ 			bool match = false;
+ 			foreach (Block block in packet.Blocks())
+ 				foreach (Field field in block.Fields) {
+@@ -626,13 +651,13 @@
+ 				}
+ 			if (!match)
+ 				return;
+-		}
++		} */
+ 
+ 		Console.WriteLine(&quot;{0} {1,21} {2,5} {3}{4}{5}&quot;
+ 				 ,direction == Direction.Incoming ? &quot;&lt;--&quot; : &quot;--&gt;&quot;
+ 				 ,endPoint
+-				 ,packet.Sequence
+-				 ,InterpretOptions(packet.Data[0])
++				 ,packet.Header.Sequence
++				 ,InterpretOptions(packet.Header.Flags)
+ 				 ,Environment.NewLine
+ 				 ,packet
+ 				 );
+
+Modified: trunk/SLProxy/Analyst.csproj
+===================================================================
+--- trunk/SLProxy/Analyst.csproj	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/Analyst.csproj	2006-12-21 21:34:01 UTC (rev 750)
+@@ -83,6 +83,10 @@
+     &lt;Reference Include=&quot;System.Xml&quot;&gt;
+       &lt;Name&gt;System.XML&lt;/Name&gt;
+     &lt;/Reference&gt;
++    &lt;ProjectReference Include=&quot;..\libsecondlife-cs\libsecondlife.csproj&quot;&gt;
++      &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
+     &lt;ProjectReference Include=&quot;SLProxy.csproj&quot;&gt;
+       &lt;Name&gt;SLProxy&lt;/Name&gt;
+       &lt;Project&gt;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&lt;/Project&gt;
+
+Modified: trunk/SLProxy/ChatConsole.cs
+===================================================================
+--- trunk/SLProxy/ChatConsole.cs	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/ChatConsole.cs	2006-12-21 21:34:01 UTC (rev 750)
+@@ -3,6 +3,7 @@
+  *   Typing on the console will send chat to Second Life.
+  *
+  * Copyright (c) 2006 Austin Jennings
++ * Modified by Andrew Ortman (&quot;qode&quot;) on Decemeber 21, 2006 to work with the new pregen proxy.
+  * All rights reserved.
+  *
+  * - Redistribution and use in source and binary forms, with or without 
+@@ -28,7 +29,8 @@
+  */
+ 
+ using SLProxy;
+-using libsecondlife;
++using libsecondlife;
++using libsecondlife.Packets;
+ using Nwc.XmlRpc;
+ 
+ using System;
+@@ -45,16 +47,14 @@
+ 
+ 	public static void Main(string[] args) {
+ 		// configure the proxy
+-		client = new SecondLife(&quot;../data/keywords.txt&quot;, &quot;../data/message_template.msg&quot;);
+-		protocolManager = client.Protocol;
+-		ProxyConfig proxyConfig = new ProxyConfig(&quot;ChatConsole&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">austin.jennings at gmail.com</A>&quot;, protocolManager, args);
++		ProxyConfig proxyConfig = new ProxyConfig(&quot;ChatConsole V2&quot;, &quot;Austin Jennings / Andrew Ortman&quot;, args);
+ 		proxy = new Proxy(proxyConfig);
+ 
+ 		// set a delegate for when the client logs in
+ 		proxy.SetLoginResponseDelegate(new XmlRpcResponseDelegate(Login));
+ 
+ 		// add a delegate for incoming chat
+-		proxy.AddDelegate(&quot;ChatFromSimulator&quot;, Direction.Incoming, new PacketDelegate(ChatFromSimulator));
++		proxy.AddDelegate(PacketType.ChatFromSimulator, Direction.Incoming, new PacketDelegate(ChatFromSimulator));
+ 
+ 		// start the proxy
+ 		proxy.Start();
+@@ -78,32 +78,26 @@
+ 			// read a line from the console
+ 			string message = Console.ReadLine();
+ 
+-			// construct a ChatFromViewer packet
+-			Hashtable blocks = new Hashtable();
+-			Hashtable fields;
+-			fields = new Hashtable();
+-			fields[&quot;Channel&quot;] = (int)0;
+-			fields[&quot;Message&quot;] = message;
+-			fields[&quot;Type&quot;] = (byte)1;
+-			blocks[fields] = &quot;ChatData&quot;;
+-			fields = new Hashtable();
+-			fields[&quot;AgentID&quot;] = agentID;
+-			fields[&quot;SessionID&quot;] = sessionID;
+-			blocks[fields] = &quot;AgentData&quot;;
+-			Packet chatPacket = PacketBuilder.BuildPacket(&quot;ChatFromViewer&quot;, protocolManager, blocks, Helpers.MSG_RELIABLE);
+-
++			// construct a ChatFromViewer packet
++            ChatFromViewerPacket chat = new ChatFromViewerPacket();
++            chat.ChatData.Channel = 0;
++            chat.ChatData.Message = Helpers.StringToField(message);
++            chat.ChatData.Type = (byte)1;
++
++            chat.AgentData.AgentID = agentID;
++            chat.AgentData.SessionID = sessionID;
+ 			// inject the packet
+-			proxy.InjectPacket(chatPacket, Direction.Outgoing);
++			proxy.InjectPacket((Packet)chat, Direction.Outgoing);
+ 		}
+ 	}
+ 
+ 	private static Packet ChatFromSimulator(Packet packet, IPEndPoint sim) {
+-		// deconstruct the packet
+-		Hashtable blocks = PacketUtility.Unbuild(packet);
+-		string message = DataConvert.toChoppedString(PacketUtility.GetField(blocks, &quot;ChatData&quot;, &quot;Message&quot;));
+-		string name = DataConvert.toChoppedString(PacketUtility.GetField(blocks, &quot;ChatData&quot;, &quot;FromName&quot;));
+-		byte audible = (byte)PacketUtility.GetField(blocks, &quot;ChatData&quot;, &quot;Audible&quot;);
+-		byte type = (byte)PacketUtility.GetField(blocks, &quot;ChatData&quot;, &quot;ChatType&quot;);
++		// deconstruct the packet
++        ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)packet;
++        string message = Helpers.FieldToString(chat.ChatData.Message);
++        string name = Helpers.FieldToString(chat.ChatData.FromName);
++        byte audible = chat.ChatData.Audible;
++        byte type = chat.ChatData.ChatType;
+ 
+ 		// if this was a normal, audible message, write it to the console
+ 		if (audible != 0 &amp;&amp; (type == 0 || type == 1 || type == 2))
+
+Modified: trunk/SLProxy/ChatConsole.csproj
+===================================================================
+--- trunk/SLProxy/ChatConsole.csproj	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/ChatConsole.csproj	2006-12-21 21:34:01 UTC (rev 750)
+@@ -83,6 +83,10 @@
+     &lt;Reference Include=&quot;System.Xml&quot;&gt;
+       &lt;Name&gt;System.XML&lt;/Name&gt;
+     &lt;/Reference&gt;
++    &lt;ProjectReference Include=&quot;..\libsecondlife-cs\libsecondlife.csproj&quot;&gt;
++      &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
+     &lt;ProjectReference Include=&quot;SLProxy.csproj&quot;&gt;
+       &lt;Name&gt;SLProxy&lt;/Name&gt;
+       &lt;Project&gt;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&lt;/Project&gt;
+
+Modified: trunk/SLProxy/README.txt
+===================================================================
+--- trunk/SLProxy/README.txt	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/README.txt	2006-12-21 21:34:01 UTC (rev 750)
+@@ -1,363 +1,375 @@
+-SLProxy is a library that works in conjunction with libsecondlife to
+-allow applications to wedge themselves between the official Second
+-Life client and servers.  SLProxy applications can inspect and modify
+-any packet as it passes between the client and the servers; remove
+-packets from the stream; and inject new packets into the stream.
+-SLProxy automatically takes care of tracking circuits and modifying
+-sequence numbers and acknowledgements to account for changes to the
+-packet stream.
+-
+-The continued existence of this software of course rests on the good
+-will of Linden Lab toward the Second Life reverse engineering effort.
+-Please use common sense when designing applications and report any
+-security holes you may find to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">security at lindenlab.com.</A>
+-
+-To use an SLProxy application, you must first start the proxy, then
+-start Second Life with the switch `-loginuri <A HREF="http://localhost:8080/">http://localhost:8080/</A>'.
+-In Windows, add this switch (without the quotes) to your Second Life
+-shortcut.  In MacOS X, this can be accomplished by sending the
+-following commands to the Terminal (assuming Second Life is installed
+-in /Applications):
+-
+-	cd &quot;/Applications/Second Life.app&quot;
+-	&quot;Contents/MacOS/Second Life&quot; -loginuri <A HREF="http://localhost:8080/">http://localhost:8080/</A>
+-
+-Note that for security reasons, by default, SLProxy applications must
+-be running on the same computer as Second Life.  If you need to run a
+-proxy on a different machine or port, start the proxy with the
+---proxy-help switch and see the options available.
+-
+-SLProxy can only handle one client using a proxy at a time.
+-
+-BUILDING
+-========
+-
+-To build SLProxy, you must check out the entire libsecondlife trunk
+-with subversion:
+-
+-  svn co <A HREF="svn://svn.gna.org/svn/libsecondlife/trunk">svn://svn.gna.org/svn/libsecondlife/trunk</A> libsecondlife
+-
+-The libsecondlife-cs project must be built first; see
+-libsecondlife-cs/README for instructions.  Building SLProxy should be
+-straightforward with Microsoft Visual Studio.  If you're using Mono,
+-you can build the solution with the included build script:
+-
+-  perl build
+-
+-The SLProxy library and its example applications will be built in
+-bin/Debug.  In order to run the example applications, you must first
+-add the libsecondlife-cs build directory to your MONO_PATH environment
+-variable.  For example, if your libsecondlife-cs directory is
+-~/libsecondlife/libsecondlife-cs and your shell is bash, you can type:
+-
+-  export MONO_PATH=$MONO_PATH:~/libsecondlife/libsecondlife-cs/bin/Debug/
+-
+-INCLUDED APPLICATIONS
+-=====================
+-
+-Included with SLProxy are a few example application, which are covered
+-in this section.
+-
+-1. Analyst
+-----------
+-
+-Analyst makes SLProxy's packet inspection and modification
+-functionality interactive.  When connected to Second Life through
+-Analyst, you use the following commands by saying them using in-world
+-chat:
+-
+-/log &lt;packet name&gt;
+-
+-  Packets of type &lt;packet name&gt; will be dumped to the console.  For
+-  example, say `/log ChatFromSimulator' to get a packet dump of all
+-  incoming chat.
+-
+-/-log &lt;packet name&gt;
+-
+-  Packets of type &lt;packet name&gt; will no longer be dumped to the
+-  console.
+-
+-/log *
+-
+-  All packets will be dumped to the console.
+-
+-/-log *
+-
+-  No packets will be dumped to the console.
+-
+-/grep [regex]
+-
+-  Only log packets that have a field for which regex matches
+-  &lt;packet name&gt;.&lt;block name&gt;.&lt;field name&gt; = &lt;value&gt;.  To stop
+-  filtering, type /grep without an argument.  Matches are case
+-  insensitive.  In the case of a variable field, Analyst will try to
+-  convert it into a string; if that doesn't match, it will try
+-  converting it into a hexidecimal numeral preceeded by 0x.
+-
+-/set &lt;packet name&gt; &lt;block name&gt; &lt;field name&gt; &lt;value&gt;
+-
+-  All forthcoming packets of type &lt;packet name&gt; will have the field
+-  identified by &lt;block name&gt; and &lt;field name&gt; set to &lt;value&gt;.  For
+-  example, if you say `/set ChatFromViewer ChatData Type 0',
+-  everything you say thereafter will be whispered.  Values for
+-  variable fields will be interpreted as strings unless they begin
+-  with a 0x, in which case they will be treated as hexidecimal
+-  numerals representing the contents of the field.
+-
+-/-set &lt;packet name&gt; &lt;block name&gt; &lt;field name&gt;
+-
+-  Packets of type &lt;packet name&gt; will no longer have the field
+-  identified by &lt;block name&gt; and &lt;field name&gt; modified.
+-
+-/-set *
+-
+-  No fields will be modified.
+-
+-/inject &lt;packet file&gt; [value]
+-
+-  Inject the packet described by &lt;packet file&gt;.packet in the working
+-  directory.  The [value] is optional and may be required by some
+-  packet files.  `/in' is an alias for `/inject'.  The syntax of a
+-  packet file is described in section 2.1.  SLProxy comes with two
+-  example packet files: god.packet allows you to enable hacked god
+-  mode by typing `/inject god', and whisper.packet allows you to
+-  whisper by typing `/inject whisper &lt;message&gt;'.
+-
+-These commands will not be forwarded to the server, so other people
+-won't hear you say them.
+-
+-Analyst accepts a --log-all command line switch, which causes the
+-proxy to start out logging all packets as if you had typed `/log *'.
+-This can be useful if you want to capture a complete dump of your
+-session, including login.
+-
+-Analyst also accepts a --log-login command line switch, which causes
+-the XML-RPC login request and response to dumped to the console.
+-
+-2.1 Packet files
+-- - - - - - - -
+-
+-A packet file describes a packet that can be injected with the /inject
+-command.  Please refer to god.packet and whisper.packet (in the
+-bin/Debug/ directory) as examples.
+-
+-The first line of a packet file must contain the word `in' or `out',
+-specifying whether the packet is incoming or outgoing, respectively,
+-followed by the name of the packet.
+-
+-The remainder of the file specifies the packet's blocks and fields.  A
+-block is described by placing its name in square brackets
+-(e.g. `[GrantData]').  Following the the line specifying the block's
+-name, the block's fields and values are specified, separated by equal
+-signs (e.g. `GodLevel = 255'), one per line.
+-
+-The value of a field can be a literal value (e.g. `255'), or one of
+-the following special values:
+-
+-$Value
+-
+-  the [value] specified by the user
+-
+-$UUID
+-
+-  a random UUID
+-
+-$AgentID
+-
+-  the user's AgentID
+-
+-$SessionID
+-
+-  the user's SessionID
+-
+-2. ChatConsole
+---------------
+-
+-ChatConsole is a trivial SLProxy application intended as an example of
+-how SLProxy applications can be written.  When connected to Second
+-Life through ChatConsole, all in-world chat will be echoed to the
+-console, and anything typed in the console will be echoed to the game as
+-in-world chat.
+-
+-PUBLIC INTERFACE
+-================
+-
+-This section describes the interface that SLProxy applications will
+-use to interact with the packet stream.  Please see ChatConsole.cs for
+-a simple example of how this interface can be used.
+-
+-SLProxy extends the functionality of libsecondlife, so we assume here
+-that the reader is already familiar with libsecondlife's Packet and
+-PacketBuilder classes.
+-
+-1. ProxyConfig class
+---------------------
+-
+-An instance of ProxyConfig represents the configuration of a Proxy
+-object, and must be provided when constructing a Proxy.  ProxyConfig
+-has two constructors:
+-
+-	ProxyConfig(string userAgent, string author)
+-	ProxyConfig(string userAgent, string author, string[] args)
+-
+-Both constructors require a user agent name and the author's email
+-address.  These are sent to Second Life's login server to identify the
+-client, and to allow Linden Lab to get in touch with authors whose
+-applications may inadvertantly be causing problems.  The second
+-constructor is preferred and takes an array of command-line arguments
+-that allow the user to override certain network settings.  For a list
+-of command line arguments, start your appliation with the --proxy-help
+-switch.
+-
+-2. Proxy class
+---------------
+-
+-The Proxy class represents an instance of an SLProxy and provides the
+-methods necessary to modify the packet stream.  Proxy's sole
+-constructor takes an instance of ProxyConfig.
+-
+-2.1 Login delegates
+-- - - - - - - - - -
+-
+-You may specify that SLProxy should call a delegate method in your
+-application when the user requests login or the server responds.
+-
+-	delegate void XmlRpcRequestDelegate(XmlRpcRequest request)
+-	delegate void XmlRpcResponseDelegate(XmlRpcResponse response)
+-	void SetLoginRequestDelegate(XmlRpcRequestDelegate loginRequestDelegate)
+-	void SetLoginResponseDelegate(XmlRpcResponseDelegate loginResponseDelegate)
+-
+-A login response delegate, in particular, is useful for retrieving the
+-agent_id and session_id, which are required when injecting certain
+-types of packets.  See ChatConsole.cs for an example of how these can
+-be retrieved.
+-
+-Note that all delegates must terminate (not go into an infinite loop),
+-and must be thread-safe.
+-
+-2.2 Packet delegates
+-- - - - - - - - - -
+-
+-Packet delegates allow you to inspect and modify packets as they pass
+-between the client and the server:
+-
+-	delegate Packet PacketDelegate(Packet packet, IPEndPoint endPoint)
+-	void AddDelegate(string packetName, Direction direction, PacketDelegate packetDelegate)
+-	void RemoveDelegate(string packetName, Direction direction)
+-
+-AddDelegate adds a callback delegate for packets named packetName
+-going direction.  Directions are either Direction.Incoming, meaning
+-packets heading from the server to the client, or Direction.Outgoing,
+-meaning packets heading from the client to the server.  Only one
+-delegate can apply to a packet at a time; if you add a new delegate
+-with the same packetName and direction, the old one will be removed.
+-
+-RemoveDelegate simply removes the delegate for the specified type of
+-packet.
+-
+-PacketDelegate methods are passed a copy of the packet (in the form of
+-a libsecondlife Packet object) and the IPEndPoint of the server that
+-sent (or will receive) the packet.  PacketDelegate methods may do one
+-of three things:
+-
+-1. Return the same packet, in which case it will be passed on.
+-2. Return a new packet (built with libsecondlife), in which case the
+-   new packet will substitute for the original.  SLProxy will
+-   automatically copy the sequence number and appended ACKs from the
+-   old packet to the new one.
+-3. Return null, in which case the packet will not be passed on.
+-
+-SLProxy automatically takes care of ensuring that sequence numbers and
+-acknowledgements are adjusted to account for changes made by the
+-application.  When replacing a reliable packet with an unreliable
+-packet or removing a reliable packet, a fake acknowledgement is
+-injected.  When replacing an unreliable packet with a reliable packet,
+-SLProxy ensures delivery and intercepts its acknowledgement.  Note
+-that if a reliable packet is passed on but then lost on the network,
+-Second Life will resend it and the delegate will be called again.  You
+-can tell if a packet is being resent by checking if (packet.Data[0] &amp;
+-Helpers.MSG_RESENT) is nonzero, although be advised that it's possible
+-that the original packet never made it to the proxy and the packet
+-will be marked RESENT the first time the proxy ever sees it.
+-
+-Note that all delegates must terminate (not go into an infinite loop),
+-and must be thread-safe.
+-
+-2.3 Packet injection
+-- - - - - - - - - -
+-
+-New packets may be injected into the stream at any point, either
+-during a delegate callback or by another thread in your application.
+-Packets are injected with the InjectPacket method:
+-
+-	void InjectPacket(Packet packet, Direction direction)
+-
+-This will inject a packet heading to either the client or to the
+-active server, when direction is Direction.Incoming or
+-Direction.Outgoing, respectively.  The packet's sequence number will
+-be set automatically, and if the packet is reliable, SLProxy will
+-ensure its delivery and intercept its acknowledgement.
+-
+-Injecting a packet immediately upon (or prior to) connection is not
+-recommended, since the client and the server won't have initialized
+-their session yet.
+-
+-2.4 Starting and stopping the proxy
+-- - - - - - - - - - - - - - - - - -
+-
+-Once you've constructed a Proxy and added your delegates, you must
+-start it with the Start method:
+-
+-	void Start()
+-
+-Once started, the proxy will begin listening for connections.  The
+-Start method spawns new threads for the proxy and returns immediately.
+-
+-When your application is ready to shut down, you must call the Stop
+-method:
+-
+-	void Stop()
+-
+-Note that this may not actually force the proxy to stop accepting
+-connections; it merely guarantees that all foreground threads are
+-stopped, allowing the application to exit cleanly.
+-
+-3. PacketUtility class
+-----------------------
+-
+-The PacketUtility class provides a handful of static methods which may
+-be useful when inspecting and modifying packets.
+-
+-3.1 Hashtable Unbuild(Packet packet)
+-- - - - - - - - - - - - - - - - - -
+-
+-The Unbuild method takes a Packet object and returns a table of
+-blocks, structured in a format suitable for passing to PacketUtility's
+-GetField and SetField methods or PacketBuilder's BuildPacket method.
+-
+-For example, this should make an approximate copy of a packet:
+-
+-Hashtable packetBlocks = PacketUtility.Unbuild(packet);
+-Packet packetCopy = PacketBuilder.BuildPacket(packet.Layout.Name, protocolManager, packetBlocks, packet.Data[0]);
+-
+-3.2 object GetField(Hashtable blocks, string block, string field)
+-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-
+-The GetField method takes a table of blocks (produced by
+-PacketUtility.Unbuild) and extracts the value of a particular field.
+-If the field is part of a variable block, an arbitrary instance of the
+-field will be returned.  If the field does not exist, null will be
+-returned.
+-
+-3.3 void SetField(Hashtable blocks, string block, string field, object value)
+-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-
+-The SetField method takes a table of blocks (produced by
+-PacketUtility.Unbuild) and sets the value of a particular field.  If
+-the field is part of a variable block, all instances of the field will
+-be set.  If the field does not exist, SetField will have no effect.
+-
+-This can be used by a packet delegate method in conjunction with
+-PacketUtility.Unbuild and PacketBuilder.BuildPacket to substitute a
+-new packet that is a copy of the original packet with certain fields
+-modified.
++NOTE: THIS DEVELOPER BRANCH IS THE NEW PREGEN SLPROXY. THIS DOCUMENT
++MAY NOT BE UP TO DATE WITH THE NEW VERSION.
++
++Public Source - Release Canidate 1
++
++MODIFICATIONS BY &quot;ALPHA ZAIUS&quot; / ANDREW ORTMAN. QODE IN EFNET: #LIBSL
++AND #LIBSL-DEV
++
++SPECIAL THANKS TO &quot;mcortez&quot; IN EFNET (#libsl-dev) FOR A HELPFUL PATCH
++TO ANALYST AND SLPROXY-PREGEN TO KICKSTART ITS TESTING.
++
++---------------------------------------------------------------------
++SLProxy is a library that works in conjunction with libsecondlife to
++allow applications to wedge themselves between the official Second
++Life client and servers.  SLProxy applications can inspect and modify
++any packet as it passes between the client and the servers; remove
++packets from the stream; and inject new packets into the stream.
++SLProxy automatically takes care of tracking circuits and modifying
++sequence numbers and acknowledgements to account for changes to the
++packet stream.
++
++The continued existence of this software of course rests on the good
++will of Linden Lab toward the Second Life reverse engineering effort.
++Please use common sense when designing applications and report any
++security holes you may find to <A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">security at lindenlab.com.</A>
++
++To use an SLProxy application, you must first start the proxy, then
++start Second Life with the switch `-loginuri <A HREF="http://localhost:8080/">http://localhost:8080/</A>'.
++In Windows, add this switch (without the quotes) to your Second Life
++shortcut.  In MacOS X, this can be accomplished by sending the
++following commands to the Terminal (assuming Second Life is installed
++in /Applications):
++
++	cd &quot;/Applications/Second Life.app&quot;
++	&quot;Contents/MacOS/Second Life&quot; -loginuri <A HREF="http://localhost:8080/">http://localhost:8080/</A>
++
++Note that for security reasons, by default, SLProxy applications must
++be running on the same computer as Second Life.  If you need to run a
++proxy on a different machine or port, start the proxy with the
++--proxy-help switch and see the options available.
++
++SLProxy can only handle one client using a proxy at a time.
++
++BUILDING
++========
++
++To build SLProxy, you must check out the entire libsecondlife trunk
++with subversion:
++
++  svn co <A HREF="svn://svn.gna.org/svn/libsecondlife/trunk">svn://svn.gna.org/svn/libsecondlife/trunk</A> libsecondlife
++
++The libsecondlife-cs project must be built first; see
++libsecondlife-cs/README for instructions.  Building SLProxy should be
++straightforward with Microsoft Visual Studio.  If you're using Mono,
++you can build the solution with the included build script:
++
++  perl build
++
++The SLProxy library and its example applications will be built in
++bin/Debug.  In order to run the example applications, you must first
++add the libsecondlife-cs build directory to your MONO_PATH environment
++variable.  For example, if your libsecondlife-cs directory is
++~/libsecondlife/libsecondlife-cs and your shell is bash, you can type:
++
++  export MONO_PATH=$MONO_PATH:~/libsecondlife/libsecondlife-cs/bin/Debug/
++
++INCLUDED APPLICATIONS
++=====================
++
++Included with SLProxy are a few example application, which are covered
++in this section.
++
++1. Analyst
++----------
++
++Analyst makes SLProxy's packet inspection and modification
++functionality interactive.  When connected to Second Life through
++Analyst, you use the following commands by saying them using in-world
++chat:
++
++/log &lt;packet name&gt;
++
++  Packets of type &lt;packet name&gt; will be dumped to the console.  For
++  example, say `/log ChatFromSimulator' to get a packet dump of all
++  incoming chat.
++
++/-log &lt;packet name&gt;
++
++  Packets of type &lt;packet name&gt; will no longer be dumped to the
++  console.
++
++/log *
++
++  All packets will be dumped to the console.
++
++/-log *
++
++  No packets will be dumped to the console.
++
++/grep [regex]
++
++  Only log packets that have a field for which regex matches
++  &lt;packet name&gt;.&lt;block name&gt;.&lt;field name&gt; = &lt;value&gt;.  To stop
++  filtering, type /grep without an argument.  Matches are case
++  insensitive.  In the case of a variable field, Analyst will try to
++  convert it into a string; if that doesn't match, it will try
++  converting it into a hexidecimal numeral preceeded by 0x.
++
++/set &lt;packet name&gt; &lt;block name&gt; &lt;field name&gt; &lt;value&gt;
++
++  All forthcoming packets of type &lt;packet name&gt; will have the field
++  identified by &lt;block name&gt; and &lt;field name&gt; set to &lt;value&gt;.  For
++  example, if you say `/set ChatFromViewer ChatData Type 0',
++  everything you say thereafter will be whispered.  Values for
++  variable fields will be interpreted as strings unless they begin
++  with a 0x, in which case they will be treated as hexidecimal
++  numerals representing the contents of the field.
++
++/-set &lt;packet name&gt; &lt;block name&gt; &lt;field name&gt;
++
++  Packets of type &lt;packet name&gt; will no longer have the field
++  identified by &lt;block name&gt; and &lt;field name&gt; modified.
++
++/-set *
++
++  No fields will be modified.
++
++/inject &lt;packet file&gt; [value]
++
++  Inject the packet described by &lt;packet file&gt;.packet in the working
++  directory.  The [value] is optional and may be required by some
++  packet files.  `/in' is an alias for `/inject'.  The syntax of a
++  packet file is described in section 2.1.  SLProxy comes with two
++  example packet files: god.packet allows you to enable hacked god
++  mode by typing `/inject god', and whisper.packet allows you to
++  whisper by typing `/inject whisper &lt;message&gt;'.
++
++These commands will not be forwarded to the server, so other people
++won't hear you say them.
++
++Analyst accepts a --log-all command line switch, which causes the
++proxy to start out logging all packets as if you had typed `/log *'.
++This can be useful if you want to capture a complete dump of your
++session, including login.
++
++Analyst also accepts a --log-login command line switch, which causes
++the XML-RPC login request and response to dumped to the console.
++
++2.1 Packet files
++- - - - - - - -
++
++A packet file describes a packet that can be injected with the /inject
++command.  Please refer to god.packet and whisper.packet (in the
++bin/Debug/ directory) as examples.
++
++The first line of a packet file must contain the word `in' or `out',
++specifying whether the packet is incoming or outgoing, respectively,
++followed by the name of the packet.
++
++The remainder of the file specifies the packet's blocks and fields.  A
++block is described by placing its name in square brackets
++(e.g. `[GrantData]').  Following the the line specifying the block's
++name, the block's fields and values are specified, separated by equal
++signs (e.g. `GodLevel = 255'), one per line.
++
++The value of a field can be a literal value (e.g. `255'), or one of
++the following special values:
++
++$Value
++
++  the [value] specified by the user
++
++$UUID
++
++  a random UUID
++
++$AgentID
++
++  the user's AgentID
++
++$SessionID
++
++  the user's SessionID
++
++2. ChatConsole
++--------------
++
++ChatConsole is a trivial SLProxy application intended as an example of
++how SLProxy applications can be written.  When connected to Second
++Life through ChatConsole, all in-world chat will be echoed to the
++console, and anything typed in the console will be echoed to the game as
++in-world chat.
++
++PUBLIC INTERFACE
++================
++
++This section describes the interface that SLProxy applications will
++use to interact with the packet stream.  Please see ChatConsole.cs for
++a simple example of how this interface can be used.
++
++SLProxy extends the functionality of libsecondlife, so we assume here
++that the reader is already familiar with libsecondlife's Packet and
++PacketBuilder classes.
++
++1. ProxyConfig class
++--------------------
++
++An instance of ProxyConfig represents the configuration of a Proxy
++object, and must be provided when constructing a Proxy.  ProxyConfig
++has two constructors:
++
++	ProxyConfig(string userAgent, string author)
++	ProxyConfig(string userAgent, string author, string[] args)
++
++Both constructors require a user agent name and the author's email
++address.  These are sent to Second Life's login server to identify the
++client, and to allow Linden Lab to get in touch with authors whose
++applications may inadvertantly be causing problems.  The second
++constructor is preferred and takes an array of command-line arguments
++that allow the user to override certain network settings.  For a list
++of command line arguments, start your appliation with the --proxy-help
++switch.
++
++2. Proxy class
++--------------
++
++The Proxy class represents an instance of an SLProxy and provides the
++methods necessary to modify the packet stream.  Proxy's sole
++constructor takes an instance of ProxyConfig.
++
++2.1 Login delegates
++- - - - - - - - - -
++
++You may specify that SLProxy should call a delegate method in your
++application when the user requests login or the server responds.
++
++	delegate void XmlRpcRequestDelegate(XmlRpcRequest request)
++	delegate void XmlRpcResponseDelegate(XmlRpcResponse response)
++	void SetLoginRequestDelegate(XmlRpcRequestDelegate loginRequestDelegate)
++	void SetLoginResponseDelegate(XmlRpcResponseDelegate loginResponseDelegate)
++
++A login response delegate, in particular, is useful for retrieving the
++agent_id and session_id, which are required when injecting certain
++types of packets.  See ChatConsole.cs for an example of how these can
++be retrieved.
++
++Note that all delegates must terminate (not go into an infinite loop),
++and must be thread-safe.
++
++2.2 Packet delegates
++- - - - - - - - - -
++
++Packet delegates allow you to inspect and modify packets as they pass
++between the client and the server:
++
++	delegate Packet PacketDelegate(Packet packet, IPEndPoint endPoint)
++	void AddDelegate(string packetName, Direction direction, PacketDelegate packetDelegate)
++	void RemoveDelegate(string packetName, Direction direction)
++
++AddDelegate adds a callback delegate for packets named packetName
++going direction.  Directions are either Direction.Incoming, meaning
++packets heading from the server to the client, or Direction.Outgoing,
++meaning packets heading from the client to the server.  Only one
++delegate can apply to a packet at a time; if you add a new delegate
++with the same packetName and direction, the old one will be removed.
++
++RemoveDelegate simply removes the delegate for the specified type of
++packet.
++
++PacketDelegate methods are passed a copy of the packet (in the form of
++a libsecondlife Packet object) and the IPEndPoint of the server that
++sent (or will receive) the packet.  PacketDelegate methods may do one
++of three things:
++
++1. Return the same packet, in which case it will be passed on.
++2. Return a new packet (built with libsecondlife), in which case the
++   new packet will substitute for the original.  SLProxy will
++   automatically copy the sequence number and appended ACKs from the
++   old packet to the new one.
++3. Return null, in which case the packet will not be passed on.
++
++SLProxy automatically takes care of ensuring that sequence numbers and
++acknowledgements are adjusted to account for changes made by the
++application.  When replacing a reliable packet with an unreliable
++packet or removing a reliable packet, a fake acknowledgement is
++injected.  When replacing an unreliable packet with a reliable packet,
++SLProxy ensures delivery and intercepts its acknowledgement.  Note
++that if a reliable packet is passed on but then lost on the network,
++Second Life will resend it and the delegate will be called again.  You
++can tell if a packet is being resent by checking if (packet.Data[0] &amp;
++Helpers.MSG_RESENT) is nonzero, although be advised that it's possible
++that the original packet never made it to the proxy and the packet
++will be marked RESENT the first time the proxy ever sees it.
++
++Note that all delegates must terminate (not go into an infinite loop),
++and must be thread-safe.
++
++2.3 Packet injection
++- - - - - - - - - -
++
++New packets may be injected into the stream at any point, either
++during a delegate callback or by another thread in your application.
++Packets are injected with the InjectPacket method:
++
++	void InjectPacket(Packet packet, Direction direction)
++
++This will inject a packet heading to either the client or to the
++active server, when direction is Direction.Incoming or
++Direction.Outgoing, respectively.  The packet's sequence number will
++be set automatically, and if the packet is reliable, SLProxy will
++ensure its delivery and intercept its acknowledgement.
++
++Injecting a packet immediately upon (or prior to) connection is not
++recommended, since the client and the server won't have initialized
++their session yet.
++
++2.4 Starting and stopping the proxy
++- - - - - - - - - - - - - - - - - -
++
++Once you've constructed a Proxy and added your delegates, you must
++start it with the Start method:
++
++	void Start()
++
++Once started, the proxy will begin listening for connections.  The
++Start method spawns new threads for the proxy and returns immediately.
++
++When your application is ready to shut down, you must call the Stop
++method:
++
++	void Stop()
++
++Note that this may not actually force the proxy to stop accepting
++connections; it merely guarantees that all foreground threads are
++stopped, allowing the application to exit cleanly.
++
++3. PacketUtility class
++----------------------
++
++The PacketUtility class provides a handful of static methods which may
++be useful when inspecting and modifying packets.
++
++3.1 Hashtable Unbuild(Packet packet)
++- - - - - - - - - - - - - - - - - -
++
++The Unbuild method takes a Packet object and returns a table of
++blocks, structured in a format suitable for passing to PacketUtility's
++GetField and SetField methods or PacketBuilder's BuildPacket method.
++
++For example, this should make an approximate copy of a packet:
++
++Hashtable packetBlocks = PacketUtility.Unbuild(packet);
++Packet packetCopy = PacketBuilder.BuildPacket(packet.Layout.Name, protocolManager, packetBlocks, packet.Data[0]);
++
++3.2 object GetField(Hashtable blocks, string block, string field)
++- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
++
++The GetField method takes a table of blocks (produced by
++PacketUtility.Unbuild) and extracts the value of a particular field.
++If the field is part of a variable block, an arbitrary instance of the
++field will be returned.  If the field does not exist, null will be
++returned.
++
++3.3 void SetField(Hashtable blocks, string block, string field, object value)
++- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
++
++The SetField method takes a table of blocks (produced by
++PacketUtility.Unbuild) and sets the value of a particular field.  If
++the field is part of a variable block, all instances of the field will
++be set.  If the field does not exist, SetField will have no effect.
++
++This can be used by a packet delegate method in conjunction with
++PacketUtility.Unbuild and PacketBuilder.BuildPacket to substitute a
++new packet that is a copy of the original packet with certain fields
++modified.
+
+Modified: trunk/SLProxy/SLProxy.build
+===================================================================
+--- trunk/SLProxy/SLProxy.build	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/SLProxy.build	2006-12-21 21:34:01 UTC (rev 750)
+@@ -57,11 +57,11 @@
+       output=&quot;${bin_dir}/SLProxy.dll&quot;&gt;
+       &lt;sources failonempty=&quot;true&quot;&gt;
+         &lt;include name=&quot;SLProxy.cs&quot; /&gt;
+-        &lt;include name=&quot;legacy/*.cs&quot; /&gt;
++        &lt;!-- &lt;include name=&quot;legacy/*.cs&quot; /&gt; --&gt;
+       &lt;/sources&gt;
+-      &lt;!-- &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
++      &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
+         &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
+-      &lt;/references&gt; --&gt;
++      &lt;/references&gt;
+     &lt;/csc&gt;
+     &lt;copy todir=&quot;${bin_dir}&quot; overwrite=&quot;true&quot;&gt;
+ 		&lt;fileset basedir=&quot;../data&quot;&gt;
+@@ -83,7 +83,7 @@
+         &lt;include name=&quot;Analyst.cs&quot; /&gt;
+       &lt;/sources&gt;
+       &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
+-        &lt;!-- &lt;include name=&quot;libsecondlife.dll&quot;/&gt; --&gt;
++        &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
+         &lt;include name=&quot;SLProxy.dll&quot;/&gt;
+       &lt;/references&gt;
+     &lt;/csc&gt;
+@@ -102,7 +102,7 @@
+         &lt;include name=&quot;ChatConsole.cs&quot; /&gt;
+       &lt;/sources&gt;
+       &lt;references basedir=&quot;${bin_dir}/&quot;&gt;
+-        &lt;!-- &lt;include name=&quot;libsecondlife.dll&quot;/&gt; --&gt;
++        &lt;include name=&quot;libsecondlife.dll&quot;/&gt;
+         &lt;include name=&quot;SLProxy.dll&quot;/&gt;
+       &lt;/references&gt;
+     &lt;/csc&gt;
+
+Modified: trunk/SLProxy/SLProxy.cs
+===================================================================
+--- trunk/SLProxy/SLProxy.cs	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/SLProxy.cs	2006-12-21 21:34:01 UTC (rev 750)
+@@ -2,6 +2,9 @@
+  * SLProxy.cs: implementation of Second Life proxy library
+  *
+  * Copyright (c) 2006 Austin Jennings
++ * Pregen modifications made by Andrew Ortman on Dec 10, 2006 -&gt; Dec 20, 2006
++ * 
++ * 
+  * All rights reserved.
+  *
+  * - Redistribution and use in source and binary forms, with or without 
+@@ -12,6 +15,7 @@
+  * - Neither the name of the Second Life Reverse Engineering Team nor the names 
+  *   of its contributors may be used to endorse or promote products derived from
+  *   this software without specific prior written permission.
++ * 
+  *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; 
+  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+@@ -26,11 +30,12 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-//#define DEBUG_SEQUENCE
++// #define DEBUG_SEQUENCE
+ 
+ using Nwc.XmlRpc;
+ using System;
+ using System.Collections;
++using System.Collections.Generic;
+ using System.IO;
+ using System.Net;
+ using System.Net.Sockets;
+@@ -39,7 +44,9 @@
+ using System.Threading;
+ using System.Xml;
+ using libsecondlife;
++using libsecondlife.Packets;
+ 
++
+ // SLProxy: proxy library for Second Life
+ namespace SLProxy {
+ 	// ProxyConfig: configuration for proxy objects
+@@ -48,8 +55,6 @@
+ 		public string userAgent;
+ 		// author: email address of the proxy application's author
+ 		public string author;
+-		// protocol: libsecondlife ProtocolManager
+-		public ProtocolManager protocol;
+ 		// loginPort: port that the login proxy will listen on
+ 		public ushort loginPort = 8080;
+ 		// clientFacingAddress: address from which to communicate with the client
+@@ -62,14 +67,13 @@
+ 		public bool verbose = true;
+ 
+ 		// ProxyConfig: construct a default proxy configuration with the specified userAgent, author, and protocol
+-		public ProxyConfig(string userAgent, string author, ProtocolManager protocol) {
++		public ProxyConfig(string userAgent, string author) {
+ 			this.userAgent = userAgent;
+ 			this.author = author;
+-			this.protocol = protocol;
+ 		}
+ 
+ 		// ProxyConfig: construct a default proxy configuration, parsing command line arguments (try --proxy-help)
+-		public ProxyConfig(string userAgent, string author, ProtocolManager protocol, string[] args) : this(userAgent, author, protocol) {
++		public ProxyConfig(string userAgent, string author, string[] args) : this(userAgent, author) {
+ 			Hashtable argumentParsers = new Hashtable();
+ 			argumentParsers[&quot;proxy-help&quot;] = new ArgumentParser(ParseHelp);
+ 			argumentParsers[&quot;proxy-login-port&quot;] = new ArgumentParser(ParseLoginPort);
+@@ -203,13 +207,13 @@
+ 		}}
+ 
+ 		// AddDelegate: add callback packetDelegate for packets of type packetName going direction
+-		public void AddDelegate(string packetName, Direction direction, PacketDelegate packetDelegate) { lock(this) {
+-			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates)[packetName] = packetDelegate;
++		public void AddDelegate(PacketType packetType, Direction direction, PacketDelegate packetDelegate) { lock(this) {
++			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates)[packetType] = packetDelegate;
+ 		}}
+ 
+ 		// RemoveDelegate: remove callback for packets of type packetName going direction
+-		public void RemoveDelegate(string packetName, Direction direction) { lock(this) {
+-			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates).Remove(packetName);
++		public void RemoveDelegate(PacketType packetType, Direction direction) { lock(this) {
++			(direction == Direction.Incoming ? incomingDelegates : outgoingDelegates).Remove(packetType);
+ 		}}
+ 
+ 		// InjectPacket: send packet to the client or server when direction is Incoming or Outgoing, respectively
+@@ -326,7 +330,7 @@
+ 			request.Params.Add(requestParams);
+ 
+ 			// forward the XML-RPC request to the server
+-			XmlRpcResponse response = (XmlRpcResponse)request.Send(proxyConfig.remoteLoginUri.ToString());
++			XmlRpcResponse response = (XmlRpcResponse)request.Send(proxyConfig.remoteLoginUri.ToString(),60000); //added 60 second timeout -- Andrew
+ 			Hashtable responseData = (Hashtable)response.Value;
+ 
+ 			// proxy any simulator address given in the XML-RPC response
+@@ -415,76 +419,71 @@
+ 
+ 				// interpret the packet according to the SL protocol
+ 				Packet packet;
+-				if ((receiveBuffer[0] &amp; Helpers.MSG_ZEROCODED) == 0)
+-					packet = new Packet(receiveBuffer, length, proxyConfig.protocol, proxyConfig.protocol.Command(receiveBuffer), false);
+-				else {
+-					Helpers.ZeroDecodeCommand(receiveBuffer, zeroBuffer);
+-					packet = new Packet(receiveBuffer, length, proxyConfig.protocol, proxyConfig.protocol.Command(zeroBuffer), false);
+-					needsZero = true;
+-				}
++                int end = length - 1;
++
++                packet = Packet.BuildPacket(receiveBuffer, ref end, zeroBuffer);
+ #if DEBUG_SEQUENCE
+-				Console.WriteLine(&quot;&lt;- &quot; + packet.Layout.Name + &quot; #&quot; + packet.Sequence);
++				Console.WriteLine(&quot;&lt;- &quot; + packet.Type + &quot; #&quot; + packet.Header.Sequence);
+ #endif
+ 
+ 				// check for ACKs we're waiting for
+ 				packet = simProxy.CheckAcks(packet, Direction.Incoming, ref length, ref needsCopy);
+ 
+ 				// modify sequence numbers to account for injections
+-				uint oldSequence = packet.Sequence;
++				uint oldSequence = packet.Header.Sequence;
+ 				packet = simProxy.ModifySequence(packet, Direction.Incoming, ref length, ref needsCopy);
+ 
+ 				// keep track of sequence numbers
+-				if (packet.Sequence &gt; simProxy.incomingSequence)
+-					simProxy.incomingSequence = packet.Sequence;
++				if (packet.Header.Sequence &gt; simProxy.incomingSequence)
++					simProxy.incomingSequence = packet.Header.Sequence;
+ 
+ 				// check the packet for addresses that need proxying
+-				if (incomingCheckers.Contains(packet.Layout.Name)) {
+-					if (needsZero) {
+-						length = Helpers.ZeroDecode(packet.Data, length, zeroBuffer);
+-						packet.Data = zeroBuffer;
++				if (incomingCheckers.Contains(packet.Type)) {
++					/* if (needsZero) {
++						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
++						packet.Header.Data = zeroBuffer;
+ 						needsZero = false;
+-					}
++					} */
+ 
+-					Packet newPacket = ((AddressChecker)incomingCheckers[packet.Layout.Name])(packet);
+-					SwapPacket(packet, newPacket, length);
++					Packet newPacket = ((AddressChecker)incomingCheckers[packet.Type])(packet);
++					SwapPacket(packet, newPacket);
+ 					packet = newPacket;
+-					length = packet.Data.Length;
+ 					needsCopy = false;
+ 				}
+ 
+ 				// pass the packet to any callback delegates
+-				if (incomingDelegates.Contains(packet.Layout.Name)) {
+-					if (needsZero) {
+-						length = Helpers.ZeroDecode(packet.Data, length, zeroBuffer);
+-						packet.Data = zeroBuffer;
++				if (incomingDelegates.Contains(packet.Type)) {
++					/* if (needsZero) {
++						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
++						packet.Header.Data = zeroBuffer;
+ 						needsCopy = true;
+-					}
++					} */
+ 
+ 					if (needsCopy) {
+-						byte[] newData = new byte[length];
+-						Array.Copy(packet.Data, 0, newData, 0, length);
+-						packet.Data = newData;
++						byte[] newData = new byte[packet.Header.Data.Length];
++						Array.Copy(packet.Header.Data, 0, newData, 0, packet.Header.Data.Length);
++						packet.Header.Data = newData; // FIXME
+ 					}
+ 
+ 					try {
+-						Packet newPacket = ((PacketDelegate)incomingDelegates[packet.Layout.Name])(packet, (IPEndPoint)remoteEndPoint);
++						Packet newPacket = ((PacketDelegate)incomingDelegates[packet.Type])(packet, (IPEndPoint)remoteEndPoint);
+ 						if (newPacket == null) {
+-							if ((packet.Data[0] &amp; Helpers.MSG_RELIABLE) != 0)
++							if ((packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0)
+ 								simProxy.Inject(SpoofAck(oldSequence), Direction.Outgoing);
+ 
+-							if ((packet.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0)
++							if ((packet.Header.Flags &amp; Helpers.MSG_APPENDED_ACKS) != 0)
+ 								packet = SeparateAck(packet);
+ 							else
+ 								packet = null;
+ 						} else {
+-							bool oldReliable = (packet.Data[0] &amp; Helpers.MSG_RELIABLE) != 0;
+-							bool newReliable = (newPacket.Data[0] &amp; Helpers.MSG_RELIABLE) != 0;
++							bool oldReliable = (packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0;
++							bool newReliable = (newPacket.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0;
+ 							if (oldReliable &amp;&amp; !newReliable)
+ 								simProxy.Inject(SpoofAck(oldSequence), Direction.Outgoing);
+ 							else if (!oldReliable &amp;&amp; newReliable)
+ 								simProxy.WaitForAck(packet, Direction.Incoming);
+ 
+-							SwapPacket(packet, newPacket, packet.Data.Length);
++							SwapPacket(packet, newPacket);
+ 							packet = newPacket;
+ 						}
+ 					} catch (Exception e) {
+@@ -493,9 +492,9 @@
+ 					}
+ 
+ 					if (packet != null)
+-						simProxy.SendPacket(packet, packet.Data.Length, false);
++						simProxy.SendPacket(packet, false);
+ 				} else
+-					simProxy.SendPacket(packet, length, needsZero);
++					simProxy.SendPacket(packet, needsZero);
+ 			} else
+ 				// ignore packets from unknown peers
+ 				Log(&quot;dropping packet from &quot; + remoteEndPoint, false);
+@@ -508,68 +507,68 @@
+ 		}}
+ 
+ 		// SendPacket: send a packet to a sim from our fake client endpoint
+-		public void SendPacket(Packet packet, IPEndPoint endPoint, int length, bool skipZero) {
+-			if (skipZero || (packet.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
+-				simFacingSocket.SendTo(packet.Data, length, SocketFlags.None, endPoint);
++		public void SendPacket(Packet packet, IPEndPoint endPoint, bool skipZero) {
++			byte[] buffer = packet.ToBytes();
++			if (skipZero || (packet.Header.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
++				simFacingSocket.SendTo(buffer, buffer.Length, SocketFlags.None, endPoint);
+ 			else {
+-				int zeroLength = Helpers.ZeroEncode(packet.Data, length, zeroBuffer);
++				int zeroLength = Helpers.ZeroEncode(buffer, buffer.Length, zeroBuffer);
+ 				simFacingSocket.SendTo(zeroBuffer, zeroLength, SocketFlags.None, endPoint);
+ 			}
++			
+ 		}
+ 
+ 		// SpoofAck: create an ACK for the given packet
+ 		public Packet SpoofAck(uint sequence) {
+-			Hashtable blocks = new Hashtable();
+-			Hashtable fields = new Hashtable();
+-			fields[&quot;ID&quot;] = (uint)sequence;
+-			blocks[fields] = &quot;Packets&quot;;
+-			return PacketBuilder.BuildPacket(&quot;PacketAck&quot;, proxyConfig.protocol, blocks, Helpers.MSG_ZEROCODED);
++            PacketAckPacket spoof = new PacketAckPacket();
++            spoof.Packets = new PacketAckPacket.PacketsBlock[1];
++	    spoof.Packets[0] = new PacketAckPacket.PacketsBlock();
++            spoof.Packets[0].ID = sequence;
++            return (Packet)spoof;
++            //Legacy:
++            ////Hashtable blocks = new Hashtable();
++            ////Hashtable fields = new Hashtable();
++            ////fields[&quot;ID&quot;] = (uint)sequence;
++            ////blocks[fields] = &quot;Packets&quot;;
++            ////return .BuildPacket(&quot;PacketAck&quot;, proxyConfig.protocol, blocks, Helpers.MSG_ZEROCODED);
+ 		}
+ 
+ 		// SeparateAck: create a standalone PacketAck for packet's appended ACKs
+ 		public Packet SeparateAck(Packet packet) {
+-			int ackCount = ((packet.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : (int)packet.Data[packet.Data.Length - 1]);
+-			Hashtable blocks = new Hashtable();
+-			for (int i = 0; i &lt; ackCount; ++i) {
+-				Hashtable fields = new Hashtable();
+-				int offset = packet.Data.Length - (ackCount - i) * 4 - 1;
+-				fields[&quot;ID&quot;] = (uint)
+-					  (packet.Data[offset++] &lt;&lt;  0)
+-					+ (packet.Data[offset++] &lt;&lt;  8)
+-					+ (packet.Data[offset++] &lt;&lt; 16)
+-					+ (packet.Data[offset++] &lt;&lt; 24)
+-					;
+-				blocks[fields] = &quot;Packets&quot;;
+-			}
++            PacketAckPacket seperate = new PacketAckPacket();
++            int ackCount = ((packet.Header.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : (int)packet.Header.Data[packet.Header.Data.Length - 1]);
++            seperate.Packets = new PacketAckPacket.PacketsBlock[ackCount];	
++		
++            for (int i = 0; i &lt; ackCount; ++i)
++            {
++            	int offset = packet.Header.Data.Length - (ackCount - i) * 4 - 1;
++                seperate.Packets[i].ID = (uint) ((packet.Header.Data[offset++] &lt;&lt;  0)
++				                                + (packet.Header.Data[offset++] &lt;&lt;  8)
++				                                + (packet.Header.Data[offset++] &lt;&lt; 16)
++				                                + (packet.Header.Data[offset++] &lt;&lt; 24))
++				                                ;
++            }
+ 
+-			Packet ack = PacketBuilder.BuildPacket(&quot;PacketAck&quot;, proxyConfig.protocol, blocks, Helpers.MSG_ZEROCODED);
+-			ack.Sequence = packet.Sequence;
+-			return ack;
++            Packet ack = (Packet)seperate;
++            ack.Header.Sequence = packet.Header.Sequence;
++            return ack;
+ 		}
+ 
+ 		// SwapPacket: copy the sequence number and appended ACKs from one packet to another
+-		public static void SwapPacket(Packet oldPacket, Packet newPacket, int oldLength) {
+-			newPacket.Sequence = oldPacket.Sequence;
++		public static void SwapPacket(Packet oldPacket, Packet newPacket) {
++			newPacket.Header.Sequence = oldPacket.Header.Sequence;
+ 
+-			int oldAcks = (oldPacket.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : (int)oldPacket.Data[oldLength - 1];
+-			int newAcks = (newPacket.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : (int)newPacket.Data[newPacket.Data.Length - 1];
++			int oldAcks = (oldPacket.Header.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : oldPacket.Header.AckList.Length;
++			int newAcks = (newPacket.Header.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) == 0 ? 0 : newPacket.Header.AckList.Length;
+ 
+ 			if (oldAcks != 0 || newAcks != 0) {
+-				int oldAckSize = oldAcks == 0 ? 0 : oldAcks * 4 + 1;
+-				int newAckSize = newAcks == 0 ? 0 : newAcks * 4 + 1;
++				
++               			uint[] newAckList = new uint[oldAcks];
++		                Array.Copy(oldPacket.Header.AckList, 0, newAckList, 0, oldAcks);
+ 
+-				byte[] newData = new byte[newPacket.Data.Length - newAckSize + oldAckSize];
+-				Array.Copy(newPacket.Data, 0, newData, 0, newPacket.Data.Length - newAckSize);
+-
+-				if (newAcks != 0)
+-					newData[0] ^= Helpers.MSG_APPENDED_ACKS;
+-
+-				if (oldAcks != 0) {
+-					newData[0] |= Helpers.MSG_APPENDED_ACKS;
+-					Array.Copy(oldPacket.Data, oldLength - oldAckSize, newData, newPacket.Data.Length - newAckSize, oldAckSize);
+-				}
+-
+-				newPacket.Data = newData;
++				newPacket.Header.AckList = newAckList;
++				newPacket.Header.AppendedAcks = oldPacket.Header.AppendedAcks;
++                
+ 			}
+ 		}
+ 
+@@ -685,21 +684,21 @@
+ 					foreach (uint id in incomingAcks.Keys)
+ 						if (!incomingSeenAcks.Contains(id)) {
+ 							Packet packet = (Packet)incomingAcks[id];
+-							packet.Data[0] |= Helpers.MSG_RESENT;
++							packet.Header.Data[0] |= Helpers.MSG_RESENT;
+ #if DEBUG_SEQUENCE
+-							Console.WriteLine(&quot;RESEND &lt;- &quot; + packet.Layout.Name + &quot; #&quot; + packet.Sequence);
++							Console.WriteLine(&quot;RESEND &lt;- &quot; + packet.Type + &quot; #&quot; + packet.Header.Sequence);
+ #endif
+-							SendPacket(packet, packet.Data.Length, false);
++							SendPacket(packet, false);
+ 						}
+ 
+ 					foreach (uint id in outgoingAcks.Keys)
+ 						if (!outgoingSeenAcks.Contains(id)) {
+ 							Packet packet = (Packet)outgoingAcks[id];
+-							packet.Data[0] |= Helpers.MSG_RESENT;
++							packet.Header.Data[0] |= Helpers.MSG_RESENT;
+ #if DEBUG_SEQUENCE
+-							Console.WriteLine(&quot;RESEND -&gt; &quot; + packet.Layout.Name + &quot; #&quot; + packet.Sequence);
++							Console.WriteLine(&quot;RESEND -&gt; &quot; + packet.Type + &quot; #&quot; + packet.Header.Sequence);
+ #endif
+-							proxy.SendPacket(packet, remoteEndPoint, packet.Data.Length, false);
++							proxy.SendPacket(packet, remoteEndPoint, false);
+ 						}
+ 				}
+ 			} catch (Exception e) {
+@@ -734,77 +733,71 @@
+ 				length = socket.EndReceiveFrom(ar, ref clientEndPoint);
+ 
+ 				// interpret the packet according to the SL protocol
+-				Packet packet;
+-				if ((receiveBuffer[0] &amp; Helpers.MSG_ZEROCODED) == 0)
+-					packet = new Packet(receiveBuffer, length, proxyConfig.protocol, proxyConfig.protocol.Command(receiveBuffer), false);
+-				else {
+-					Helpers.ZeroDecodeCommand(receiveBuffer, zeroBuffer);
+-					packet = new Packet(receiveBuffer, length, proxyConfig.protocol, proxyConfig.protocol.Command(zeroBuffer), false);
+-					needsZero = true;
+-				}
++		                int end = length - 1;
++				Packet packet = libsecondlife.Packets.Packet.BuildPacket(receiveBuffer,ref end, zeroBuffer);
++				
+ #if DEBUG_SEQUENCE
+-				Console.WriteLine(&quot;-&gt; &quot; + packet.Layout.Name + &quot; #&quot; + packet.Sequence);
++				Console.WriteLine(&quot;-&gt; &quot; + packet.Type + &quot; #&quot; + packet.Header.Sequence);
+ #endif
+-
+-				// check for ACKs we're waiting for
++                // check for ACKs we're waiting for
+ 				packet = CheckAcks(packet, Direction.Outgoing, ref length, ref needsCopy);
+ 
+ 				// modify sequence numbers to account for injections
+-				uint oldSequence = packet.Sequence;
++				uint oldSequence = packet.Header.Sequence;
+ 				packet = ModifySequence(packet, Direction.Outgoing, ref length, ref needsCopy);
+ 
+ 				// keep track of sequence numbers
+-				if (packet.Sequence &gt; outgoingSequence)
+-					outgoingSequence = packet.Sequence;
++				if (packet.Header.Sequence &gt; outgoingSequence)
++                    outgoingSequence = packet.Header.Sequence ;
+ 
+ 				// check the packet for addresses that need proxying
+-				if (proxy.outgoingCheckers.Contains(packet.Layout.Name)) {
+-					if (needsZero) {
+-						length = Helpers.ZeroDecode(packet.Data, length, zeroBuffer);
+-						packet.Data = zeroBuffer;
++				if (proxy.outgoingCheckers.Contains(packet.Type)) {
++					/* if (packet.Header.Zerocoded) {
++						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
++						packet.Header.Data = zeroBuffer;
+ 						needsZero = false;
+-					}
++					} */
+ 
+-					Packet newPacket = ((AddressChecker)proxy.outgoingCheckers[packet.Layout.Name])(packet);
+-					SwapPacket(packet, newPacket, length);
++					Packet newPacket = ((AddressChecker)proxy.outgoingCheckers[packet.Type])(packet);
++					SwapPacket(packet, newPacket);
+ 					packet = newPacket;
+-					length = packet.Data.Length;
++					length = packet.Header.Data.Length;
+ 					needsCopy = false;
+ 				}
+ 
+ 				// pass the packet to any callback delegates
+-				if (proxy.outgoingDelegates.Contains(packet.Layout.Name)) {
+-					if (needsZero) {
+-						length = Helpers.ZeroDecode(packet.Data, length, zeroBuffer);
+-						packet.Data = zeroBuffer;
++				if (proxy.outgoingDelegates.Contains(packet.Type)) {
++					/* if (packet.Header.Zerocoded) {
++						length = Helpers.ZeroDecode(packet.Header.Data, length, zeroBuffer);
++						packet.Header.Data = zeroBuffer;
+ 						needsCopy = true;
+-					}
++					} */
+ 
+ 					if (needsCopy) {
+-						byte[] newData = new byte[length];
+-						Array.Copy(packet.Data, 0, newData, 0, length);
+-						packet.Data = newData;
++						byte[] newData = new byte[packet.Header.Data.Length];
++						Array.Copy(packet.Header.Data, 0, newData, 0, packet.Header.Data.Length);
++						packet.Header.Data = newData; // FIXME!!!
+ 					}
+ 
+ 					try {
+-						Packet newPacket = ((PacketDelegate)proxy.outgoingDelegates[packet.Layout.Name])(packet, remoteEndPoint);
++						Packet newPacket = ((PacketDelegate)proxy.outgoingDelegates[packet.Type])(packet, remoteEndPoint);
+ 						if (newPacket == null) {
+-							if ((packet.Data[0] &amp; Helpers.MSG_RELIABLE) != 0)
++							if ((packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0)
+ 								Inject(proxy.SpoofAck(oldSequence), Direction.Incoming);
+ 
+-							if ((packet.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0)
++							if ((packet.Header.Flags &amp; Helpers.MSG_APPENDED_ACKS) != 0)
+ 								packet = proxy.SeparateAck(packet);
+ 							else
+ 								packet = null;
+ 						} else {
+-							bool oldReliable = (packet.Data[0] &amp; Helpers.MSG_RELIABLE) != 0;
+-							bool newReliable = (newPacket.Data[0] &amp; Helpers.MSG_RELIABLE) != 0;
++							bool oldReliable = (packet.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0;
++							bool newReliable = (newPacket.Header.Flags &amp; Helpers.MSG_RELIABLE) != 0;
+ 							if (oldReliable &amp;&amp; !newReliable)
+ 								Inject(proxy.SpoofAck(oldSequence), Direction.Incoming);
+ 							else if (!oldReliable &amp;&amp; newReliable)	
+ 								WaitForAck(packet, Direction.Outgoing);
+ 
+-							SwapPacket(packet, newPacket, packet.Data.Length);
++							SwapPacket(packet, newPacket);
+ 							packet = newPacket;
+ 						}
+ 					} catch (Exception e) {
+@@ -813,9 +806,9 @@
+ 					}
+ 
+ 					if (packet != null)
+-						proxy.SendPacket(packet, remoteEndPoint, packet.Data.Length, false);
++						proxy.SendPacket(packet, remoteEndPoint, false);
+ 				} else
+-					proxy.SendPacket(packet, remoteEndPoint, length, needsZero);
++					proxy.SendPacket(packet, remoteEndPoint, needsZero);
+ 
+ 				// send any packets queued for injection
+ 				if (firstReceive) {
+@@ -833,11 +826,12 @@
+ 			}}
+ 
+ 			// SendPacket: send a packet from the sim to the client via our fake sim endpoint
+-			public void SendPacket(Packet packet, int length, bool skipZero) {
+-				if (skipZero || (packet.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
+-					socket.SendTo(packet.Data, length, SocketFlags.None, clientEndPoint);
++			public void SendPacket(Packet packet, bool skipZero) {
++				byte[] buffer = packet.ToBytes();
++				if (skipZero || (packet.Header.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
++					socket.SendTo(buffer, buffer.Length, SocketFlags.None, clientEndPoint);
+ 				else {
+-					int zeroLength = Helpers.ZeroEncode(packet.Data, length, zeroBuffer);
++					int zeroLength = Helpers.ZeroEncode(buffer, buffer.Length, zeroBuffer);
+ 					socket.SendTo(zeroBuffer, zeroLength, SocketFlags.None, clientEndPoint);
+ 				}
+ 			}
+@@ -851,34 +845,36 @@
+ 					}
+ 
+ 					incomingInjections.Add(++incomingSequence);
+-					packet.Sequence = incomingSequence;
++					packet.Header.Sequence = incomingSequence;
+ 				} else {
+ 					outgoingInjections.Add(++outgoingSequence);
+-					packet.Sequence = outgoingSequence;
++					packet.Header.Sequence = outgoingSequence;
+ 				}
+ 
+ #if DEBUG_SEQUENCE
+-				Console.WriteLine(&quot;INJECT &quot; + (direction == Direction.Incoming ? &quot;&lt;-&quot; : &quot;-&gt;&quot;) + &quot; &quot; + packet.Layout.Name + &quot; #&quot; + packet.Sequence);
++				Console.WriteLine(&quot;INJECT &quot; + (direction == Direction.Incoming ? &quot;&lt;-&quot; : &quot;-&gt;&quot;) + &quot; &quot; + packet.Type + &quot; #&quot; + packet.Header.Sequence);
+ 
+ #endif
+-				if ((packet.Data[0] &amp; Helpers.MSG_RELIABLE) != 0)
++				if ((packet.Header.Data[0] &amp; Helpers.MSG_RELIABLE) != 0)
+ 					WaitForAck(packet, direction);
+ 
+-				if (direction == Direction.Incoming)
+-					if ((packet.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
+-						socket.SendTo(packet.Data, packet.Data.Length, SocketFlags.None, clientEndPoint);
++				if (direction == Direction.Incoming) {
++					byte[] buffer = packet.ToBytes();
++					if ((packet.Header.Data[0] &amp; Helpers.MSG_ZEROCODED) == 0)
++						socket.SendTo(buffer, buffer.Length, SocketFlags.None, clientEndPoint);
+ 					else {
+-						int zeroLength = Helpers.ZeroEncode(packet.Data, packet.Data.Length, zeroBuffer);
++						int zeroLength = Helpers.ZeroEncode(buffer, buffer.Length, zeroBuffer);
+ 						socket.SendTo(zeroBuffer, zeroLength, SocketFlags.None, clientEndPoint);
+ 					}
++				}
+ 				else
+-					proxy.SendPacket(packet, remoteEndPoint, packet.Data.Length, false);
++					proxy.SendPacket(packet, remoteEndPoint, false);
+ 			}
+ 
+ 			// WaitForAck: take care of resending a packet until it's ACKed
+ 			public void WaitForAck(Packet packet, Direction direction) {
+ 				Hashtable table = direction == Direction.Incoming ? incomingAcks : outgoingAcks;
+-				table.Add(packet.Sequence, packet);
++				table.Add(packet.Header.Sequence, packet);
+ 			}
+ 
+ 			// CheckAcks: check for and remove ACKs of packets we've injected
+@@ -890,42 +886,51 @@
+ 					return packet;
+ 
+ 				// check for embedded ACKs
+-				if (packet.Layout.Name == &quot;PacketAck&quot;) {
++				if (packet.Type == PacketType.PacketAck) {
+ 					bool changed = false;
+-					Hashtable blocks = PacketUtility.Unbuild(packet);
+-					Hashtable newBlocks = new Hashtable();
+-					foreach (Hashtable fields in blocks.Keys) {
+-						uint id = ((uint)fields[&quot;ID&quot;]);
++                    List&lt;PacketAckPacket.PacketsBlock&gt; newPacketBlocks = new List&lt;PacketAckPacket.PacketsBlock&gt;();
++					foreach (PacketAckPacket.PacketsBlock pb in ((PacketAckPacket)packet).Packets) {
++						uint id = pb.ID;
+ #if DEBUG_SEQUENCE
+ 						string hrup = &quot;Check !&quot; + id;
+ #endif
+-						if (acks.Contains(id)) {
++                        if (acks.Contains(id))
++                        {
+ #if DEBUG_SEQUENCE
+ 							hrup += &quot; get's&quot;;
+ #endif
+-							seenAcks.Add(id);
+-							changed = true;
+-						} else
+-							newBlocks.Add(fields, blocks[fields]);
++                            seenAcks.Add(id);
++                            changed = true;
++                        }
++                        else
++                            newPacketBlocks.Add(pb);
+ #if DEBUG_SEQUENCE
+ 						Console.WriteLine(hrup);
+ #endif
+ 					}
+-					if (changed) {
+-						Packet newPacket = PacketBuilder.BuildPacket(&quot;PacketAck&quot;, proxyConfig.protocol, newBlocks, packet.Data[0]);
+-						SwapPacket(packet, newPacket, length);
++					if (changed)
++                    {
++                        PacketAckPacket newPacket = new PacketAckPacket();
++                        newPacket.Packets = new PacketAckPacket.PacketsBlock[newPacketBlocks.Count];
++                        
++                        int a = 0;
++                        foreach (PacketAckPacket.PacketsBlock pb in newPacketBlocks)
++                        {
++                            newPacket.Packets[a++] = pb;
++                        } 
++
++                        SwapPacket(packet, (Packet)newPacket);
+ 						packet = newPacket;
+-						length = packet.Data.Length;
++						length = packet.Header.Data.Length;
+ 						needsCopy = false;
+ 					}
+ 				}
+ 
+ 				// check for appended ACKs
+-				if ((packet.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0) {
+-					byte ackCount = packet.Data[length - 1];
++				if ((packet.Header.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0) {
++					int ackCount = packet.Header.AckList.Length;
+ 					for (int i = 0; i &lt; ackCount;) {
+-						int offset = length - (ackCount - i) * 4 - 1;
+-						uint ackID = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16));
++						uint ackID = packet.Header.AckList[i]; // FIXME FIXME FIXME
+ #if DEBUG_SEQUENCE
+ 						string hrup = &quot;Check @&quot; + ackID;
+ #endif
+@@ -933,11 +938,10 @@
+ #if DEBUG_SEQUENCE
+ 							hrup += &quot; get's&quot;;
+ #endif
+-							byte[] newData = new byte[length -= 4];
+-							Array.Copy(packet.Data, 0, newData, 0, offset);
+-							Array.Copy(packet.Data, offset + 4, newData, offset, length - offset - 4);
+-							--newData[newData.Length - 1];
+-							packet.Data = newData;
++							uint[] newAcks = new uint[ackCount-1];
++							Array.Copy(packet.Header.AckList, 0, newAcks, 0, i);
++							Array.Copy(packet.Header.AckList, i+1, newAcks, i, ackCount - i - 1);
++							packet.Header.AckList = newAcks;
+ 							--ackCount;
+ 							seenAcks.Add(ackID);
+ 							needsCopy = false;
+@@ -949,9 +953,9 @@
+ 					}
+ 					if (ackCount == 0) {
+ 						byte[] newData = new byte[length -= 1];
+-						Array.Copy(packet.Data, 0, newData, 0, length);
++						Array.Copy(packet.Header.Data, 0, newData, 0, length);
+ 						newData[0] ^= Helpers.MSG_APPENDED_ACKS;
+-						packet.Data = newData;
++						packet.Header.Data = newData;
+ 					}
+ 				}
+ 
+@@ -965,22 +969,22 @@
+ 				uint ourOffset = direction == Direction.Outgoing ? outgoingOffset : incomingOffset;
+ 				uint theirOffset = direction == Direction.Incoming ? outgoingOffset : incomingOffset;
+ 
+-				uint newSequence = (packet.Sequence + ourOffset);
++				uint newSequence = (uint)(packet.Header.Sequence + ourOffset);
+ 				foreach (uint injection in ourInjections)
+ 					if (newSequence &gt;= injection)
+ 						++newSequence;
+ #if DEBUG_SEQUENCE
+-				Console.WriteLine(&quot;Mod #&quot; + packet.Sequence + &quot; = &quot; + newSequence);
++				Console.WriteLine(&quot;Mod #&quot; + packet.Header.Sequence + &quot; = &quot; + newSequence);
+ #endif
+-				packet.Sequence = newSequence;
++				packet.Header.Sequence = newSequence;
+ 
+-				if ((packet.Data[0] &amp; Helpers.MSG_APPENDED_ACKS) != 0) {
+-					int ackCount = packet.Data[length - 1];
++				if ((packet.Header.Flags &amp; Helpers.MSG_APPENDED_ACKS) != 0) {
++					int ackCount = packet.Header.AckList.Length;
+ 					for (int i = 0; i &lt; ackCount; ++i) {
+ 						int offset = length - (ackCount - i) * 4 - 1;
+-						uint ackID = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16)) - theirOffset;
++						uint ackID = packet.Header.AckList[i] - theirOffset;
+ #if DEBUG_SEQUENCE
+-						uint hrup = (uint)(packet.Data[offset + 3] + (packet.Data[offset + 2] &lt;&lt; 8) + (packet.Data[offset + 1] &lt;&lt; 16));
++						uint hrup = packet.Header.AckList[i];
+ #endif
+ 						for (int j = theirInjections.Count - 1; j &gt;= 0; --j)
+ 							if (ackID &gt;= (uint)theirInjections[j])
+@@ -988,33 +992,29 @@
+ #if DEBUG_SEQUENCE
+ 						Console.WriteLine(&quot;Mod @&quot; + hrup + &quot; = &quot; + ackID);
+ #endif
+-						packet.Data[offset + 3] = (byte)(ackID % 256);
+-						packet.Data[offset + 2] = (byte)((ackID / 256) % 256);
+-						packet.Data[offset + 1] = (byte)(ackID / 65536);
++						packet.Header.AckList[i] = ackID;
+ 					}
+ 				}
+ 
+-				if (packet.Layout.Name == &quot;PacketAck&quot;) {
+-					Hashtable blocks = PacketUtility.Unbuild(packet);
+-					foreach (Hashtable fields in blocks.Keys) {
+-						if ((string)blocks[fields] == &quot;Packets&quot;) {
+-							uint ackID = (uint)fields[&quot;ID&quot;] - theirOffset;
++				if (packet.Type == PacketType.PacketAck) {
++                    PacketAckPacket pap = (PacketAckPacket)packet;
++                    foreach(PacketAckPacket.PacketsBlock pb in pap.Packets) {
++                    	uint ackID = (uint)pb.ID - theirOffset;
+ #if DEBUG_SEQUENCE
+-							uint hrup = (uint)fields[&quot;ID&quot;];
++						uint hrup = (uint)pb.ID;
+ #endif
+-							for (int i = theirInjections.Count - 1; i &gt;= 0; --i)
+-								if (ackID &gt;= (uint)theirInjections[i])
+-									--ackID;
++						for (int i = theirInjections.Count - 1; i &gt;= 0; --i)
++							if (ackID &gt;= (uint)theirInjections[i])
++								--ackID;
+ #if DEBUG_SEQUENCE
+-							Console.WriteLine(&quot;Mod !&quot; + hrup + &quot; = &quot; + ackID);
++						Console.WriteLine(&quot;Mod !&quot; + hrup + &quot; = &quot; + ackID);
+ #endif
+-							fields[&quot;ID&quot;] = ackID;
+-						}
++						pb.ID = ackID;
++					
+ 					}
+-					Packet newPacket = PacketBuilder.BuildPacket(&quot;PacketAck&quot;, proxyConfig.protocol, blocks, packet.Data[0]);
+-					SwapPacket(packet, newPacket, length);
+-					packet = newPacket;
+-					length = packet.Data.Length;
++                    //SwapPacket(packet, (Packet)pap);
++					// packet = (Packet)pap;
++					length = packet.Header.Data.Length;
+ 					needsCopy = false;
+ 				}
+ 
+@@ -1036,69 +1036,72 @@
+ 		// InitializeAddressCheckers: initialize delegates that check packets for addresses that need proxying
+ 		private void InitializeAddressCheckers() {
+ 			// TODO: what do we do with mysteries and empty IPs?
+-			AddMystery(&quot;OpenCircuit&quot;);
+-			AddMystery(&quot;AgentPresenceResponse&quot;);
+-			incomingCheckers.Add(&quot;TeleportFinish&quot;, new AddressChecker(CheckTeleportFinish));
++			AddMystery(PacketType.OpenCircuit);
++			AddMystery(PacketType.AgentPresenceResponse);
++			incomingCheckers.Add(PacketType.TeleportFinish, new AddressChecker(CheckTeleportFinish));
+ 			// ViewerStats: IP is 0.0.0.0
+-			incomingCheckers.Add(&quot;AgentToNewRegion&quot;, new AddressChecker(CheckAgentToNewRegion));
+-			incomingCheckers.Add(&quot;CrossedRegion&quot;, new AddressChecker(CheckCrossedRegion));
+-			incomingCheckers.Add(&quot;EnableSimulator&quot;, new AddressChecker(CheckEnableSimulator));
++			incomingCheckers.Add(PacketType.AgentToNewRegion, new AddressChecker(CheckAgentToNewRegion));
++			incomingCheckers.Add(PacketType.CrossedRegion, new AddressChecker(CheckCrossedRegion));
++			incomingCheckers.Add(PacketType.EnableSimulator, new AddressChecker(CheckEnableSimulator));
+ 			// KickUser: IP is 0.0.0.0
+-			incomingCheckers.Add(&quot;UserLoginLocationReply&quot;, new AddressChecker(CheckUserLoginLocationReply));
++			//incomingCheckers.Add(&quot;UserLoginLocationReply&quot;, new AddressChecker(CheckUserLoginLocationReply));
+ 		}
+ 
+ 		// AddMystery: add a checker delegate that logs packets we're watching for development purposes
+-		private void AddMystery(String name) {
+-			incomingCheckers.Add(name, new AddressChecker(LogIncomingMysteryPacket));
+-			outgoingCheckers.Add(name, new AddressChecker(LogOutgoingMysteryPacket));
++		private void AddMystery(PacketType type) {
++			incomingCheckers.Add(type, new AddressChecker(LogIncomingMysteryPacket));
++			outgoingCheckers.Add(type, new AddressChecker(LogOutgoingMysteryPacket));
+ 		}
+ 
+ 		// GenericCheck: replace the sim address in a packet with our proxy address
+-		private Packet GenericCheck(Packet packet, string block, string fieldIP, string fieldPort, bool active) {
+-			Hashtable blocks = PacketUtility.Unbuild(packet);
++		private void GenericCheck(ref uint simIP, ref ushort simPort, bool active) {
++            IPAddress sim_ip = new IPAddress((long)simIP);
+ 
+-			IPEndPoint realSim = new IPEndPoint((IPAddress)PacketUtility.GetField(blocks, block, fieldIP), Convert.ToInt32(PacketUtility.GetField(blocks, block, fieldPort)));
++            IPEndPoint realSim = new IPEndPoint(sim_ip, Convert.ToInt32(simPort));
+ 			IPEndPoint fakeSim = ProxySim(realSim);
+-			PacketUtility.SetField(blocks, block, fieldIP, fakeSim.Address);
+-			PacketUtility.SetField(blocks, block, fieldPort, (ushort)fakeSim.Port);
+ 
+-			if (active)
+-				activeCircuit = realSim;
+-
+-			return PacketBuilder.BuildPacket(packet.Layout.Name, proxyConfig.protocol, blocks, packet.Data[0]);
++            simPort = (ushort)fakeSim.Port;
++            int i = 0;
++            byte[] bytes = fakeSim.Address.GetAddressBytes();
++            simIP = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++            
++            if (active)
++                activeCircuit = realSim;
+ 		}
+ 
+ 		// CheckTeleportFinish: check TeleportFinish packets
+ 		private Packet CheckTeleportFinish(Packet packet) {
+-			return GenericCheck(packet, &quot;Info&quot;, &quot;SimIP&quot;, &quot;SimPort&quot;, true);
++            TeleportFinishPacket tfp = (TeleportFinishPacket)packet;
++            GenericCheck(ref tfp.Info.SimIP, ref tfp.Info.SimPort, true);
++            return (Packet)tfp;
+ 		}
+ 
+ 		// CheckAgentToNewRegion: check AgentToNewRegion packets
+ 		private Packet CheckAgentToNewRegion(Packet packet) {
+-			return GenericCheck(packet, &quot;RegionData&quot;, &quot;IP&quot;, &quot;Port&quot;, true);
++            AgentToNewRegionPacket atnwp = (AgentToNewRegionPacket)packet;
++            GenericCheck(ref atnwp.RegionData.IP, ref atnwp.RegionData.Port, true);
++            return (Packet)atnwp;
+ 		}
+ 
+ 		// CheckEnableSimulator: check EnableSimulator packets
+ 		private Packet CheckEnableSimulator(Packet packet) {
+-			return GenericCheck(packet, &quot;SimulatorInfo&quot;, &quot;IP&quot;, &quot;Port&quot;, false);
++            EnableSimulatorPacket esp = (EnableSimulatorPacket)packet;
++            GenericCheck(ref esp.SimulatorInfo.IP, ref esp.SimulatorInfo.Port, false);
++            return (Packet)esp;
+ 		}
+ 
+ 		// CheckCrossedRegion: check CrossedRegion packets
+ 		private Packet CheckCrossedRegion(Packet packet) {
+-			return GenericCheck(packet, &quot;RegionData&quot;, &quot;SimIP&quot;, &quot;SimPort&quot;, true);
++            CrossedRegionPacket crp = (CrossedRegionPacket)packet;
++            GenericCheck(ref crp.RegionData.SimIP, ref crp.RegionData.SimPort, true);
++            return (Packet)crp;
+ 		}
+ 
+-		// CheckUserLoginLocationReply: check UserLoginLocationReply packets
+-		private Packet CheckUserLoginLocationReply(Packet packet) {
+-			return GenericCheck(packet, &quot;SimulatorBlock&quot;, &quot;IP&quot;, &quot;Port&quot;, true);
+-		}
+-
+-		// LogPacket: log a packet dump
++        // LogPacket: log a packet dump
+ 		private Packet LogPacket(Packet packet, string type) {
+ 			Log(type + &quot; packet:&quot;, true);
+ 			Log(packet, true);
+-
+-			return PacketBuilder.BuildPacket(packet.Layout.Name, proxyConfig.protocol, PacketUtility.Unbuild(packet), packet.Data[0]);
++            return packet;
+ 		}
+ 
+ 		// LogIncomingMysteryPacket: log an incoming packet we're watching for development purposes
+@@ -1126,40 +1129,4 @@
+ 		Incoming,
+ 		Outgoing
+ 	}
+-
+-	// PacketUtility: provides various utility methods for working with libsecondlife Packet objects
+-	public class PacketUtility {
+-		// Unbuild: deconstruct a packet into a Hashtable of blocks suitable for passing to PacketBuilder
+-		public static Hashtable Unbuild(Packet packet) {
+-			Hashtable blockTable = new Hashtable();
+-			foreach (Block block in packet.Blocks()) {
+-				Hashtable fieldTable = new Hashtable();
+-				foreach (Field field in block.Fields)
+-					fieldTable[field.Layout.Name] = field.Data;
+-				blockTable[fieldTable] = block.Layout.Name;
+-			}
+-
+-			return blockTable;
+-		}
+-
+-		// GetField: given a table of blocks, return the value of the specified block and field
+-		// In the case of packets with variable blocks, an arbitrary block will be used.
+-		public static object GetField(Hashtable blocks, string block, string field) {
+-			foreach (Hashtable fields in blocks.Keys)
+-				if ((string)blocks[fields] == block)
+-					if (fields.Contains(field))
+-						return fields[field];
+-
+-			return null;
+-		}
+-
+-		// SetField: given a table of blocks, update the value of the specified block and field
+-		// In the case of packets with variable blocks, all blocks will be updated.
+-		public static void SetField(Hashtable blocks, string block, string field, object value) {
+-			foreach (Hashtable fields in blocks.Keys)
+-				if ((string)blocks[fields] == block)
+-					if (fields.Contains(field))
+-						fields[field] = value;
+-		}
+-	}
+ }
+
+Modified: trunk/SLProxy/SLProxy.csproj
+===================================================================
+--- trunk/SLProxy/SLProxy.csproj	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/SLProxy.csproj	2006-12-21 21:34:01 UTC (rev 750)
+@@ -49,6 +49,7 @@
+     &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
+     &lt;DebugType&gt;full&lt;/DebugType&gt;
+     &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
++    &lt;UseVSHostingProcess&gt;false&lt;/UseVSHostingProcess&gt;
+   &lt;/PropertyGroup&gt;
+   &lt;PropertyGroup Condition=&quot; '$(Configuration)|$(Platform)' == 'Release|AnyCPU' &quot;&gt;
+     &lt;OutputPath&gt;bin\Release\&lt;/OutputPath&gt;
+@@ -85,26 +86,16 @@
+     &lt;/Reference&gt;
+   &lt;/ItemGroup&gt;
+   &lt;ItemGroup&gt;
+-    &lt;Compile Include=&quot;legacy\Logger.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\Packet.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\ProtocolManager.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\SecondLife.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\Types.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcDeserializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcErrorCodes.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcException.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcRequest.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcRequestDeserializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcRequestSerializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcResponse.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcResponseDeserializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcResponseSerializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcSerializer.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;legacy\XmlRpcXmlTokens.cs&quot; /&gt;
+     &lt;Compile Include=&quot;SLProxy.cs&quot;&gt;
+       &lt;SubType&gt;Code&lt;/SubType&gt;
+     &lt;/Compile&gt;
+   &lt;/ItemGroup&gt;
++  &lt;ItemGroup&gt;
++    &lt;ProjectReference Include=&quot;..\libsecondlife-cs\libsecondlife.csproj&quot;&gt;
++      &lt;Project&gt;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&lt;/Project&gt;
++      &lt;Name&gt;libsecondlife&lt;/Name&gt;
++    &lt;/ProjectReference&gt;
++  &lt;/ItemGroup&gt;
+   &lt;Import Project=&quot;$(MSBuildBinPath)\Microsoft.CSharp.targets&quot; /&gt;
+   &lt;PropertyGroup&gt;
+     &lt;PreBuildEvent&gt;
+
+Modified: trunk/SLProxy/SLProxy.sln
+===================================================================
+--- trunk/SLProxy/SLProxy.sln	2006-12-21 15:42:20 UTC (rev 749)
++++ trunk/SLProxy/SLProxy.sln	2006-12-21 21:34:01 UTC (rev 750)
+@@ -6,24 +6,42 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;ChatConsole&quot;, &quot;ChatConsole.csproj&quot;, &quot;{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}&quot;
+ EndProject
++Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;libsecondlife&quot;, &quot;..\libsecondlife-cs\libsecondlife.csproj&quot;, &quot;{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}&quot;
++EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
++		Debug|.NET 1.1 = Debug|.NET 1.1
+ 		Debug|Any CPU = Debug|Any CPU
++		Release|.NET 1.1 = Release|.NET 1.1
+ 		Release|Any CPU = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
++		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}.Release|Any CPU.Build.0 = Release|Any CPU
++		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{6222B134-AE5F-489A-8A77-423A721B7C62}.Release|Any CPU.Build.0 = Release|Any CPU
++		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|.NET 1.1.ActiveCfg = Debug|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|.NET 1.1.ActiveCfg = Release|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504}.Release|Any CPU.Build.0 = Release|Any CPU
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|.NET 1.1.ActiveCfg = Debug|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|.NET 1.1.Build.0 = Debug|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|.NET 1.1.ActiveCfg = Release|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|.NET 1.1.Build.0 = Release|.NET 1.1
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{D9CDEDFB-8169-4B03-B57F-0DF638F044EC}.Release|Any CPU.Build.0 = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000116.html">[Libsecondlife-commits] r749 -	trunk/libsecondlife-cs/examples/IA_ImageTool
+</A></li>
+	<LI>Next message: <A HREF="000118.html">[Libsecondlife-commits] r751 - in trunk/libsecondlife-cs:	AssetSystem InventorySystem examples/IA_InventoryManager
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#117">[ date ]</a>
+              <a href="thread.html#117">[ thread ]</a>
+              <a href="subject.html#117">[ subject ]</a>
+              <a href="author.html#117">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

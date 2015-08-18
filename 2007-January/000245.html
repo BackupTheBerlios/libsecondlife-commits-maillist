@@ -1,0 +1,460 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r841 - in trunk: libsecondlife-cs	libsecondlife.xcodeproj
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2007-January/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r841%20-%20in%20trunk%3A%20libsecondlife-cs%0A%09libsecondlife.xcodeproj&In-Reply-To=%3C200701130248.l0D2miXn007364%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000244.html">
+   <LINK REL="Next"  HREF="000246.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r841 - in trunk: libsecondlife-cs	libsecondlife.xcodeproj</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r841%20-%20in%20trunk%3A%20libsecondlife-cs%0A%09libsecondlife.xcodeproj&In-Reply-To=%3C200701130248.l0D2miXn007364%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r841 - in trunk: libsecondlife-cs	libsecondlife.xcodeproj">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 13 03:48:44 CET 2007</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000244.html">[Libsecondlife-commits] r840 - in trunk: . applications	applications/SecondGlance applications/libslupdater	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/InventorySystem	libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+        <LI>Next message: <A HREF="000246.html">[Libsecondlife-commits] r842 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#245">[ date ]</a>
+              <a href="thread.html#245">[ thread ]</a>
+              <a href="subject.html#245">[ subject ]</a>
+              <a href="author.html#245">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2007-01-13 03:48:33 +0100 (Sat, 13 Jan 2007)
+New Revision: 841
+
+Modified:
+   trunk/libsecondlife-cs/GroupManager.cs
+   trunk/libsecondlife-cs/NetworkManager.cs
+   trunk/libsecondlife-cs/Settings.cs
+   trunk/libsecondlife.xcodeproj/project.pbxproj
+Log:
+(hopefully) resolved bug #9863 and moved some values to Settings.cs. also removed a warning ! one whole warning !
+
+
+Modified: trunk/libsecondlife-cs/GroupManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/GroupManager.cs	2007-01-13 00:23:00 UTC (rev 840)
++++ trunk/libsecondlife-cs/GroupManager.cs	2007-01-13 02:48:33 UTC (rev 841)
+@@ -368,7 +368,8 @@
+         private Dictionary&lt;LLUUID, GroupTitlesCallback&gt; GroupTitlesCallbacks;
+         private Dictionary&lt;LLUUID, GroupAccountSummaryCallback&gt; GroupAccountSummaryCallbacks;
+         private Dictionary&lt;LLUUID, GroupAccountDetailsCallback&gt; GroupAccountDetailsCallbacks;
+-        private Dictionary&lt;LLUUID, GroupAccountTransactionsCallback&gt; GroupAccountTransactionsCallbacks;
++		//TODO - presumably someone created this Dictionary so they could use it.
++        //private Dictionary&lt;LLUUID, GroupAccountTransactionsCallback&gt; GroupAccountTransactionsCallbacks;
+         /// &lt;summary&gt;A list of all the lists of group members, indexed by the request ID&lt;/summary&gt;
+         private Dictionary&lt;LLUUID, Dictionary&lt;LLUUID, GroupMember&gt;&gt; GroupMembersCaches;
+         /// &lt;summary&gt;A list of all the lists of group roles, indexed by the request ID&lt;/summary&gt;
+@@ -391,7 +392,7 @@
+             GroupTitlesCallbacks = new Dictionary&lt;LLUUID, GroupTitlesCallback&gt;();
+             GroupAccountSummaryCallbacks = new Dictionary&lt;LLUUID, GroupAccountSummaryCallback&gt;();
+             GroupAccountDetailsCallbacks = new Dictionary&lt;LLUUID, GroupAccountDetailsCallback&gt;();
+-            GroupAccountTransactionsCallbacks = new Dictionary&lt;LLUUID, GroupAccountTransactionsCallback&gt;();
++            //GroupAccountTransactionsCallbacks = new Dictionary&lt;LLUUID, GroupAccountTransactionsCallback&gt;();
+ 
+             GroupMembersCaches = new Dictionary&lt;LLUUID, Dictionary&lt;LLUUID, GroupMember&gt;&gt;();
+             GroupRolesCaches = new Dictionary&lt;LLUUID, Dictionary&lt;LLUUID, GroupRole&gt;&gt;();
+
+Modified: trunk/libsecondlife-cs/NetworkManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/NetworkManager.cs	2007-01-13 00:23:00 UTC (rev 840)
++++ trunk/libsecondlife-cs/NetworkManager.cs	2007-01-13 02:48:33 UTC (rev 841)
+@@ -31,6 +31,7 @@
+ using System.Net;
+ using System.Net.Sockets;
+ using System.Globalization;
++using System.Threading;
+ using Nwc.XmlRpc;
+ using Nii.JSON;
+ using libsecondlife.Packets;
+@@ -715,8 +716,8 @@
+         private bool connected;
+ 
+         private const int NetworkTrafficTimeout = 15000;
+-        private const int LoginTimeout = 60000;
+-        private const int LogoutTimeout = 10000;
++		
++		ManualResetEvent LogoutReplyEvent = new ManualResetEvent(false);
+ 
+         /// &lt;summary&gt;
+         /// 
+@@ -735,7 +736,7 @@
+             RegisterCallback(PacketType.KickUser, new PacketCallback(KickUserHandler));
+             RegisterCallback(PacketType.LogoutReply, new PacketCallback(LogoutReplyHandler));
+ 
+-            // Disconnect a sim if no network traffic has been received for 15 seconds
++            // Disconnect a sim if we exceed our threshold
+             DisconnectTimer = new System.Timers.Timer(NetworkTrafficTimeout);
+             DisconnectTimer.Elapsed += new ElapsedEventHandler(DisconnectTimer_Elapsed);
+         }
+@@ -1058,7 +1059,7 @@
+ 
+             try
+             {
+-                result = (XmlRpcResponse)xmlrpc.Send(url, LoginTimeout);
++                result = (XmlRpcResponse)xmlrpc.Send(url, Client.Settings.LOGIN_TIMEOUT);
+             }
+             catch (Exception e)
+             {
+@@ -1298,11 +1299,19 @@
+ 
+             return simulator;
+         }
++		
++		public void Logout()
++		{
++			RequestLogout();
++			LogoutReplyEvent.WaitOne(100, false);
++			
++			
++		}
+ 
+         /// &lt;summary&gt;
+         /// Trigger the logout process ( three step process !)
+         /// &lt;/summary&gt;
+-        public void Logout()
++        public void RequestLogout()
+         {
+             // This will catch a Logout when the client is not logged in
+             if (CurrentSim == null || !connected)
+@@ -1319,7 +1328,7 @@
+             logout.AgentData.AgentID = AgentID;
+             logout.AgentData.SessionID = SessionID;
+             CurrentSim.SendPacket(logout, true);
+-            LogoutTimer = new System.Timers.Timer(LogoutTimeout);
++            LogoutTimer = new System.Timers.Timer(Client.Settings.LOGOUT_TIMEOUT);
+             LogoutTimer.Elapsed += new ElapsedEventHandler(LogoutTimer_Elapsed);
+             LogoutTimer.Start();
+         }
+@@ -1344,7 +1353,6 @@
+                         {
+                             callbackDict.Add(InventoryData.ItemID, InventoryData.NewAssetID);
+                         }
+-
+                         try
+                         {
+                             OnLogoutReply(callbackDict);
+@@ -1386,7 +1394,8 @@
+             CurrentSim.SendPacket(logoutDemand, true);
+             // Shutdown the network layer
+             Shutdown();
+-
++			//incase we are blocking in Logout()
++			LogoutReplyEvent.Set();
+             if (OnDisconnected != null)
+             {
+                 try
+
+Modified: trunk/libsecondlife-cs/Settings.cs
+===================================================================
+--- trunk/libsecondlife-cs/Settings.cs	2007-01-13 00:23:00 UTC (rev 840)
++++ trunk/libsecondlife-cs/Settings.cs	2007-01-13 02:48:33 UTC (rev 841)
+@@ -1,96 +1,101 @@
+-/*
+- * Copyright (c) 2006, Second Life Reverse Engineering Team
+- * All rights reserved.
+- *
+- * - Redistribution and use in source and binary forms, with or without
+- *   modification, are permitted provided that the following conditions are met:
+- *
+- * - Redistributions of source code must retain the above copyright notice, this
+- *   list of conditions and the following disclaimer.
+- * - Neither the name of the Second Life Reverse Engineering Team nor the names
+- *   of its contributors may be used to endorse or promote products derived from
+- *   this software without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+- * POSSIBILITY OF SUCH DAMAGE.
+- */
+-
+-using System;
+-using System.Collections.Generic;
+-using libsecondlife.Packets;
+-
+-namespace libsecondlife
+-{
+-    /// &lt;summary&gt;
+-    /// Class for controlling various system settings.
+-    /// &lt;/summary&gt;
+-    public class Settings
+-    {
+-        /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
+-        public string VERSION = &quot;libsecondlife 0.0.9&quot;;
+-        /// &lt;summary&gt;XML-RPC login server to connect to&lt;/summary&gt;
+-        public string LOGIN_SERVER = &quot;<A HREF="https://login.agni.lindenlab.com/cgi-bin/login.cgi">https://login.agni.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
+-
+-        /// &lt;summary&gt;Millisecond interval between ticks, where all ACKs are 
+-        /// sent out and the age of unACKed packets is checked&lt;/summary&gt;
+-        public readonly int NETWORK_TICK_LENGTH = 500;
+-        /// &lt;summary&gt;The maximum value of a packet sequence number. After that 
+-        /// we assume the sequence number just rolls over? Or maybe the 
+-        /// protocol isn't able to sustain a connection past that&lt;/summary&gt;
+-        public readonly int MAX_SEQUENCE = 0xFFFFFF;
+-        /// &lt;summary&gt;Number of milliseconds before a teleport attempt will time
+-        /// out&lt;/summary&gt;
+-        public readonly int TELEPORT_TIMEOUT = 18 * 1000;
+-
+-        /// &lt;summary&gt;The maximum size of the sequence number inbox, used to
+-        /// check for resent and/or duplicate packets&lt;/summary&gt;
+-        public int INBOX_SIZE = 100;
+-        /// &lt;summary&gt;Milliseconds before a packet is assumed lost and resent&lt;/summary&gt;
+-        public int RESEND_TIMEOUT = 4000;
+-        /// &lt;summary&gt;Milliseconds before the connection to a simulator is 
+-        /// assumed lost&lt;/summary&gt;
+-        public int SIMULATOR_TIMEOUT = 15000;
+-        /// &lt;summary&gt;Maximum number of queued ACKs to be sent before SendAcks()
+-        /// is forced&lt;/summary&gt;
+-        public int MAX_PENDING_ACKS = 10;
+-        /// &lt;summary&gt;Maximum number of ACKs to append to a packet&lt;/summary&gt;
+-        public int MAX_APPENDED_ACKS = 10;
+-        /// &lt;summary&gt;Cost of uploading an asset&lt;/summary&gt;
+-        public int UPLOAD_COST { get { return priceUpload; } }
+-
+-        private SecondLife Client;
+-        private int priceUpload = 0;
+-
+-        /// &lt;summary&gt;
+-        /// Constructor
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;client&quot;&gt;Client connection Object to use&lt;/param&gt;
+-        public Settings(SecondLife client)
+-        {
+-            Client = client;
+-
+-            Client.Network.RegisterCallback(Packets.PacketType.EconomyData, new NetworkManager.PacketCallback(EconomyDataHandler));
+-        }
+-
+-        /// &lt;summary&gt;
+-        /// Presumably for outputting asset upload costs.
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
+-        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
+-        private void EconomyDataHandler(Packet packet, Simulator simulator)
+-        {
+-            EconomyDataPacket econ = (EconomyDataPacket)packet;
+-
+-            priceUpload = econ.Info.PriceUpload;
+-        }
+-    }
+-}
++/*
++ * Copyright (c) 2006, Second Life Reverse Engineering Team
++ * All rights reserved.
++ *
++ * - Redistribution and use in source and binary forms, with or without
++ *   modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice, this
++ *   list of conditions and the following disclaimer.
++ * - Neither the name of the Second Life Reverse Engineering Team nor the names
++ *   of its contributors may be used to endorse or promote products derived from
++ *   this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++using System;
++using System.Collections.Generic;
++using libsecondlife.Packets;
++
++namespace libsecondlife
++{
++    /// &lt;summary&gt;
++    /// Class for controlling various system settings.
++    /// &lt;/summary&gt;
++    public class Settings
++    {
++        /// &lt;summary&gt;The version of libsecondlife (not the SL protocol itself)&lt;/summary&gt;
++        public string VERSION = &quot;libsecondlife 0.0.9&quot;;
++        /// &lt;summary&gt;XML-RPC login server to connect to&lt;/summary&gt;
++        public string LOGIN_SERVER = &quot;<A HREF="https://login.agni.lindenlab.com/cgi-bin/login.cgi">https://login.agni.lindenlab.com/cgi-bin/login.cgi</A>&quot;;
++
++        /// &lt;summary&gt;Millisecond interval between ticks, where all ACKs are 
++        /// sent out and the age of unACKed packets is checked&lt;/summary&gt;
++        public readonly int NETWORK_TICK_LENGTH = 500;
++        /// &lt;summary&gt;The maximum value of a packet sequence number. After that 
++        /// we assume the sequence number just rolls over? Or maybe the 
++        /// protocol isn't able to sustain a connection past that&lt;/summary&gt;
++        public readonly int MAX_SEQUENCE = 0xFFFFFF;
++        /// &lt;summary&gt;Number of milliseconds before a teleport attempt will time
++        /// out&lt;/summary&gt;
++        public readonly int TELEPORT_TIMEOUT = 18 * 1000;
++		
++		/// &lt;summary&gt;Number of milliseconds before NetworkManager.Logout() will time out&lt;/summary&gt;
++		public readonly int LOGOUT_TIMEOUT = 5 * 1000;
++		/// &lt;summary&gt;Number of milliseconds for xml-rpc to timeout&lt;/summary&gt;
++		public readonly int LOGIN_TIMEOUT = 10 * 1000;
++		
++        /// &lt;summary&gt;The maximum size of the sequence number inbox, used to
++        /// check for resent and/or duplicate packets&lt;/summary&gt;
++        public int INBOX_SIZE = 100;
++        /// &lt;summary&gt;Milliseconds before a packet is assumed lost and resent&lt;/summary&gt;
++        public int RESEND_TIMEOUT = 4000;
++        /// &lt;summary&gt;Milliseconds before the connection to a simulator is 
++        /// assumed lost&lt;/summary&gt;
++        public int SIMULATOR_TIMEOUT = 15000;
++        /// &lt;summary&gt;Maximum number of queued ACKs to be sent before SendAcks()
++        /// is forced&lt;/summary&gt;
++        public int MAX_PENDING_ACKS = 10;
++        /// &lt;summary&gt;Maximum number of ACKs to append to a packet&lt;/summary&gt;
++        public int MAX_APPENDED_ACKS = 10;
++        /// &lt;summary&gt;Cost of uploading an asset&lt;/summary&gt;
++        public int UPLOAD_COST { get { return priceUpload; } }
++
++        private SecondLife Client;
++        private int priceUpload = 0;
++
++        /// &lt;summary&gt;
++        /// Constructor
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;client&quot;&gt;Client connection Object to use&lt;/param&gt;
++        public Settings(SecondLife client)
++        {
++            Client = client;
++
++            Client.Network.RegisterCallback(Packets.PacketType.EconomyData, new NetworkManager.PacketCallback(EconomyDataHandler));
++        }
++
++        /// &lt;summary&gt;
++        /// Presumably for outputting asset upload costs.
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;packet&quot;&gt;&lt;/param&gt;
++        /// &lt;param name=&quot;simulator&quot;&gt;&lt;/param&gt;
++        private void EconomyDataHandler(Packet packet, Simulator simulator)
++        {
++            EconomyDataPacket econ = (EconomyDataPacket)packet;
++
++            priceUpload = econ.Info.PriceUpload;
++        }
++    }
++}
+
+Modified: trunk/libsecondlife.xcodeproj/project.pbxproj
+===================================================================
+--- trunk/libsecondlife.xcodeproj/project.pbxproj	2007-01-13 00:23:00 UTC (rev 840)
++++ trunk/libsecondlife.xcodeproj/project.pbxproj	2007-01-13 02:48:33 UTC (rev 841)
+@@ -16,7 +16,6 @@
+ 		4054E3110B57351700B0667D /* AssetManager.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2BD0B57343500B0667D /* AssetManager.cs */; };
+ 		4054E3120B57351700B0667D /* AssetNotecard.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2BE0B57343500B0667D /* AssetNotecard.cs */; };
+ 		4054E3130B57351700B0667D /* AssetPacketHelpers.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2BF0B57343500B0667D /* AssetPacketHelpers.cs */; };
+-		4054E3140B57351700B0667D /* AssetRequestDownload.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2C00B57343500B0667D /* AssetRequestDownload.cs */; };
+ 		4054E3150B57351700B0667D /* AssetRequestUpload.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2C10B57343500B0667D /* AssetRequestUpload.cs */; };
+ 		4054E3160B57351700B0667D /* AssetScript.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2C20B57343500B0667D /* AssetScript.cs */; };
+ 		4054E3170B57351700B0667D /* AssetWearable.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E2C30B57343500B0667D /* AssetWearable.cs */; };
+@@ -133,6 +132,7 @@
+ 		4054E45E0B575BE200B0667D /* libsecondlife.dll in Frameworks */ = {isa = PBXBuildFile; fileRef = 4054E3050B57345B00B0667D /* libsecondlife.dll */; };
+ 		4054E46E0B575CD500B0667D /* ParcelDownload.cs in Sources */ = {isa = PBXBuildFile; fileRef = 4054E46D0B575CD500B0667D /* ParcelDownload.cs */; };
+ 		4054E46F0B575D1400B0667D /* libsecondlife.dll in Frameworks */ = {isa = PBXBuildFile; fileRef = 4054E3050B57345B00B0667D /* libsecondlife.dll */; };
++		40F258A30B586E8D003B627A /* AssetRequest.cs in Sources */ = {isa = PBXBuildFile; fileRef = 40F258A20B586E8D003B627A /* AssetRequest.cs */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXContainerItemProxy section */
+@@ -197,7 +197,6 @@
+ 		4054E2BD0B57343500B0667D /* AssetManager.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetManager.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E2BE0B57343500B0667D /* AssetNotecard.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetNotecard.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E2BF0B57343500B0667D /* AssetPacketHelpers.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetPacketHelpers.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+-		4054E2C00B57343500B0667D /* AssetRequestDownload.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetRequestDownload.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E2C10B57343500B0667D /* AssetRequestUpload.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetRequestUpload.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E2C20B57343500B0667D /* AssetScript.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetScript.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E2C30B57343500B0667D /* AssetWearable.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssetWearable.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+@@ -315,6 +314,7 @@
+ 		4054E45B0B575BD600B0667D /* AssemblyInfo.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; path = AssemblyInfo.cs; sourceTree = &quot;&lt;group&gt;&quot;; };
+ 		4054E4650B575CA000B0667D /* ParcelDownload.exe */ = {isa = PBXFileReference; explicitFileType = compiled.mono.executable; includeInIndex = 0; path = ParcelDownload.exe; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		4054E46D0B575CD500B0667D /* ParcelDownload.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; name = ParcelDownload.cs; path = &quot;libsecondlife-cs/examples/ParcelDownload/ParcelDownload.cs&quot;; sourceTree = &quot;&lt;group&gt;&quot;; };
++		40F258A20B586E8D003B627A /* AssetRequest.cs */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.csharp; name = AssetRequest.cs; path = &quot;libsecondlife-cs/AssetSystem/AssetRequest.cs&quot;; sourceTree = &quot;&lt;group&gt;&quot;; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -390,6 +390,7 @@
+ 		4054E2B50B5733D200B0667D /* libsecondlife-cs */ = {
+ 			isa = PBXGroup;
+ 			children = (
++				40F258A20B586E8D003B627A /* AssetRequest.cs */,
+ 				4054E2B60B57343500B0667D /* _Packets_.cs */,
+ 				4054E2B70B57343500B0667D /* AssemblyInfo.cs */,
+ 				4054E2B80B57343500B0667D /* AssetSystem */,
+@@ -431,7 +432,6 @@
+ 				4054E2BD0B57343500B0667D /* AssetManager.cs */,
+ 				4054E2BE0B57343500B0667D /* AssetNotecard.cs */,
+ 				4054E2BF0B57343500B0667D /* AssetPacketHelpers.cs */,
+-				4054E2C00B57343500B0667D /* AssetRequestDownload.cs */,
+ 				4054E2C10B57343500B0667D /* AssetRequestUpload.cs */,
+ 				4054E2C20B57343500B0667D /* AssetScript.cs */,
+ 				4054E2C30B57343500B0667D /* AssetWearable.cs */,
+@@ -845,7 +845,6 @@
+ 				4054E3110B57351700B0667D /* AssetManager.cs in Sources */,
+ 				4054E3120B57351700B0667D /* AssetNotecard.cs in Sources */,
+ 				4054E3130B57351700B0667D /* AssetPacketHelpers.cs in Sources */,
+-				4054E3140B57351700B0667D /* AssetRequestDownload.cs in Sources */,
+ 				4054E3150B57351700B0667D /* AssetRequestUpload.cs in Sources */,
+ 				4054E3160B57351700B0667D /* AssetScript.cs in Sources */,
+ 				4054E3170B57351700B0667D /* AssetWearable.cs in Sources */,
+@@ -908,6 +907,7 @@
+ 				4054E3500B57351700B0667D /* XmlRpcServer.cs in Sources */,
+ 				4054E3510B57351700B0667D /* XmlRpcSystemObject.cs in Sources */,
+ 				4054E3520B57351700B0667D /* XmlRpcXmlTokens.cs in Sources */,
++				40F258A30B586E8D003B627A /* AssetRequest.cs in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000244.html">[Libsecondlife-commits] r840 - in trunk: . applications	applications/SecondGlance applications/libslupdater	libsecondlife-cs libsecondlife-cs/AssetSystem	libsecondlife-cs/InventorySystem	libsecondlife-cs/libsecondlife.Utilities
+</A></li>
+	<LI>Next message: <A HREF="000246.html">[Libsecondlife-commits] r842 -	trunk/libsecondlife-cs/InventorySystem
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#245">[ date ]</a>
+              <a href="thread.html#245">[ thread ]</a>
+              <a href="subject.html#245">[ subject ]</a>
+              <a href="author.html#245">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

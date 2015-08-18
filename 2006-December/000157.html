@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r777 - in trunk/libsecondlife-cs: .	mapgenerator
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r777%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612290119.kBT1JUaX030441%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000156.html">
+   <LINK REL="Next"  HREF="000158.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r777 - in trunk/libsecondlife-cs: .	mapgenerator</H1>
+    <B>otakup0pe at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r777%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09mapgenerator&In-Reply-To=%3C200612290119.kBT1JUaX030441%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r777 - in trunk/libsecondlife-cs: .	mapgenerator">otakup0pe at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec 29 02:19:30 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000156.html">[Libsecondlife-commits] [Patch #1753] Partial /inject and /set	support for Analyst
+</A></li>
+        <LI>Next message: <A HREF="000158.html">[Libsecondlife-commits] r778 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: otakup0pe
+Date: 2006-12-29 02:19:22 +0100 (Fri, 29 Dec 2006)
+New Revision: 777
+
+Modified:
+   trunk/libsecondlife-cs/_Packets_.cs
+   trunk/libsecondlife-cs/mapgenerator/unusedpackets.txt
+Log:
+I guess ParcelMediaCommandMessage is actually used.
+
+Modified: trunk/libsecondlife-cs/_Packets_.cs
+===================================================================
+--- trunk/libsecondlife-cs/_Packets_.cs	2006-12-29 00:26:28 UTC (rev 776)
++++ trunk/libsecondlife-cs/_Packets_.cs	2006-12-29 01:19:22 UTC (rev 777)
+@@ -752,6 +752,7 @@
+         MapItemRequest,
+         MapItemReply,
+         SendPostcard,
++        ParcelMediaCommandMessage,
+         ParcelMediaUpdate,
+         LandStatRequest,
+         LandStatReply,
+@@ -1187,6 +1188,7 @@
+     [XmlInclude(typeof(MapItemRequestPacket))]
+     [XmlInclude(typeof(MapItemReplyPacket))]
+     [XmlInclude(typeof(SendPostcardPacket))]
++    [XmlInclude(typeof(ParcelMediaCommandMessagePacket))]
+     [XmlInclude(typeof(ParcelMediaUpdatePacket))]
+     [XmlInclude(typeof(LandStatRequestPacket))]
+     [XmlInclude(typeof(LandStatReplyPacket))]
+@@ -1640,6 +1642,7 @@
+                         case 476: return PacketType.MapItemRequest;
+                         case 477: return PacketType.MapItemReply;
+                         case 478: return PacketType.SendPostcard;
++                        case 487: return PacketType.ParcelMediaCommandMessage;
+                         case 488: return PacketType.ParcelMediaUpdate;
+                         case 489: return PacketType.LandStatRequest;
+                         case 490: return PacketType.LandStatReply;
+@@ -2108,6 +2111,7 @@
+                         case 476: return new MapItemRequestPacket(header, bytes, ref i);
+                         case 477: return new MapItemReplyPacket(header, bytes, ref i);
+                         case 478: return new SendPostcardPacket(header, bytes, ref i);
++                        case 487: return new ParcelMediaCommandMessagePacket(header, bytes, ref i);
+                         case 488: return new ParcelMediaUpdatePacket(header, bytes, ref i);
+                         case 489: return new LandStatRequestPacket(header, bytes, ref i);
+                         case 490: return new LandStatReplyPacket(header, bytes, ref i);
+@@ -67584,6 +67588,117 @@
+     }
+ 
+     /// &lt;exclude/&gt;
++    public class ParcelMediaCommandMessagePacket : Packet
++    {
++        /// &lt;exclude/&gt;
++        [XmlType(&quot;parcelmediacommandmessage_commandblock&quot;)]
++        public class CommandBlockBlock
++        {
++            public uint Command;
++            public float Time;
++            public uint Flags;
++
++            [XmlIgnore]
++            public int Length
++            {
++                get
++                {
++                    return 12;
++                }
++            }
++
++            public CommandBlockBlock() { }
++            public CommandBlockBlock(byte[] bytes, ref int i)
++            {
++                try
++                {
++                    Command = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                    if (!BitConverter.IsLittleEndian) Array.Reverse(bytes, i, 4);
++                    Time = BitConverter.ToSingle(bytes, i); i += 4;
++                    Flags = (uint)(bytes[i++] + (bytes[i++] &lt;&lt; 8) + (bytes[i++] &lt;&lt; 16) + (bytes[i++] &lt;&lt; 24));
++                }
++                catch (Exception)
++                {
++                    throw new MalformedDataException();
++                }
++            }
++
++            public void ToBytes(byte[] bytes, ref int i)
++            {
++                byte[] ba;
++                bytes[i++] = (byte)(Command % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Command &gt;&gt; 24) % 256);
++                ba = BitConverter.GetBytes(Time);
++                if(!BitConverter.IsLittleEndian) { Array.Reverse(ba, 0, 4); }
++                Array.Copy(ba, 0, bytes, i, 4); i += 4;
++                bytes[i++] = (byte)(Flags % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 8) % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 16) % 256);
++                bytes[i++] = (byte)((Flags &gt;&gt; 24) % 256);
++            }
++
++            public override string ToString()
++            {
++                string output = &quot;-- CommandBlock --&quot; + Environment.NewLine;
++                output += &quot;Command: &quot; + Command.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Time: &quot; + Time.ToString() + &quot;&quot; + Environment.NewLine;
++                output += &quot;Flags: &quot; + Flags.ToString() + &quot;&quot; + Environment.NewLine;
++                output = output.Trim();
++                return output;
++            }
++        }
++
++        private Header header;
++        public override Header Header { get { return header; } set { header = value; } }
++        public override PacketType Type { get { return PacketType.ParcelMediaCommandMessage; } }
++        public CommandBlockBlock CommandBlock;
++
++        public ParcelMediaCommandMessagePacket()
++        {
++            Header = new LowHeader();
++            Header.ID = 487;
++            Header.Reliable = true;
++            CommandBlock = new CommandBlockBlock();
++        }
++
++        public ParcelMediaCommandMessagePacket(byte[] bytes, ref int i)
++        {
++            int packetEnd = bytes.Length - 1;
++            Header = new LowHeader(bytes, ref i, ref packetEnd);
++            CommandBlock = new CommandBlockBlock(bytes, ref i);
++        }
++
++        public ParcelMediaCommandMessagePacket(Header head, byte[] bytes, ref int i)
++        {
++            Header = head;
++            CommandBlock = new CommandBlockBlock(bytes, ref i);
++        }
++
++        public override byte[] ToBytes()
++        {
++            int length = 8;
++            length += CommandBlock.Length;;
++            if (header.AckList.Length &gt; 0) { length += header.AckList.Length * 4 + 1; }
++            byte[] bytes = new byte[length];
++            int i = 0;
++            header.ToBytes(bytes, ref i);
++            CommandBlock.ToBytes(bytes, ref i);
++            if (header.AckList.Length &gt; 0) { header.AcksToBytes(bytes, ref i); }
++            return bytes;
++        }
++
++        public override string ToString()
++        {
++            string output = &quot;--- ParcelMediaCommandMessage ---&quot; + Environment.NewLine;
++                output += CommandBlock.ToString() + &quot;&quot; + Environment.NewLine;
++            return output;
++        }
++
++    }
++
++    /// &lt;exclude/&gt;
+     public class ParcelMediaUpdatePacket : Packet
+     {
+         /// &lt;exclude/&gt;
+
+Modified: trunk/libsecondlife-cs/mapgenerator/unusedpackets.txt
+===================================================================
+--- trunk/libsecondlife-cs/mapgenerator/unusedpackets.txt	2006-12-29 00:26:28 UTC (rev 776)
++++ trunk/libsecondlife-cs/mapgenerator/unusedpackets.txt	2006-12-29 01:19:22 UTC (rev 777)
+@@ -114,5 +114,4 @@
+ RpcScriptReplyInbound
+ MailTaskSimRequest
+ MailTaskSimReply
+-ScriptMailRegistration
+-ParcelMediaCommandMessage
+\ No newline at end of file
++ScriptMailRegistration
+\ No newline at end of file
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000156.html">[Libsecondlife-commits] [Patch #1753] Partial /inject and /set	support for Analyst
+</A></li>
+	<LI>Next message: <A HREF="000158.html">[Libsecondlife-commits] r778 - trunk/libsecondlife-cs
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>

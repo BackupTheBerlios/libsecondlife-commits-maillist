@@ -1,0 +1,1700 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Libsecondlife-commits] r728 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/libsecondlife-commits/2006-December/index.html" >
+   <LINK REL="made" HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r728%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612160907.kBG97hPf014875%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000091.html">
+   <LINK REL="Next"  HREF="000093.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Libsecondlife-commits] r728 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands</H1>
+    <B>lonecoder at mail.berlios.de</B> 
+    <A HREF="mailto:libsecondlife-commits%40lists.berlios.de?Subject=Re%3A%20%5BLibsecondlife-commits%5D%20r728%20-%20in%20trunk/libsecondlife-cs%3A%20.%0A%09examples/TestClient%20examples/TestClient/Commands&In-Reply-To=%3C200612160907.kBG97hPf014875%40sheep.berlios.de%3E"
+       TITLE="[Libsecondlife-commits] r728 - in trunk/libsecondlife-cs: .	examples/TestClient examples/TestClient/Commands">lonecoder at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 16 10:07:43 CET 2006</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000091.html">[Libsecondlife-commits] r727 - trunk/libsecondlife-cs
+</A></li>
+        <LI>Next message: <A HREF="000093.html">[Libsecondlife-commits] [Patch #1723] Bot identifys itself when	asked for uptime.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: lonecoder
+Date: 2006-12-16 10:07:28 +0100 (Sat, 16 Dec 2006)
+New Revision: 728
+
+Added:
+   trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+Modified:
+   trunk/libsecondlife-cs/AvatarManager.cs
+   trunk/libsecondlife-cs/MainAvatar.cs
+   trunk/libsecondlife-cs/SecondLife.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+   trunk/libsecondlife-cs/examples/TestClient/Program.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+   trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+   trunk/libsecondlife-cs/libsecondlife.sln
+Log:
+Reworked how TestClient handles multiple logins.
+Made TestClient descend from SecondLife.
+Exposed the list of Avatars in AvatarManager, because I thought it was doing the same thing as TestClient.Avatars.  I'm no not so convinced of this and will probably revert the changes tomorrow.
+Added EchoMaster command as an example of a bot that responds to chat messages.
+
+Modified: trunk/libsecondlife-cs/AvatarManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/AvatarManager.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/AvatarManager.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -32,7 +32,7 @@
+ namespace libsecondlife
+ {
+     /// &lt;summary&gt;
+-    /// Class to manage multiple Avatars
++    /// Class to manage multiple AvatarList
+     /// &lt;/summary&gt;
+     public class AvatarManager
+     {
+@@ -71,8 +71,9 @@
+         /// &lt;summary&gt;Triggered whenever a friend comes online or goes offline&lt;/summary&gt;
+         public event FriendNotificationCallback OnFriendNotification;
+ 
++        public Dictionary&lt;LLUUID, Avatar&gt; AvatarList;
++
+         private SecondLife Client;
+-        private Dictionary&lt;LLUUID, Avatar&gt; Avatars;
+         private AgentNamesCallback OnAgentNames;
+         private Dictionary&lt;LLUUID, AvatarPropertiesCallback&gt; AvatarPropertiesCallbacks;
+ 	    private Dictionary&lt;LLUUID, AvatarStatisticsCallback&gt; AvatarStatisticsCallbacks;
+@@ -85,7 +86,7 @@
+         public AvatarManager(SecondLife client)
+         {
+             Client = client;
+-            Avatars = new Dictionary&lt;LLUUID, Avatar&gt;();
++            AvatarList = new Dictionary&lt;LLUUID, Avatar&gt;();
+             //Callback Dictionaries
+             AvatarPropertiesCallbacks = new Dictionary&lt;LLUUID, AvatarPropertiesCallback&gt;();
+ 	        AvatarStatisticsCallbacks = new Dictionary&lt;LLUUID, AvatarStatisticsCallback&gt;();
+@@ -102,25 +103,25 @@
+               
+ 
+         /// &lt;summary&gt;
+-        /// Add an Avatar into the Avatars Dictionary
++        /// Add an Avatar into the AvatarList Dictionary
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;avatar&quot;&gt;Filled-out Avatar class to insert&lt;/param&gt;
+         public void AddAvatar(Avatar avatar)
+         {
+-            lock (Avatars)
++            lock (AvatarList)
+             {
+-                Avatars[avatar.ID] = avatar;
++                AvatarList[avatar.ID] = avatar;
+             }
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Used to search all known Avatars for a particular Avatar Key
++        /// Used to search all known AvatarList for a particular Avatar Key
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;id&quot;&gt;&lt;/param&gt;
+         /// &lt;returns&gt;&lt;/returns&gt;
+         public bool Contains(LLUUID id)
+         {
+-            return Avatars.ContainsKey(id);
++            return AvatarList.ContainsKey(id);
+         }
+ 
+         /// &lt;summary&gt;
+@@ -170,11 +171,11 @@
+         {
+             string name = &quot;&quot;;
+ 
+-            lock (Avatars)
++            lock (AvatarList)
+             {
+-                if (Avatars.ContainsKey(id))
++                if (AvatarList.ContainsKey(id))
+                 {
+-                    name = Avatars[id].Name;
++                    name = AvatarList[id].Name;
+                 }
+             }
+ 
+@@ -212,9 +213,9 @@
+             // Fire callbacks for the ones we already have cached
+             foreach (LLUUID id in ids)
+             {
+-                if (Avatars.ContainsKey(id))
++                if (AvatarList.ContainsKey(id))
+                 {
+-                    havenames[id] = Avatars[id].Name;
++                    havenames[id] = AvatarList[id].Name;
+                 }
+                 else
+                 {
+@@ -244,7 +245,7 @@
+         }
+ 
+         /// &lt;summary&gt;
+-        /// Process an incoming UUIDNameReply Packet and insert Full Names into the Avatars Dictionary
++        /// Process an incoming UUIDNameReply Packet and insert Full Names into the AvatarList Dictionary
+         /// &lt;/summary&gt;
+         /// &lt;param name=&quot;packet&quot;&gt;Incoming Packet to process&lt;/param&gt;
+         /// &lt;param name=&quot;simulator&quot;&gt;Unused&lt;/param&gt;
+@@ -253,20 +254,20 @@
+             Dictionary&lt;LLUUID, string&gt; names = new Dictionary&lt;LLUUID, string&gt;();
+             UUIDNameReplyPacket reply = (UUIDNameReplyPacket)packet;
+ 
+-            lock (Avatars)
++            lock (AvatarList)
+             {
+                 foreach (UUIDNameReplyPacket.UUIDNameBlockBlock block in reply.UUIDNameBlock)
+                 {
+-                    if (!Avatars.ContainsKey(block.ID))
++                    if (!AvatarList.ContainsKey(block.ID))
+                     {
+-                        Avatars[block.ID] = new Avatar();
+-                        Avatars[block.ID].ID = block.ID;
++                        AvatarList[block.ID] = new Avatar();
++                        AvatarList[block.ID].ID = block.ID;
+                     }
+ 
+-                    Avatars[block.ID].Name = Helpers.FieldToString(block.FirstName) +
++                    AvatarList[block.ID].Name = Helpers.FieldToString(block.FirstName) +
+                         &quot; &quot; + Helpers.FieldToString(block.LastName);
+ 
+-                    names[block.ID] = Avatars[block.ID].Name;
++                    names[block.ID] = AvatarList[block.ID].Name;
+                 }
+             }
+ 
+@@ -289,18 +290,18 @@
+                 // If the agent is online...
+                 foreach (OnlineNotificationPacket.AgentBlockBlock block in ((OnlineNotificationPacket)packet).AgentBlock)
+                 {
+-                    lock (Avatars)
++                    lock (AvatarList)
+                     {
+-                        if (!Avatars.ContainsKey(block.AgentID))
++                        if (!AvatarList.ContainsKey(block.AgentID))
+                         {
+                             // Mark this avatar for a name request
+                             requestids.Add(block.AgentID);
+ 
+-                            Avatars[block.AgentID] = new Avatar();
+-                            Avatars[block.AgentID].ID = block.AgentID;
++                            AvatarList[block.AgentID] = new Avatar();
++                            AvatarList[block.AgentID].ID = block.AgentID;
+                         }
+ 
+-                        Avatars[block.AgentID].Online = true;
++                        AvatarList[block.AgentID].Online = true;
+                     }
+ 
+                     if (OnFriendNotification != null)
+@@ -314,18 +315,18 @@
+                 // If the agent is Offline...
+                 foreach (OfflineNotificationPacket.AgentBlockBlock block in ((OfflineNotificationPacket)packet).AgentBlock)
+                 {
+-                    lock (Avatars)
++                    lock (AvatarList)
+                     {
+-                        if (!Avatars.ContainsKey(block.AgentID))
++                        if (!AvatarList.ContainsKey(block.AgentID))
+                         {
+                             // Mark this avatar for a name request
+                             requestids.Add(block.AgentID);
+ 
+-                            Avatars[block.AgentID] = new Avatar();
+-                            Avatars[block.AgentID].ID = block.AgentID;
++                            AvatarList[block.AgentID] = new Avatar();
++                            AvatarList[block.AgentID].ID = block.AgentID;
+                         }
+ 
+-                        Avatars[block.AgentID].Online = false;
++                        AvatarList[block.AgentID].Online = false;
+                     }
+ 
+                     if (OnFriendNotification != null)
+@@ -348,17 +349,17 @@
+         private void AvatarStatisticsHandler(Packet packet, Simulator simulator)
+         {
+ 	    AvatarStatisticsReplyPacket asr = (AvatarStatisticsReplyPacket)packet;
+-            lock(Avatars)
++            lock(AvatarList)
+             {
+ 		Avatar av;
+-		if (!Avatars.ContainsKey(asr.AvatarData.AvatarID))
++		if (!AvatarList.ContainsKey(asr.AvatarData.AvatarID))
+ 		{
+ 			 av = new Avatar();
+ 			 av.ID = asr.AvatarData.AvatarID;
+ 		}
+ 		else
+ 		{
+-			 av = Avatars[asr.AvatarData.AvatarID];
++			 av = AvatarList[asr.AvatarData.AvatarID];
+ 		}
+ 
+                 foreach(AvatarStatisticsReplyPacket.StatisticsDataBlock b in asr.StatisticsData)
+@@ -392,9 +393,9 @@
+         {
+             Avatar av;
+             AvatarPropertiesReplyPacket reply = (AvatarPropertiesReplyPacket)packet;
+-            lock(Avatars)
++            lock(AvatarList)
+             {
+-            if (!Avatars.ContainsKey(reply.AgentData.AvatarID))
++            if (!AvatarList.ContainsKey(reply.AgentData.AvatarID))
+             {
+                 //not in our &quot;cache&quot;, create a new object
+                 av = new Avatar();
+@@ -402,7 +403,7 @@
+             else
+             {
+                 //Cache hit, modify existing avatar
+-                av = Avatars[reply.AgentData.AvatarID];
++                av = AvatarList[reply.AgentData.AvatarID];
+             }
+             av.ID = reply.AgentData.AvatarID;
+             av.ProfileImage = reply.PropertiesData.ImageID;
+@@ -419,7 +420,7 @@
+             av.Transacted = reply.PropertiesData.Transacted;
+             av.ProfileURL = Helpers.FieldToString(reply.PropertiesData.ProfileURL);
+             //reassign in the cache
+-            Avatars[av.ID] = av;
++            AvatarList[av.ID] = av;
+             //Heaven forbid that we actually get a packet we didn't ask for.
+             if (AvatarPropertiesCallbacks.ContainsKey(av.ID) &amp;&amp; AvatarPropertiesCallbacks[av.ID] != null)
+                 AvatarPropertiesCallbacks[av.ID](av);
+@@ -458,9 +459,9 @@
+         {
+             AvatarInterestsReplyPacket airp = (AvatarInterestsReplyPacket)packet;
+             Avatar av;
+-            lock (Avatars)
++            lock (AvatarList)
+             {
+-                if (!Avatars.ContainsKey(airp.AgentData.AvatarID))
++                if (!AvatarList.ContainsKey(airp.AgentData.AvatarID))
+                 {
+                     //not in our &quot;cache&quot;, create a new object
+                     av = new Avatar();
+@@ -469,7 +470,7 @@
+                 else
+                 {
+                     //Cache hit, modify existing avatar
+-                    av = Avatars[airp.AgentData.AvatarID];
++                    av = AvatarList[airp.AgentData.AvatarID];
+                 }
+                 //The rest of the properties, thanks LL.
+                 av.WantToMask = airp.PropertiesData.WantToMask;
+
+Modified: trunk/libsecondlife-cs/MainAvatar.cs
+===================================================================
+--- trunk/libsecondlife-cs/MainAvatar.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/MainAvatar.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -1122,5 +1122,4 @@
+             TeleportTimeout = true;
+         }
+     }
+-
+-}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/SecondLife.cs
+===================================================================
+--- trunk/libsecondlife-cs/SecondLife.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/SecondLife.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -52,7 +52,7 @@
+         public ParcelManager Parcels;
+         /// &lt;summary&gt;'Client's Avatar' Subsystem&lt;/summary&gt;
+         public MainAvatar Self;
+-        /// &lt;summary&gt;Other Avatars Subsystem&lt;/summary&gt;
++        /// &lt;summary&gt;Other AvatarList Subsystem&lt;/summary&gt;
+         public AvatarManager Avatars;
+         /// &lt;summary&gt;Grid (aka simulator group) Subsystem&lt;/summary&gt;
+         public GridManager Grid;
+
+Added: trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/ClientManager.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -0,0 +1,209 @@
++using System;
++using System.Collections.Generic;
++using System.Reflection;
++using System.Xml;
++using libsecondlife;
++using libsecondlife.Packets;
++using libsecondlife.AssetSystem;
++
++namespace libsecondlife.TestClient
++{
++    public class LoginDetails
++    {
++        public string FirstName;
++        public string LastName;
++        public string Password;
++		public string Master;
++    }
++
++    public class ClientManager
++    {
++        public Dictionary&lt;LLUUID, SecondLife&gt; Clients = new Dictionary&lt;LLUUID, SecondLife&gt;();
++        public Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt;();
++		//public Dictionary&lt;LLUUID, AvatarAppearancePacket&gt; Appearances = new Dictionary&lt;LLUUID, AvatarAppearancePacket&gt;();
++
++		public Dictionary&lt;string, object&gt; SharedValues = new Dictionary&lt;string, object&gt;();
++        public bool Running = true;
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;accounts&quot;&gt;&lt;/param&gt;
++        public ClientManager(List&lt;LoginDetails&gt; accounts)
++        {
++            foreach (LoginDetails account in accounts)
++                Login(account);
++        }
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        /// &lt;param name=&quot;account&quot;&gt;&lt;/param&gt;
++        /// &lt;returns&gt;&lt;/returns&gt;
++        public TestClient Login(LoginDetails account)
++        {
++            // Check if this client is already logged in
++            foreach (TestClient c in Clients.Values)
++            {
++                if (c.Self.FirstName == account.FirstName &amp;&amp; c.Self.LastName == account.LastName)
++                {
++					Logout(c);
++                    break;
++                }
++            }
++
++			TestClient client = new TestClient(this);
++
++			client.SimPrims = SimPrims;
++			client.Master = account.Master;
++
++            bool login = client.Network.Login(account.FirstName, account.LastName, account.Password, 
++                &quot;TestClient&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;);
++
++            if (login)
++            {
++                // Set our appearance
++                //AppearanceManager appearance = new AppearanceManager(client);
++                //appearance.SendAgentSetAppearance();
++            }
++
++            if (client.Network.Connected)
++            {
++                Clients[client.Network.AgentID] = client;
++
++                Console.WriteLine(&quot;Logged in &quot; + client.ToString());
++
++                // Throttle the connection to not receive LayerData or asset packets
++                client.Throttle.Total = 0.0f;
++                client.Throttle.Task = 1536000.0f;
++                client.Throttle.Set();
++            }
++            else
++            {
++                Console.WriteLine(&quot;Failed to login &quot; + account.FirstName + &quot; &quot; + account.LastName +
++                    &quot;: &quot; + client.Network.LoginError);
++            }
++
++            return client;
++        }
++
++		/// &lt;summary&gt;
++		/// 
++		/// &lt;/summary&gt;
++		/// &lt;param name=&quot;args&quot;&gt;&lt;/param&gt;
++		/// &lt;returns&gt;&lt;/returns&gt;
++		public TestClient Login(string[] args)
++		{
++            LoginDetails account = new LoginDetails();
++            account.FirstName = args[0];
++            account.LastName = args[1];
++            account.Password = args[2];
++			
++			return Login(account);
++		}
++
++        /// &lt;summary&gt;
++        /// 
++        /// &lt;/summary&gt;
++        public void Run()
++        {
++            Console.WriteLine(&quot;Type quit to exit.  Type help for a command list.&quot;);
++
++            while (Running)
++            {
++                PrintPrompt();
++                string input = Console.ReadLine();
++                DoCommandAll(input, null, null);
++            }
++
++            foreach (SecondLife client in Clients.Values)
++            {
++                if (client.Network.Connected)
++                    client.Network.Logout();
++            }
++        }
++
++		private void PrintPrompt()
++		{
++			//Console.Write(String.Format(&quot;{0} {1} - {2}&gt; &quot;, client.Self.FirstName, client.Self.LastName, client.Network.CurrentSim.Region.Name));
++
++            int online = 0;
++
++            foreach (SecondLife client in Clients.Values)
++            {
++                if (client.Network.Connected) online++;
++            }
++
++            Console.Write(online + &quot; avatars online&gt; &quot;);
++		}
++
++		/// &lt;summary&gt;
++		/// 
++		/// &lt;/summary&gt;
++		/// &lt;param name=&quot;cmd&quot;&gt;&lt;/param&gt;
++		/// &lt;param name=&quot;fromAgentID&quot;&gt;&lt;/param&gt;
++		/// &lt;param name=&quot;imSessionID&quot;&gt;&lt;/param&gt;
++        public void DoCommandAll(string cmd, LLUUID fromAgentID, LLUUID imSessionID)
++        {
++            string[] tokens = cmd.Trim().Split(new char[] { ' ', '\t' });
++            string firstToken = tokens[0].ToLower();
++
++            if (tokens.Length == 0)
++                return;
++
++            if (firstToken == &quot;login&quot;)
++            {
++                // Special login case: Only call it once, and allow it with
++                // no logged in avatars
++                string[] args = new string[tokens.Length - 1];
++                Array.Copy(tokens, 1, args, 0, args.Length);
++                Login(args);
++            }
++            else if (firstToken == &quot;quit&quot;)
++            {
++				Quit();
++				Console.WriteLine(&quot;All clients logged out and program finished running.&quot;);
++            }
++            else
++            {
++				// make a copy of the clients list so that it can be iterated without fear of being changed during iteration
++				Dictionary&lt;LLUUID, SecondLife&gt; clientsCopy = new Dictionary&lt;LLUUID, SecondLife&gt;(Clients);
++
++				foreach (TestClient client in clientsCopy.Values)
++					client.DoCommand(cmd, fromAgentID, imSessionID);
++			}
++        }
++
++		/// &lt;summary&gt;
++		/// 
++		/// &lt;/summary&gt;
++		/// &lt;param name=&quot;client&quot;&gt;&lt;/param&gt;
++		public void Logout(TestClient client)
++		{
++            Clients.Remove(client.Network.AgentID);
++            client.Network.Logout();
++		}
++
++		/// &lt;summary&gt;
++		/// 
++		/// &lt;/summary&gt;
++		public void LogoutAll()
++		{
++			// make a copy of the clients list so that it can be iterated without fear of being changed during iteration
++			Dictionary&lt;LLUUID, SecondLife&gt; clientsCopy = new Dictionary&lt;LLUUID, SecondLife&gt;(Clients);
++
++			foreach (TestClient client in clientsCopy.Values)
++				Logout(client);
++		}
++
++		/// &lt;summary&gt;
++		/// 
++		/// &lt;/summary&gt;
++		public void Quit()
++		{
++			LogoutAll();
++			Running = false;
++			// TODO: It would be really nice if we could figure out a way to abort the ReadLine here in so that Run() will exit.
++		}
++	}
++}
+
+Added: trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/EchoMasterCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -0,0 +1,41 @@
++using System;
++using System.Collections.Generic;
++using System.Text;
++using libsecondlife;
++using libsecondlife.Packets;
++
++namespace libsecondlife.TestClient
++{
++    public class EchoMasterCommand: Command
++    {
++		public EchoMasterCommand()
++		{
++			Name = &quot;echoMaster&quot;;
++			Description = &quot;Repeat everything that master says.&quot;;
++		}
++
++        public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
++		{
++			if (!Active)
++			{
++				Active = true;
++				Client.Self.OnChat += new ChatCallback(Self_OnChat);
++				return &quot;Echoing is now on.&quot;;
++			}
++			else
++			{
++				Active = false;
++				Client.Self.OnChat -= new ChatCallback(Self_OnChat);
++				return &quot;Echoing is now off.&quot;;
++			}
++		}
++
++		void Self_OnChat(string message, byte audible, byte type, byte sourcetype, string fromName, LLUUID id, LLUUID ownerid, LLVector3 position)
++		{
++			if (message.Length &gt; 0 &amp;&amp; TestClient.Master == fromName)
++			{
++			    TestClient.Self.Chat(message, 0, MainAvatar.ChatType.Normal);
++			}
++		}
++    }
++}
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -61,26 +61,34 @@
+             {
+                 try
+                 {
+-                    XmlWriter writer = XmlWriter.Create(file);
+-                    List&lt;PrimObject&gt; prims = new List&lt;PrimObject&gt;();
++					XmlWriterSettings settings = new XmlWriterSettings();
++					settings.Indent = true;
++                    XmlWriter writer = XmlWriter.Create(file, settings);
++					try
++					{
++						List&lt;PrimObject&gt; prims = new List&lt;PrimObject&gt;();
+ 
+-                    lock (TestClient.SimPrims)
+-                    {
+-                        if (TestClient.SimPrims.ContainsKey(Client.Network.CurrentSim))
+-                        {
+-                            foreach (PrimObject prim in TestClient.SimPrims[Client.Network.CurrentSim].Values)
+-                            {
+-                                if (prim.LocalID == localid || prim.ParentID == localid)
+-                                {
+-                                    prims.Add(prim);
+-                                    count++;
+-                                }
+-                            }
+-                        }
+-                    }
+-                    //Serialize it!
+-                    Helpers.PrimListToXml(prims, writer);
+-                    writer.Close();
++						lock (TestClient.SimPrims)
++						{
++							if (TestClient.SimPrims.ContainsKey(Client.Network.CurrentSim))
++							{
++								foreach (PrimObject prim in TestClient.SimPrims[Client.Network.CurrentSim].Values)
++								{
++									if (prim.LocalID == localid || prim.ParentID == localid)
++									{
++										prims.Add(prim);
++										count++;
++									}
++								}
++							}
++						}
++						//Serialize it!
++						Helpers.PrimListToXml(prims, writer);
++					}
++					finally
++					{
++						writer.Close();
++					}
+                 }
+                 catch (Exception e)
+                 {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ExportOutfitCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -37,8 +37,17 @@
+                 {
+                     try
+                     {
+-                        XmlWriter writer = XmlWriter.Create(args[1]);
+-                        TestClient.Appearances[id].ToXml(writer);
++						XmlWriterSettings settings = new XmlWriterSettings();
++						settings.Indent = true;
++						XmlWriter writer = XmlWriter.Create(args[1], settings);
++						try
++						{
++							TestClient.Appearances[id].ToXml(writer);
++						}
++						finally
++						{
++							writer.Close();
++						}
+                     }
+                     catch (Exception e)
+                     {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/FollowCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -43,7 +43,7 @@
+ 
+         bool Follow(string name)
+         {
+-            foreach (Avatar av in TestClient.Avatars.Values)
++            foreach (Avatar av in TestClient.Avatars.AvatarList.Values)
+             {
+                 if (av.Name == name)
+ 				{
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/ImportCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -3,48 +3,18 @@
+ using libsecondlife;
+ using libsecondlife.Packets;
+ using System.Xml;
+-using System.Threading;
+ using System.Xml.Serialization;
+ using System.IO;
+-
+ namespace libsecondlife.TestClient
+ {
+-    public class Linkset
+-    {
+-        public PrimObject RootPrim;
+-        public List&lt;PrimObject&gt; Children;
+-
+-        public Linkset()
+-        {
+-            RootPrim = new PrimObject();
+-            Children = new List&lt;PrimObject&gt;();
+-        }
+-
+-        public Linkset(PrimObject rootPrim)
+-        {
+-            RootPrim = rootPrim;
+-            Children = new List&lt;PrimObject&gt;();
+-        }
+-    }
+-
+     public class ImportCommand : Command
+     {
+-        PrimObject currentPrim;
+-        LLVector3 currentPosition;
+-        SecondLife currentClient;
+-        ManualResetEvent primDone;
+-        List&lt;PrimObject&gt; primsCreated;
+-        uint rootLocalID = 0;
+-        bool registeredCreateEvent = false;
+-        bool rezzingRootPrim = false;
+-        bool linking = false;
+-
+         public ImportCommand()
+         {
+             Name = &quot;import&quot;;
+             Description = &quot;Import prims from an exported xml file. Usage: import [filename.xml]&quot;;
+-            primDone = new ManualResetEvent(false);
+-            registeredCreateEvent = false;
++
++//			Execute(null, new string[] {&quot;prims.xml&quot;}, LLUUID.Zero);
+         }
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+@@ -53,162 +23,32 @@
+                 return &quot;Usage: import inputfile.xml&quot;;
+ 
+             string name = args[0];
+-            Dictionary&lt;uint, PrimObject&gt; prims;
++            List&lt;PrimObject&gt; prims;
+ 
+-            currentClient = Client;
+-
+             try
+             {
+-                XmlReader reader = XmlReader.Create(name);
+-                List&lt;PrimObject&gt; listprims = Helpers.PrimListFromXml(reader);
+-                reader.Close();
++                //XmlReader reader = XmlReader.Create(name);
++                //prims = Helpers.PrimListFromXml(reader);
++                //reader.Close();
+ 
+-                // Create a dictionary indexed by the old local ID of the prims
+-                prims = new Dictionary&lt;uint, PrimObject&gt;();
+-                foreach (PrimObject prim in listprims)
+-                {
+-                    prims.Add(prim.LocalID, prim);
+-                }
++                XmlSerializer serializer = new XmlSerializer(typeof(List&lt;PrimObject&gt;));
++                XmlDeserializationEvents events = new XmlDeserializationEvents();
++                events.OnUnknownAttribute += new XmlAttributeEventHandler(OnUnknownAttribute);
++                events.OnUnknownElement += new XmlElementEventHandler(OnUnknownElement);
++                events.OnUnknownNode += new XmlNodeEventHandler(OnUnknownNode);
++                events.OnUnreferencedObject += new UnreferencedObjectEventHandler(OnUnreferenced);
++                prims = (List&lt;PrimObject&gt;)serializer.Deserialize(XmlReader.Create(name), events);
++                //return list;
+             }
+             catch (Exception ex)
+             {
+                 return &quot;Deserialize failed: &quot; + ex.ToString();
+             }
+ 
+-            if (!registeredCreateEvent)
+-            {
+-                TestClient.OnPrimCreated += new TestClient.PrimCreatedCallback(TestClient_OnPrimCreated);
+-                registeredCreateEvent = true;
+-            }
+-
+-            // Build an organized structure from the imported prims
+-            Dictionary&lt;uint, Linkset&gt; linksets = new Dictionary&lt;uint, Linkset&gt;();
+-            foreach (PrimObject prim in prims.Values)
+-            {
+-                if (prim.ParentID == 0)
+-                {
+-                    if (linksets.ContainsKey(prim.LocalID))
+-                        linksets[prim.LocalID].RootPrim = prim;
+-                    else
+-                        linksets[prim.LocalID] = new Linkset(prim);
+-                }
+-                else
+-                {
+-                    if (!linksets.ContainsKey(prim.ParentID))
+-                        linksets[prim.ParentID] = new Linkset();
+-
+-                    linksets[prim.ParentID].Children.Add(prim);
+-                }
+-            }
+-            
+-            primsCreated = new List&lt;PrimObject&gt;();
+-            linking = false;
+-            Console.WriteLine(&quot;Importing &quot; + linksets.Count + &quot; structures.&quot;);
+-
+-            foreach (Linkset linkset in linksets.Values)
+-            {
+-                if (linkset.RootPrim.LocalID != 0)
+-                {
+-                    // HACK: Offset the root prim position so it's not lying on top of the original
+-                    // We need a more elaborate solution for importing with relative or absolute offsets
+-                    linkset.RootPrim.Position.Z += 3.0f;
+-                    currentPosition = linkset.RootPrim.Position;
+-
+-                    // Rez the root prim with no rotation
+-                    LLQuaternion rootRotation = linkset.RootPrim.Rotation;
+-                    linkset.RootPrim.Rotation = LLQuaternion.Identity;
+-
+-                    rezzingRootPrim = true;
+-                    currentPrim = linkset.RootPrim;
+-
+-                    Client.Objects.AddPrim(Client.Network.CurrentSim, linkset.RootPrim, linkset.RootPrim.Position);
+-
+-                    if (!primDone.WaitOne(10000, false))
+-                        return &quot;Rez failed, timed out while creating a prim.&quot;;
+-                    primDone.Reset();
+-
+-                    rezzingRootPrim = false;
+-
+-                    // Rez the child prims
+-                    foreach (PrimObject prim in linkset.Children)
+-                    {
+-                        currentPrim = prim;
+-                        currentPosition = prim.Position + linkset.RootPrim.Position;
+-
+-                        Client.Objects.AddPrim(Client.Network.CurrentSim, prim, currentPosition);
+-
+-                        if (!primDone.WaitOne(10000, false))
+-                            return &quot;Rez failed, timed out while creating a prim.&quot;;
+-                        primDone.Reset();
+-                    }
+-
+-                    // Create a list of the local IDs of the newly created prims
+-                    List&lt;uint&gt; primIDs = new List&lt;uint&gt;();
+-                    foreach (PrimObject prim in primsCreated)
+-                    {
+-                        if (prim.LocalID != rootLocalID)
+-                            primIDs.Add(prim.LocalID);
+-                    }
+-                    // Make sure the root object is the last in our list so it becomes the new root
+-                    primIDs.Add(rootLocalID);
+-
+-                    // Link and set the permissions + rotation
+-                    linking = true;
+-
+-                    Client.Objects.LinkPrims(Client.Network.CurrentSim, primIDs);
+-
+-                    Client.Objects.SetPermissions(Client.Network.CurrentSim, primIDs,
+-                        Helpers.PermissionWho.Everyone | Helpers.PermissionWho.Group | Helpers.PermissionWho.NextOwner,
+-                        Helpers.PermissionType.Copy | Helpers.PermissionType.Modify | Helpers.PermissionType.Move |
+-                        Helpers.PermissionType.Transfer, true);
+-
+-                    Client.Objects.SetRotation(Client.Network.CurrentSim, rootLocalID, rootRotation);
+-
+-                    for (int i = 0; i &lt; linkset.Children.Count + 1; i++)
+-                    {
+-                        primDone.WaitOne(10000, false);
+-                        primDone.Reset();
+-                    }
+-
+-                    linking = false;
+-                }
+-                else
+-                {
+-                    // Skip linksets with a missing root prim
+-                    Console.WriteLine(&quot;WARNING: Skipping a linkset with a missing root prim&quot;);
+-                }
+-
+-                // Reset everything for the next linkset
+-                primsCreated.Clear();
+-            }
+-
+-            return &quot;Import complete.&quot;;
++            // deserialization done, just need to code to rez and link.
++            return &quot;Deserialized  prims, rez code missing.&quot;;
+         }
+ 
+-        void TestClient_OnPrimCreated(Simulator simulator, PrimObject prim)
+-        {
+-            if (rezzingRootPrim)
+-            {
+-                rootLocalID = prim.LocalID;
+-            }
+-
+-            if (!linking)
+-            {
+-                Console.WriteLine(&quot;Setting properties for &quot; + prim.LocalID);
+-
+-                primsCreated.Add(prim);
+-
+-                // FIXME: Replace these individual calls with a single ObjectUpdate that sets the 
+-                // particle system and everything
+-                currentClient.Objects.SetPosition(simulator, prim.LocalID, currentPosition);
+-                currentClient.Objects.SetTextures(simulator, prim.LocalID, currentPrim.Textures);
+-                //currentClient.Objects.SetLight(simulator, prim.LocalID, currentPrim.Light);
+-                //currentClient.Objects.SetFlexible(simulator, prim.LocalID, currentPrim.Flexible);
+-            }
+-
+-            primDone.Set();
+-        }
+-
+         void OnUnknownAttribute(object obj, XmlAttributeEventArgs args)
+         {
+             // This hasn't happened for me
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LoginCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -19,35 +19,15 @@
+             if (args.Length != 3)
+                 return &quot;usage: login firstname lastname password&quot;;
+ 
+-            LoginDetails account = new LoginDetails();
+-            account.FirstName = args[0];
+-            account.LastName = args[1];
+-            account.Password = args[2];
++            SecondLife newClient = TestClient.ClientManager.Login(args);
+ 
+-            // Check if this client is already logged in
+-            foreach (SecondLife client in TestClient.Clients.Values)
+-            {
+-                if (client.Self.FirstName == account.FirstName &amp;&amp; client.Self.LastName == account.LastName)
+-                {
+-                    TestClient.Clients.Remove(client.Network.AgentID);
+-
+-                    client.Network.Logout();
+-
+-                    break;
+-                }
+-            }
+-
+-            SecondLife newClient = TestClient.InitializeClient(account);
+-
+             if (newClient.Network.Connected)
+             {
+-                TestClient.Clients[newClient.Network.AgentID] = newClient;
+-
+                 return &quot;Logged in &quot; + newClient.ToString();
+             }
+             else
+             {
+-                return &quot;Failed to login &quot; + account.FirstName + &quot; &quot; + account.LastName + &quot;: &quot; +
++                return &quot;Failed to login: &quot; +
+                     newClient.Network.LoginError;
+             }
+         }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/LogoutCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -17,19 +17,8 @@
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+         {
+             string name = Client.ToString();
+-            TestClient.Clients.Remove(Client.Network.AgentID);
+-            Client.Network.Logout();
+-            Client = null;
+-
+-            if (TestClient.Clients.Count &gt; 0)
+-            {
+-                return &quot;Logged &quot; + name + &quot; out&quot;;
+-            }
+-            else
+-            {
+-                TestClient.Running = false;
+-                return &quot;All avatars logged out&quot;;
+-            }
++			TestClient.ClientManager.Logout(TestClient);
++            return &quot;Logged &quot; + name + &quot; out&quot;;
+         }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/QuitCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -16,12 +16,8 @@
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+-            foreach (SecondLife client in TestClient.Clients.Values)
+-            {
+-                client.Network.Logout();
+-            }
+-
+-            TestClient.Running = false;
++			TestClient.ClientManager.LogoutAll();
++            TestClient.ClientManager.Running = false;
+             return &quot;All avatars logged out&quot;;
+ 		}
+     }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SayCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -11,7 +11,7 @@
+ 		public SayCommand()
+ 		{
+ 			Name = &quot;say&quot;;
+-			Description = &quot;Say something.&quot;;
++			Description = &quot;Say something.  (usage: say (optional channel) whatever)&quot;;
+ 		}
+ 
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+@@ -25,15 +25,8 @@
+             }
+             else if (args.Length &gt; 1)
+             {
+-                try
+-                {
+-                    channel = Convert.ToInt32(args[0]);
+-                    startIndex = 1;
+-                }
+-                catch (FormatException)
+-                {
+-                    channel = 0;
+-                }
++                if (Int32.TryParse(args[0], out channel))
++					startIndex = 1;
+             }
+             
+ 			for (int i = startIndex; i &lt; args.Length; i++) {
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SetMasterCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -23,13 +23,13 @@
+ 				masterName = masterName + args[ct] + &quot; &quot;;
+ 			TestClient.Master = masterName.TrimEnd();
+ 
+-			foreach (Avatar av in TestClient.Avatars.Values)
++			foreach (Avatar av in TestClient.Avatars.AvatarList.Values)
+ 			{
+-				if (av.Name == TestClient.Master)
+-				{
+-					Client.Self.InstantMessage(av.ID, &quot;You are now my master.  IM me with \&quot;help\&quot; for a command list.&quot;);
+-					break;
+-				}
++			    if (av.Name == TestClient.Master)
++			    {
++			        Client.Self.InstantMessage(av.ID, &quot;You are now my master.  IM me with \&quot;help\&quot; for a command list.&quot;);
++			        break;
++			    }
+ 			}
+ 
+ 			return &quot;Master set to &quot; + masterName;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/SitCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -13,7 +13,7 @@
+ 			Name = &quot;sit&quot;;
+ 			Description = &quot;Attempt to sit on the closest prim&quot;;
+ 		}
+-
++			
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 		    PrimObject closest = null;
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Commands/WhoCommand.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -17,9 +17,9 @@
+         public override string Execute(SecondLife Client, string[] args, LLUUID fromAgentID)
+ 		{
+ 			StringBuilder result = new StringBuilder();
+-			foreach (Avatar av in TestClient.Avatars.Values)
++			foreach (Avatar av in TestClient.Avatars.AvatarList.Values)
+ 			{
+-				result.AppendFormat(&quot;\n{0} {1}&quot;, av.Name, av.GroupName);
++				result.AppendFormat(&quot;\n{0} {1} {2}/{3} ID: {4}&quot;, av.Name, av.GroupName, av.CurrentRegion.Name, av.Position, av.ID);
+ 			}
+ 
+             return result.ToString();
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/Program.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/Program.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -18,7 +18,7 @@
+         {
+             Arguments arguments = new Arguments(args);
+ 
+-            TestClient tester;
++            ClientManager manager;
+             List&lt;LoginDetails&gt; accounts = new List&lt;LoginDetails&gt;();
+             LoginDetails account;
+             string master = &quot;&quot;;
+@@ -98,10 +98,12 @@
+                 }
+             }
+ 
++			foreach (LoginDetails a in accounts)
++				a.Master = master;
++
+             // Login the accounts and run the input loop
+-            tester = new TestClient(accounts);
+-            tester.Master = master;
+-            tester.Run();
++            manager = new ClientManager(accounts);
++			manager.Run();
+         }
+     }
+ }
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.cs
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.cs	2006-12-16 09:07:28 UTC (rev 728)
+@@ -8,25 +8,17 @@
+ 
+ namespace libsecondlife.TestClient
+ {
+-    public struct LoginDetails
++    public class TestClient : SecondLife
+     {
+-        public string FirstName;
+-        public string LastName;
+-        public string Password;
+-    }
+-
+-    public class TestClient
+-    {
+-        public Dictionary&lt;LLUUID, SecondLife&gt; Clients = new Dictionary&lt;LLUUID, SecondLife&gt;();
++        public Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims;
+         public LLUUID GroupID = LLUUID.Zero;
+         public Dictionary&lt;LLUUID, GroupMember&gt; GroupMembers;
+-        public Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt; SimPrims = new Dictionary&lt;Simulator, Dictionary&lt;uint, PrimObject&gt;&gt;();
+-        public Dictionary&lt;LLUUID, AvatarAppearancePacket&gt; Appearances = new Dictionary&lt;LLUUID, AvatarAppearancePacket&gt;();
+-        public Dictionary&lt;uint, Avatar&gt; Avatars = new Dictionary&lt;uint,Avatar&gt;();
+-        public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
++		public Dictionary&lt;LLUUID, AvatarAppearancePacket&gt; Appearances = new Dictionary&lt;LLUUID, AvatarAppearancePacket&gt;();
++		public Dictionary&lt;string, Command&gt; Commands = new Dictionary&lt;string,Command&gt;();
+         public Dictionary&lt;string, object&gt; SharedValues = new Dictionary&lt;string, object&gt;();
+         public bool Running = true;
+ 	    public string Master = &quot;&quot;;
++		public ClientManager ClientManager;
+ 
+         public delegate void PrimCreatedCallback(Simulator simulator, PrimObject prim);
+         public event PrimCreatedCallback OnPrimCreated;
+@@ -38,100 +30,39 @@
+         private int DrawDistance = 64;
+         private System.Timers.Timer updateTimer;
+ 
++
+         /// &lt;summary&gt;
+         /// 
+         /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;accounts&quot;&gt;&lt;/param&gt;
+-        public TestClient(List&lt;LoginDetails&gt; accounts)
++        public TestClient(ClientManager manager)
+         {
++			ClientManager = manager;
++
+             updateTimer = new System.Timers.Timer(1000);
+             updateTimer.Elapsed += new System.Timers.ElapsedEventHandler(updateTimer_Elapsed);
+ 
+             RegisterAllCommands(Assembly.GetExecutingAssembly());
+ 
+-            foreach (LoginDetails account in accounts)
+-            {
+-                SecondLife client = InitializeClient(account);
+ 
+-                if (client.Network.Connected)
+-                {
+-                    Clients[client.Network.AgentID] = client;
++            Debug = false;
+ 
+-                    Console.WriteLine(&quot;Logged in &quot; + client.ToString());
++            Network.RegisterCallback(PacketType.AgentDataUpdate, new NetworkManager.PacketCallback(AgentDataUpdateHandler));
+ 
+-                    // Throttle the connection to not receive LayerData or asset packets
+-                    client.Throttle.Total = 0.0f;
+-                    client.Throttle.Task = 1536000.0f;
+-                    client.Throttle.Set();
+-                }
+-                else
+-                {
+-                    Console.WriteLine(&quot;Failed to login &quot; + account.FirstName + &quot; &quot; + account.LastName +
+-                        &quot;: &quot; + client.Network.LoginError);
+-                }
+-            }
++            Objects.OnNewPrim += new ObjectManager.NewPrimCallback(Objects_OnNewPrim);
++            Objects.OnPrimMoved += new ObjectManager.PrimMovedCallback(Objects_OnPrimMoved);
++            Objects.OnObjectKilled += new ObjectManager.KillObjectCallback(Objects_OnObjectKilled);
++			//Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
++			//Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
++            Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
+ 
+-            updateTimer.Start();
+-        }
++            Network.RegisterCallback(PacketType.AvatarAppearance, new NetworkManager.PacketCallback(AvatarAppearanceHandler));
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        /// &lt;param name=&quot;account&quot;&gt;&lt;/param&gt;
+-        /// &lt;returns&gt;&lt;/returns&gt;
+-        public SecondLife InitializeClient(LoginDetails account)
+-        {
+-            SecondLife client = new SecondLife();
++            Objects.RequestAllObjects = true;
+ 
+-            client.Debug = false;
+ 
+-            client.Network.RegisterCallback(PacketType.AgentDataUpdate, new NetworkManager.PacketCallback(AgentDataUpdateHandler));
+-
+-            client.Objects.OnNewPrim += new ObjectManager.NewPrimCallback(Objects_OnNewPrim);
+-            client.Objects.OnPrimMoved += new ObjectManager.PrimMovedCallback(Objects_OnPrimMoved);
+-            client.Objects.OnObjectKilled += new ObjectManager.KillObjectCallback(Objects_OnObjectKilled);
+-            client.Objects.OnNewAvatar += new ObjectManager.NewAvatarCallback(Objects_OnNewAvatar);
+-            client.Objects.OnAvatarMoved += new ObjectManager.AvatarMovedCallback(Objects_OnAvatarMoved);
+-            client.Self.OnInstantMessage += new InstantMessageCallback(Self_OnInstantMessage);
+-
+-            client.Network.RegisterCallback(PacketType.AvatarAppearance, new NetworkManager.PacketCallback(AvatarAppearanceHandler));
+-
+-            client.Objects.RequestAllObjects = true;
+-
+-            bool login = client.Network.Login(account.FirstName, account.LastName, account.Password, 
+-                &quot;TestClient&quot;, &quot;<A HREF="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">contact at libsecondlife.org</A>&quot;);
+-
+-            if (login)
+-            {
+-                // Set our appearance
+-                //AppearanceManager appearance = new AppearanceManager(client);
+-                //appearance.SendAgentSetAppearance();
+-            }
+-
+-            return client;
++            updateTimer.Start();
+         }
+ 
+-        /// &lt;summary&gt;
+-        /// 
+-        /// &lt;/summary&gt;
+-        public void Run()
+-        {
+-            Console.WriteLine(&quot;Type quit to exit.  Type help for a command list.&quot;);
+-
+-            while (Running)
+-            {
+-                PrintPrompt();
+-                string input = Console.ReadLine();
+-                DoCommandAll(input, null, null);
+-            }
+-
+-            foreach (SecondLife client in Clients.Values)
+-            {
+-                if (client.Network.Connected)
+-                    client.Network.Logout();
+-            }
+-        }
+-
+         public void RegisterAllCommands(Assembly assembly)
+         {
+             foreach (Type t in assembly.GetTypes())
+@@ -170,7 +101,8 @@
+                 client.Self.InstantMessage(fromAgentID, message, imSessionID);
+             }
+         }
+-        private void DoCommand(SecondLife client, string cmd, LLUUID fromAgentID, LLUUID imSessionID)
++
++		public void DoCommand(string cmd, LLUUID fromAgentID, LLUUID imSessionID)
+         {
+             string[] tokens = cmd.Trim().Split(new char[] { ' ', '\t' });
+             string firstToken = tokens[0].ToLower();
+@@ -179,124 +111,45 @@
+                 return;
+ 
+             // &quot;all balance&quot; will send the balance command to all currently logged in bots
+-            if (firstToken == &quot;all&quot; &amp;&amp; tokens.Length &gt; 1)
+-            {
+-                cmd = &quot;&quot;;
++			if (firstToken == &quot;all&quot; &amp;&amp; tokens.Length &gt; 1)
++			{
++			    cmd = &quot;&quot;;
+ 
+-                // Reserialize all of the arguments except for &quot;all&quot;
+-                for (int i = 1; i &lt; tokens.Length; i++)
+-                {
+-                    cmd += tokens[i] + &quot; &quot;;
+-                }
++			    // Reserialize all of the arguments except for &quot;all&quot;
++			    for (int i = 1; i &lt; tokens.Length; i++)
++			    {
++			        cmd += tokens[i] + &quot; &quot;;
++			    }
+ 
+-                DoCommandAll(cmd, fromAgentID, imSessionID);
++			    ClientManager.DoCommandAll(cmd, fromAgentID, imSessionID);
+ 
+-                return;
+-            }
++			    return;
++			}
+ 
+             if (Commands.ContainsKey(firstToken))
+             {
+                 string[] args = new string[tokens.Length - 1];
+                 Array.Copy(tokens, 1, args, 0, args.Length);
+-                string response = response = Commands[firstToken].Execute(client, args, fromAgentID);
++                string response = response = Commands[firstToken].Execute(this, args, fromAgentID);
+ 
+                 if (response.Length &gt; 0)
+                 {
+-                    if (fromAgentID != null &amp;&amp; client.Network.Connected) 
+-                        SendResponseIM(client, fromAgentID, response, imSessionID);
++                    if (fromAgentID != null &amp;&amp; Network.Connected) 
++                        SendResponseIM(this, fromAgentID, response, imSessionID);
+                         
+                     Console.WriteLine(response);
+                 }
+             }
+         }
+ 
+-        private void DoCommandAll(string cmd, LLUUID fromAgentID, LLUUID imSessionID)
+-        {
+-            string[] tokens = cmd.Trim().Split(new char[] { ' ', '\t' });
+-            string firstToken = tokens[0].ToLower();
+-
+-            if (tokens.Length == 0)
+-                return;
+-
+-Begin:
+-
+-            int avatars = Clients.Count;
+-
+-            if (Commands.ContainsKey(firstToken))
+-            {
+-                if (firstToken == &quot;login&quot;)
+-                {
+-                    // Special login case: Only call it once, and allow it with
+-                    // no logged in avatars
+-                    string[] args = new string[tokens.Length - 1];
+-                    Array.Copy(tokens, 1, args, 0, args.Length);
+-                    string response = Commands[&quot;login&quot;].Execute(null, args, null);
+-
+-                    if (response.Length &gt; 0)
+-                    {
+-                        Console.WriteLine(response);
+-                    }
+-                }
+-                else if (firstToken == &quot;quit&quot;)
+-                {
+-                    // Special quit case: This allows us to quit even when there
+-                    // are zero avatars logged in
+-                    Commands[&quot;quit&quot;].Execute(null, null, null);
+-                }
+-                else
+-                {
+-                    foreach (SecondLife client in Clients.Values)
+-                    {
+-                        if (client.Network.Connected)
+-                        {
+-                            string[] args = new string[tokens.Length - 1];
+-                            Array.Copy(tokens, 1, args, 0, args.Length);
+-                            string response = Commands[firstToken].Execute(client, args, fromAgentID);
+-
+-                            if (response.Length &gt; 0)
+-                            {
+-                                if (fromAgentID != null &amp;&amp; client.Network.Connected)
+-                                    SendResponseIM(client, fromAgentID, response, imSessionID);
+-                                Console.WriteLine(response);
+-                            }
+-                        }
+-
+-                        if (avatars != Clients.Count)
+-                        {
+-                            // The dictionary size changed, start over since the 
+-                            // foreach is shot
+-                            goto Begin;
+-                        }
+-                    }
+-                }
+-            }
+-        }
+-
+-		private void PrintPrompt()
+-		{
+-			//Console.Write(String.Format(&quot;{0} {1} - {2}&gt; &quot;, client.Self.FirstName, client.Self.LastName, client.Network.CurrentSim.Region.Name));
+-
+-            int online = 0;
+-
+-            foreach (SecondLife client in Clients.Values)
+-            {
+-                if (client.Network.Connected) online++;
+-            }
+-
+-            Console.Write(online + &quot; avatars online&gt; &quot;);
+-		}
+-
+         private void updateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+         {
+-            foreach (SecondLife client in Clients.Values)
+-            {
+-                client.Self.UpdateCamera(0, client.Self.Position, forward, left, up, bodyRotation,
+-                    LLQuaternion.Identity, DrawDistance, false);
++            Self.UpdateCamera(0, Self.Position, forward, left, up, bodyRotation,
++                LLQuaternion.Identity, DrawDistance, false);
+ 
+-                foreach (Command c in Commands.Values)
+-                    if (c.Active)
+-                        c.Think(client);
+-            }
++            foreach (Command c in Commands.Values)
++                if (c.Active)
++                    c.Think(this);
+         }
+ 
+         private void AgentDataUpdateHandler(Packet packet, Simulator sim)
+@@ -315,7 +168,6 @@
+         {
+             Console.WriteLine(&quot;Got &quot; + members.Count + &quot; group members.&quot;);
+             GroupMembers = members;
+-			PrintPrompt();
+         }
+ 
+         private void Objects_OnObjectKilled(Simulator simulator, uint objectID)
+@@ -326,11 +178,11 @@
+                     SimPrims[simulator].Remove(objectID);
+             }
+ 
+-            lock (Avatars)
+-            {
+-                if (Avatars.ContainsKey(objectID))
+-                    Avatars.Remove(objectID);
+-            }
++			//lock (AvatarList)
++			//{
++			//    if (AvatarList.ContainsKey(objectID))
++			//        AvatarList.Remove(objectID);
++			//}
+         }
+ 
+         private void Objects_OnPrimMoved(Simulator simulator, PrimUpdate prim, ulong regionHandle, ushort timeDilation)
+@@ -363,25 +215,25 @@
+             }
+         }
+ 
+-        private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
+-        {
+-            lock (Avatars)
+-            {
+-                Avatars[avatar.LocalID] = avatar;
+-            }
+-        }
++		//private void Objects_OnNewAvatar(Simulator simulator, Avatar avatar, ulong regionHandle, ushort timeDilation)
++		//{
++		//    lock (AvatarList)
++		//    {
++		//        AvatarList[avatar.LocalID] = avatar;
++		//    }
++		//}
+ 
+-        private void Objects_OnAvatarMoved(Simulator simulator, AvatarUpdate avatar, ulong regionHandle, ushort timeDilation)
+-        {
+-            lock (Avatars)
+-            {
+-                if (Avatars.ContainsKey(avatar.LocalID))
+-                {
+-                    Avatars[avatar.LocalID].Position = avatar.Position;
+-                    Avatars[avatar.LocalID].Rotation = avatar.Rotation;
+-                }
+-            }
+-        }
++		//private void Objects_OnAvatarMoved(Simulator simulator, AvatarUpdate avatar, ulong regionHandle, ushort timeDilation)
++		//{
++		//    lock (AvatarList)
++		//    {
++		//        if (AvatarList.ContainsKey(avatar.LocalID))
++		//        {
++		//            AvatarList[avatar.LocalID].Position = avatar.Position;
++		//            AvatarList[avatar.LocalID].Rotation = avatar.Rotation;
++		//        }
++		//    }
++		//}
+ 
+         private void AvatarAppearanceHandler(Packet packet, Simulator simulator)
+         {
+@@ -415,16 +267,16 @@
+ 
+             Console.WriteLine(&quot;&lt;IM&gt;&quot; + fromAgentName + &quot;: &quot; + message);
+ 
+-            if (Clients.ContainsKey(toAgentID))
++            if (Self.ID == toAgentID)
+             {
+                 if (dialog == 22)
+                 {
+                     Console.WriteLine(&quot;Accepting teleport lure&quot;);
+-                    Clients[toAgentID].Self.TeleportLureRespond(fromAgentID, true);
++                    Self.TeleportLureRespond(fromAgentID, true);
+                 }
+                 else
+                 {
+-                    DoCommand(Clients[toAgentID], message, fromAgentID, imSessionID);
++                    DoCommand(message, fromAgentID, imSessionID);
+                 }
+             }
+             else
+@@ -433,5 +285,5 @@
+                 Console.WriteLine(&quot;A bot that we aren't tracking received an IM?&quot;);
+             }
+         }
+-    }
+-}
++	}
++}
+\ No newline at end of file
+
+Modified: trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj
+===================================================================
+--- trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/examples/TestClient/TestClient.csproj	2006-12-16 09:07:28 UTC (rev 728)
+@@ -36,24 +36,37 @@
+     &lt;Compile Include=&quot;Arguments.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Command.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\BalanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\EchoMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportOutfitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
++    &lt;Compile Include=&quot;Commands\IMCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\ImportOutfitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
++    &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\PacketLogCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\SetAppearanceCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Commands\ShoutCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\WhisperCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ExportCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\IMCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\ImportCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LoadCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\LoginCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\LogoutCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\FollowCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SayCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\JumpCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\GotoCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\SetMasterCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\GiveAllCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\PrimCountCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\SitCommand.cs&quot; /&gt;
+@@ -61,7 +74,10 @@
+     &lt;Compile Include=&quot;Commands\UptimeCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\HelpCommand.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Commands\LocationCommand.cs&quot; /&gt;
+-    &lt;Compile Include=&quot;Commands\QuitCommand.cs&quot; /&gt;
++    &lt;Compile Include=&quot;ClientManager.cs&quot; /&gt;
++    &lt;Compile Include=&quot;Commands\WhoCommand.cs&quot;&gt;
++      &lt;SubType&gt;Code&lt;/SubType&gt;
++    &lt;/Compile&gt;
+     &lt;Compile Include=&quot;Program.cs&quot; /&gt;
+     &lt;Compile Include=&quot;TestClient.cs&quot; /&gt;
+     &lt;Compile Include=&quot;Properties\AssemblyInfo.cs&quot; /&gt;
+
+Modified: trunk/libsecondlife-cs/libsecondlife.sln
+===================================================================
+--- trunk/libsecondlife-cs/libsecondlife.sln	2006-12-16 03:24:05 UTC (rev 727)
++++ trunk/libsecondlife-cs/libsecondlife.sln	2006-12-16 09:07:28 UTC (rev 728)
+@@ -38,6 +38,8 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLIRC&quot;, &quot;..\applications\SLIRC\SLIRC.csproj&quot;, &quot;{8855EB2F-BC4C-485A-A577-0989EB16BFDC}&quot;
+ EndProject
++Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;InventoryImageAssets&quot;, &quot;InventoryImageAssets&quot;, &quot;{AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}&quot;
++EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;IA_MultiImageUpload&quot;, &quot;examples\IA_MultiImageUpload\IA_MultiImageUpload.csproj&quot;, &quot;{8598E42A-DCBC-4224-9503-5694F17B2F45}&quot;
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;SLProxy&quot;, &quot;..\SLProxy\SLProxy.csproj&quot;, &quot;{E4115DC9-FC88-47D6-B3B6-2400AD19B80D}&quot;
+@@ -48,8 +50,14 @@
+ EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;BodyPartMorphGenerator&quot;, &quot;examples\BodyPartMorphGenerator\BodyPartMorphGenerator.csproj&quot;, &quot;{98C44481-3F15-4305-840D-037EA0D9C221}&quot;
+ EndProject
++Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;Tools and Examples&quot;, &quot;Tools and Examples&quot;, &quot;{F35EF72F-4302-4924-A162-10447B94F635}&quot;
++EndProject
++Project(&quot;{2150E333-8FDC-42A3-9474-1A3956D46DE8}&quot;) = &quot;SL Proxy&quot;, &quot;SL Proxy&quot;, &quot;{C754652B-2ACB-4D47-8914-834E17919132}&quot;
++EndProject
+ Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;TestClient&quot;, &quot;examples\TestClient\TestClient.csproj&quot;, &quot;{B87682F6-B2D7-4C4D-A529-400C24FD4880}&quot;
+ EndProject
++Project(&quot;{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&quot;) = &quot;Sit&quot;, &quot;..\..\SurveyAndSit\Sit.csproj&quot;, &quot;{C741A2FF-732C-4724-A4D3-D52324D09C8E}&quot;
++EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+ 		Debug|Any CPU = Debug|Any CPU
+@@ -156,8 +164,36 @@
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Debug|Any CPU.Build.0 = Debug|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Release|Any CPU.ActiveCfg = Release|Any CPU
+ 		{B87682F6-B2D7-4C4D-A529-400C24FD4880}.Release|Any CPU.Build.0 = Release|Any CPU
++		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{C741A2FF-732C-4724-A4D3-D52324D09C8E}.Release|Any CPU.Build.0 = Release|Any CPU
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+ 	EndGlobalSection
++	GlobalSection(NestedProjects) = preSolution
++		{FC19D5F6-076E-4923-8456-9B0E00E22896} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{66FFD34E-652C-4EF5-81FE-06AD011169D2} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{623B86F7-7753-44B7-A8C8-CBC89FB8AF8E} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{77E5330D-8A8C-41B4-A2D1-6F06FE45ED6D} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{B5AC6795-E426-4BC3-950F-D7B2970E2394} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{7AE16AC1-E64C-4FDC-9B85-4BB6145D511C} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{F460FAB3-0D12-4873-89EB-2696818764B8} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{4EF98AD4-B3B3-42B0-9273-13A614A823F7} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{8855EB2F-BC4C-485A-A577-0989EB16BFDC} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{F6258A68-C624-46A0-BA73-B55D21BB0A3B} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{B87682F6-B2D7-4C4D-A529-400C24FD4880} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{C741A2FF-732C-4724-A4D3-D52324D09C8E} = {F35EF72F-4302-4924-A162-10447B94F635}
++		{E185E4E1-62D2-430C-A94C-E8E38190805B} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{8D2E5240-2247-42F5-AAAC-CF0CCCEE349A} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{D6D1D020-D8D8-4D7E-B7AC-5913A903D6E7} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{A4F59DE9-E382-401D-AA8D-4557779D764E} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{E464B963-46E3-4E1A-A36F-9C640C880E68} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{8598E42A-DCBC-4224-9503-5694F17B2F45} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{98C44481-3F15-4305-840D-037EA0D9C221} = {AE3B6C21-9B43-490E-ABCE-2018DC1AEA44}
++		{6222B134-AE5F-489A-8A77-423A721B7C62} = {C754652B-2ACB-4D47-8914-834E17919132}
++		{D8ECCBE1-AC71-4054-AAA6-2D50E5629504} = {C754652B-2ACB-4D47-8914-834E17919132}
++		{E4115DC9-FC88-47D6-B3B6-2400AD19B80D} = {C754652B-2ACB-4D47-8914-834E17919132}
++	EndGlobalSection
+ EndGlobal
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000091.html">[Libsecondlife-commits] r727 - trunk/libsecondlife-cs
+</A></li>
+	<LI>Next message: <A HREF="000093.html">[Libsecondlife-commits] [Patch #1723] Bot identifys itself when	asked for uptime.
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#92">[ date ]</a>
+              <a href="thread.html#92">[ thread ]</a>
+              <a href="subject.html#92">[ subject ]</a>
+              <a href="author.html#92">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/libsecondlife-commits">More information about the Libsecondlife-commits
+mailing list</a><br>
+</body></html>
